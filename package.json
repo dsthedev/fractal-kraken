@@ -1,0 +1,16 @@
+{
+  "private": true,
+  "workspaces": [
+    "api",
+    "web"
+  ],
+  "devDependencies": {
+    "@cedarjs/core": "2.3.0",
+    "@cedarjs/project-config": "2.3.0",
+    "@cedarjs/testing": "2.3.0"
+  },
+  "engines": {
+    "node": "=24.x"
+  },
+  "packageManager": "yarn@4.12.0"
+}
