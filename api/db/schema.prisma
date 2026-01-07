@@ -5,7 +5,7 @@
 // https://www.prisma.io/docs/orm/prisma-migrate
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -14,11 +14,130 @@ generator client {
   binaryTargets = "native"
 }
 
-// Define your own datamodels here and run `yarn cedar prisma migrate dev`
-// to create migrations for them and apply to your dev DB.
-// TODO: Please remove the following example:
-model UserExample {
-  id    Int     @id @default(autoincrement())
+model User {
+  id String @id @default(uuid())
+
   email String  @unique
   name  String?
+
+  hashedPassword      String    @default("")
+  salt                String    @default("")
+  resetToken          String?
+  resetTokenExpiresAt DateTime?
+
+  roles String @default("guest")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  audits Audit[]
+  // estimates Estimate[]
+  // rate      Rate[]
+  // stub      Stub[]
 }
+
+model Audit {
+  id String @id @default(uuid())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  log    String
+}
+
+// model Estimate {
+//   id   Int     @id @default(autoincrement())
+//   uuid String? @default(uuid())
+
+//   jobName       String?
+//   billableItems String?
+
+//   installerName String?
+//   jobAddress    String?
+//   retailer      String?
+//   retailerRep   String?
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   author   User? @relation(fields: [authorId], references: [id])
+//   authorId Int?
+// }
+
+// model Rate {
+//   id   Int    @id @default(autoincrement())
+//   uuid String @default(uuid())
+
+//   value    Int     @default(0)
+//   mValue   Int     @default(0)
+//   unit     String?
+//   task     String
+//   material String?
+//   note     String?
+
+//   description String?
+
+//   authorId Int?
+//   author   User? @relation(fields: [authorId], references: [id])
+
+//   rUnitId Int? // New field for the relationship
+//   rUnit   MeasurementUnit? @relation(fields: [rUnitId], references: [id])
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt()
+// }
+
+// model Stub {
+//   id   Int     @id @default(autoincrement())
+//   uuid String? @default(uuid())
+
+//   payor     String // who paid
+//   checkNum  String? // payor's check id #
+//   jobsPaid  String? // future list of jobs w/ paid each
+//   totalPaid Int // total paid for this check
+
+//   paidAt DateTime @default(now()) // date check issued, not cashed
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   author   User? @relation(fields: [authorId], references: [id])
+//   authorId Int?
+// }
+
+// model BillableItem {
+//   id          Int    @id @default(autoincrement())
+//   uuid        String @default(uuid())
+//   quantity    Int    @default(0)
+//   unit        String
+//   service     String
+//   description String
+//   rate        Int    @default(0)
+//   subtotal    Int    @default(0)
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// // Units of Measurement
+// // used to quickly identify which of the numerous forms of a units name may be. perhaps it could be a string, but why not make things more complicated?
+// model MeasurementUnit {
+//   id Int @id @default(autoincrement())
+
+//   fullName         String // square foot - Full name of the unit of measurement.
+//   pluralName       String // square feet - Full plural name of the unit of measurement.
+//   shortName        String? // sqft - Abbreviated name of the unit of measurement.
+//   symbol           String? // ft² - Symbolic notation used for the unit of measurement.
+//   notation         String? // ' - Notation used for the unit (e.g., feet is ' and inches is ").
+//   dimension        String? // square - Dimension of the unit (e.g., linear, square, cubic).
+//   description      String? // Square feet is a unit of area measurement. - Detailed description of the unit.
+//   conversionFactor Float? // 0.092903 - Factor for converting to a standard unit.
+//   category         String? // Area - Category of the unit (e.g., Length, Area, Volume, Time).
+//   baseUnit         String? // meter - The base unit of measurement related to this unit.
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+//   Rate      Rate[]
+// }

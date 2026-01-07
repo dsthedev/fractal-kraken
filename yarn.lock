@@ -3134,6 +3134,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@faker-js/faker@npm:^10.2.0":
+  version: 10.2.0
+  resolution: "@faker-js/faker@npm:10.2.0"
+  checksum: 10c0/72b5048ff32e90b2876560015e177f91b0625dafaaa43631302e413329105be331a1c126c8f7b0f95817cacd51c9222b58e62b6f09f5485522302e6103f19f09
+  languageName: node
+  linkType: hard
+
 "@fastify/accept-negotiator@npm:^2.0.0":
   version: 2.0.1
   resolution: "@fastify/accept-negotiator@npm:2.0.1"
@@ -19209,6 +19216,7 @@ __metadata:
     "@cedarjs/router": "npm:2.3.0"
     "@cedarjs/vite": "npm:2.3.0"
     "@cedarjs/web": "npm:2.3.0"
+    "@faker-js/faker": "npm:^10.2.0"
     "@radix-ui/react-dropdown-menu": "npm:^2.1.16"
     "@radix-ui/react-slot": "npm:^1.2.4"
     "@radix-ui/react-tooltip": "npm:^1.2.8"
