@@ -5,6 +5,8 @@ import { RedwoodApolloProvider } from '@cedarjs/web/apollo'
 
 import FatalErrorPage from 'src/pages/FatalErrorPage'
 
+import { ThemeProvider } from './components/theme-provider'
+
 import './index.css'
 
 interface AppProps {
@@ -14,7 +16,11 @@ interface AppProps {
 const App = ({ children }: AppProps) => (
   <FatalErrorBoundary page={FatalErrorPage}>
     <RedwoodProvider titleTemplate="%PageTitle | %AppTitle">
-      <RedwoodApolloProvider>{children}</RedwoodApolloProvider>
+      <RedwoodApolloProvider>
+        <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+          {children}
+        </ThemeProvider>
+      </RedwoodApolloProvider>
     </RedwoodProvider>
   </FatalErrorBoundary>
 )
