@@ -1,73 +1,78 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from 'react'
 
-type Theme = 'dark' | 'light' | 'system'
-
-type ThemeProviderProps = {
-  children: React.ReactNode
-  defaultTheme?: Theme
-  storageKey?: string
-}
-
-type ThemeProviderState = {
-  theme: Theme
+type Theme = 'light' | 'dark'
+type ThemeContextValue = {
+  /** Actual applied theme (light/dark) for UI and icons */
+  resolvedTheme: Theme
+  /** User choice setter (binary) */
   setTheme: (theme: Theme) => void
 }
 
-const initialState: ThemeProviderState = {
-  theme: 'system',
-  setTheme: () => null,
+type ThemeProviderProps = {
+  children: React.ReactNode
+  storageKey?: string
 }
 
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
+const ThemeContext = createContext<ThemeContextValue | undefined>(undefined)
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'system',
   storageKey = 'vite-ui-theme',
-  ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
+  // 1. Track explicit user choice ('light'/'dark') or undefined if not set
+  const [userTheme, setUserTheme] = useState<Theme | undefined>(() => {
+    const stored = localStorage.getItem(storageKey) as Theme | null
+    return stored ?? undefined
+  })
+
+  // 2. Track system preference
+  const [systemTheme, setSystemTheme] = useState<Theme>(() =>
+    window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   )
 
+  // 3. Listen for OS theme changes
   useEffect(() => {
-    const root = window.document.documentElement
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const handler = (e: MediaQueryListEvent) =>
+      setSystemTheme(e.matches ? 'dark' : 'light')
+    mediaQuery.addEventListener('change', handler)
+    return () => mediaQuery.removeEventListener('change', handler)
+  }, [])
 
+  // 4. Compute the theme to actually apply (binary UX: user overrides system)
+  const resolvedTheme: Theme = userTheme ?? systemTheme
+
+  // 5. Apply resolved theme to document root
+  useEffect(() => {
+    const root = document.documentElement
     root.classList.remove('light', 'dark')
+    root.classList.add(resolvedTheme)
+  }, [resolvedTheme])
 
-    if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
-        .matches
-        ? 'dark'
-        : 'light'
-
-      root.classList.add(systemTheme)
-      return
-    }
-
-    root.classList.add(theme)
-  }, [theme])
-
-  const value = {
-    theme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme)
-      setTheme(theme)
+  // 6. Setter that persists user choice
+  const setTheme = useCallback(
+    (newTheme: Theme) => {
+      setUserTheme(newTheme)
+      localStorage.setItem(storageKey, newTheme)
     },
-  }
+    [storageKey]
+  )
 
   return (
-    <ThemeProviderContext.Provider {...props} value={value}>
+    <ThemeContext.Provider value={{ resolvedTheme, setTheme }}>
       {children}
-    </ThemeProviderContext.Provider>
+    </ThemeContext.Provider>
   )
 }
 
-export const useTheme = () => {
-  const context = useContext(ThemeProviderContext)
-
-  if (context === undefined)
-    throw new Error('useTheme must be used within a ThemeProvider')
-
-  return context
+export function useTheme() {
+  const ctx = useContext(ThemeContext)
+  if (!ctx) throw new Error('useTheme must be used within ThemeProvider')
+  return ctx
 }

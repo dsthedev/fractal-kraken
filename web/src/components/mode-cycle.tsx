@@ -1,4 +1,4 @@
-import { Moon, Sun, Monitor } from 'lucide-react'
+import { Moon, Sun } from 'lucide-react'
 
 import { useTheme } from 'src/components/theme-provider'
 import { Button } from 'src/components/ui/button'
@@ -8,18 +8,14 @@ import {
   TooltipTrigger,
 } from 'src/components/ui/tooltip'
 
-const themes = ['light', 'dark', 'system'] as const
-
-function getNextTheme(theme: (typeof themes)[number]) {
-  const index = themes.indexOf(theme)
-  return themes[(index + 1) % themes.length]
-}
-
 export function ModeCycle() {
-  const { theme = 'system', setTheme } = useTheme()
-  const nextTheme = getNextTheme(theme)
+  const { theme, resolvedTheme, setTheme } = useTheme()
 
-  const cycleTheme = () => {
+  // Toggle to the opposite of the current resolved theme
+  const nextTheme = resolvedTheme === 'light' ? 'dark' : 'light'
+
+  const handleToggle = () => {
+    // Persist the new user choice
     setTheme(nextTheme)
   }
 
@@ -29,35 +25,29 @@ export function ModeCycle() {
         <Button
           variant="outline"
           size="icon"
-          onClick={cycleTheme}
+          onClick={handleToggle}
           aria-label="Toggle theme"
           className="relative"
         >
-          {/* Light */}
+          {/* Light icon */}
           <Sun
             className={`absolute h-[1.2rem] w-[1.2rem] transition-all ${
-              theme === 'light' ? 'scale-100 rotate-0' : 'scale-0 -rotate-90'
+              resolvedTheme === 'light'
+                ? 'scale-100 rotate-0'
+                : 'scale-0 -rotate-90'
             }`}
           />
-
-          {/* Dark */}
+          {/* Dark icon */}
           <Moon
             className={`absolute h-[1.2rem] w-[1.2rem] transition-all ${
-              theme === 'dark' ? 'scale-100 rotate-0' : 'scale-0 rotate-90'
+              resolvedTheme === 'dark'
+                ? 'scale-100 rotate-0'
+                : 'scale-0 rotate-90'
             }`}
           />
-
-          {/* System */}
-          <Monitor
-            className={`absolute h-[1.2rem] w-[1.2rem] transition-all ${
-              theme === 'system' ? 'scale-100 rotate-0' : 'scale-0'
-            }`}
-          />
-
           <span className="sr-only">Toggle theme</span>
         </Button>
       </TooltipTrigger>
-
       <TooltipContent>
         Switch to <strong>{nextTheme}</strong> mode
       </TooltipContent>
