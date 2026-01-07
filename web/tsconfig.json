@@ -13,6 +13,7 @@
       "../api/src",
       "../.redwood/types/mirror/api/src"
     ],
+    "baseUrl": ".",
     "paths": {
       "src/*": [
         "./src/*",
