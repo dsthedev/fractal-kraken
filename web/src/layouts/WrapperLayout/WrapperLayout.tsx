@@ -17,7 +17,7 @@ const WrapperLayout = ({ children }: WrapperLayoutProps) => {
         </div>
       </header>
 
-      <main className="flex-1 mx-auto w-full px-1 sm:px-4 md:px-6 lg:px-8 max-w-xl">
+      <main className="flex-1 mx-auto w-full px-1 sm:px-4 md:px-6 lg:px-8 max-w-[1080px]">
         <div className="rounded-lg border border-border bg-background p-4 my-6">
           {children}
         </div>

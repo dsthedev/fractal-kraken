@@ -176,14 +176,14 @@
   @apply p-3;
 }
 .rw-table td {
-  @apply bg-white;
+  /* @apply bg-white; */
 }
 .rw-table tr:nth-child(odd) td,
 .rw-table tr:nth-child(odd) th {
-  @apply bg-gray-50;
+  /* @apply bg-gray-50; */
 }
 .rw-table thead tr {
-  @apply bg-gray-200;
+  /* @apply bg-gray-200; */
 }
 .rw-table th {
   @apply font-semibold text-left;

@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-import { Form, Label, TextField, Submit, FieldError } from '@cedarjs/forms'
+import { Form, Label, TextField, Submit, FieldError, set } from '@cedarjs/forms'
 import { navigate, routes } from '@cedarjs/router'
 import { Metadata } from '@cedarjs/web'
 import { toast, Toaster } from '@cedarjs/web/toast'
@@ -9,6 +9,8 @@ import { useAuth } from 'src/auth'
 
 const ForgotPasswordPage = () => {
   const { isAuthenticated, forgotPassword } = useAuth()
+  const [email, setEmail] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -22,10 +24,13 @@ const ForgotPasswordPage = () => {
   }, [])
 
   const onSubmit = async (data: { email: string }) => {
+    setIsSubmitting(true)
     const response = await forgotPassword(data.email)
+    setIsSubmitting(false)
 
     if (response.error) {
       toast.error(response.error)
+      setIsSubmitting(false)
     } else {
       // The function `forgotPassword.handler` in api/src/functions/auth.js has
       // been invoked, let the user know how to get the link to reset their
@@ -64,6 +69,9 @@ const ForgotPasswordPage = () => {
                     </Label>
                     <TextField
                       name="email"
+                      disabled={isSubmitting}
+                      placeholder="Enter e-mail address"
+                      onChange={(e) => setEmail(e.target.value)}
                       className="rw-input"
                       errorClassName="rw-input rw-input-error"
                       ref={emailRef}
@@ -79,7 +87,12 @@ const ForgotPasswordPage = () => {
                   </div>
 
                   <div className="rw-button-group">
-                    <Submit className="rw-button rw-button-blue">Submit</Submit>
+                    <Submit
+                      disabled={!email || isSubmitting}
+                      className="rw-button rw-button-blue"
+                    >
+                      Submit
+                    </Submit>
                   </div>
                 </Form>
               </div>

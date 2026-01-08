@@ -1,3 +1,5 @@
+import crypto from 'crypto'
+
 import type { APIGatewayProxyEvent, Context } from 'aws-lambda'
 
 import { DbAuthHandler } from '@cedarjs/auth-dbauth-api'
@@ -5,6 +7,7 @@ import type { DbAuthHandlerOptions, UserType } from '@cedarjs/auth-dbauth-api'
 
 import { cookieName } from 'src/lib/auth'
 import { db } from 'src/lib/db'
+import { sendResetPasswordEmail } from 'src/lib/mail'
 
 export const handler = async (
   event: APIGatewayProxyEvent,
@@ -28,12 +31,33 @@ export const handler = async (
     // so don't include anything you wouldn't want prying eyes to see. The
     // `user` here has been sanitized to only include the fields listed in
     // `allowedUserFields` so it should be safe to return as-is.
-    handler: (user, _resetToken) => {
+    handler: async (user, _resetToken) => {
       // TODO: Send user an email/message with a link to reset their password,
       // including the `resetToken`. The URL should look something like:
       // `http://localhost:8910/reset-password?resetToken=${resetToken}`
 
-      return user
+      const resetToken = crypto.randomBytes(32).toString('hex')
+
+      const hash = crypto.createHash('sha256').update(resetToken).digest('hex')
+
+      const updatedUser = await db.user.update({
+        where: { email: user.email },
+        data: {
+          resetToken: hash,
+          resetTokenExpiresAt: new Date(Date.now() + 1000 * 60 * 60 * 3),
+        },
+      })
+
+      // Send reset password email
+      await sendResetPasswordEmail({
+        toEmail: updatedUser.email,
+        resetToken: resetToken,
+      })
+
+      return {
+        id: updatedUser.id,
+        email: updatedUser.email,
+      }
     },
 
     // How long the resetToken is valid for, in seconds (default is 24 hours)
@@ -66,12 +90,12 @@ export const handler = async (
     },
 
     errors: {
-      usernameOrPasswordMissing: 'Both username and password are required',
-      usernameNotFound: 'Username ${username} not found',
+      usernameOrPasswordMissing: 'No Dice',
+      usernameNotFound: 'No Luck',
       // For security reasons you may want to make this the same as the
       // usernameNotFound error so that a malicious user can't use the error
       // to narrow down if it's the username or password that's incorrect
-      incorrectPassword: 'Incorrect password for ${username}',
+      incorrectPassword: 'No Pass',
     },
 
     // How long a user will remain logged in, in seconds
