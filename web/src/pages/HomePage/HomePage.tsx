@@ -8,11 +8,10 @@ const HomePage = () => {
     <>
       <Metadata title="Home" description="Home page" />
 
-      <h1 className="text-3xl">Home Page</h1>
-      <p>
-        If <Badge variant="secondary">shadcn/ui</Badge> has a badge style, it is
-        installed.
-      </p>
+      <div className="flex flex-col items-center gap-12 my-12">
+        <h1 className="text-3xl">Welcome to {process.env.PROJECT_NAME}!</h1>
+        <p>Stay a while, and listen.</p>
+      </div>
     </>
   )
 }

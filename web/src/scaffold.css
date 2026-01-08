@@ -166,7 +166,7 @@
   @apply overflow-x-auto;
 }
 .rw-table-wrapper-responsive .rw-table {
-  min-width: 48rem;
+  /* min-width: 48rem; */
 }
 .rw-table {
   @apply w-full text-sm;

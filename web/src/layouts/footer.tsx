@@ -1,6 +1,7 @@
 import { Link, routes } from '@cedarjs/router'
 
 import { ModeCycle } from 'src/components/mode-cycle'
+import AdminNav from 'src/layouts/admin-nav'
 
 const Footer = () => {
   return (
@@ -9,8 +10,9 @@ const Footer = () => {
         <li>
           <Link to={routes.home()}>&copy; {process.env.PROJECT_NAME}</Link>
         </li>
-        <li>
+        <li className="flex justify-center gap-4">
           <ModeCycle />
+          <AdminNav />
         </li>
       </ul>
     </footer>
