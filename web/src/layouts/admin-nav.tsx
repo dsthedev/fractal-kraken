@@ -30,13 +30,6 @@ const AdminNav = () => {
           >
             Users
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={() => {
-              navigate(routes.audits())
-            }}
-          >
-            Audits
-          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     )

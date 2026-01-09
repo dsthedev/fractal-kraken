@@ -10,7 +10,6 @@ export const schema = gql`
     roles: String!
     createdAt: DateTime!
     updatedAt: DateTime!
-    audits: [Audit]!
   }
 
   type Query {
