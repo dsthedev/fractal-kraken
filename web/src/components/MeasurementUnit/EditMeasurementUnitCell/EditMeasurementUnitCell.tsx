@@ -27,7 +27,6 @@ export const QUERY: TypedDocumentNode<EditMeasurementUnitById> = gql`
       dimension
       description
       conversionFactor
-      category
       baseUnit
       createdAt
       updatedAt
@@ -53,7 +52,6 @@ const UPDATE_MEASUREMENT_UNIT_MUTATION: TypedDocumentNode<
       dimension
       description
       conversionFactor
-      category
       baseUnit
       createdAt
       updatedAt

@@ -26,7 +26,6 @@ export const QUERY: TypedDocumentNode<
       dimension
       description
       conversionFactor
-      category
       baseUnit
       createdAt
       updatedAt

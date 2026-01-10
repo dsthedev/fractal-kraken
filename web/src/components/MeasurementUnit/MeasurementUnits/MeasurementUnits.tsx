@@ -63,7 +63,6 @@ const MeasurementUnitsList = ({ measurementUnits }: FindMeasurementUnits) => {
             <th>Dimension</th>
             <th>Description</th>
             <th>Conversion factor</th>
-            <th>Category</th>
             <th>Base unit</th>
             <th>Created at</th>
             <th>Updated at</th> */}
@@ -82,7 +81,6 @@ const MeasurementUnitsList = ({ measurementUnits }: FindMeasurementUnits) => {
               <td>{formatEnum(measurementUnit.dimension)}</td>
               <td>{truncate(measurementUnit.description)}</td>
               <td>{truncate(measurementUnit.conversionFactor)}</td>
-              <td>{formatEnum(measurementUnit.category)}</td>
               <td>{truncate(measurementUnit.baseUnit)}</td>
               <td>{timeTag(measurementUnit.createdAt)}</td>
               <td>{timeTag(measurementUnit.updatedAt)}</td> */}

@@ -53,15 +53,11 @@ const MeasurementUnit = ({ measurementUnit }: Props) => {
       <div className="rw-segment">
         <header className="rw-segment-header">
           <h2 className="rw-heading rw-heading-secondary">
-            MeasurementUnit {measurementUnit.id} Detail
+            Measurement Unit: {measurementUnit.fullName} Detail
           </h2>
         </header>
         <table className="rw-table">
           <tbody>
-            <tr>
-              <th>Id</th>
-              <td>{measurementUnit.id}</td>
-            </tr>
             <tr>
               <th>Full name</th>
               <td>{measurementUnit.fullName}</td>
@@ -95,20 +91,8 @@ const MeasurementUnit = ({ measurementUnit }: Props) => {
               <td>{measurementUnit.conversionFactor}</td>
             </tr>
             <tr>
-              <th>Category</th>
-              <td>{formatEnum(measurementUnit.category)}</td>
-            </tr>
-            <tr>
               <th>Base unit</th>
               <td>{measurementUnit.baseUnit}</td>
-            </tr>
-            <tr>
-              <th>Created at</th>
-              <td>{timeTag(measurementUnit.createdAt)}</td>
-            </tr>
-            <tr>
-              <th>Updated at</th>
-              <td>{timeTag(measurementUnit.updatedAt)}</td>
             </tr>
           </tbody>
         </table>

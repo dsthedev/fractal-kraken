@@ -10,8 +10,8 @@ import type {
   TypedDocumentNode,
 } from '@cedarjs/web'
 
-import { useSearch } from 'src/contexts/SearchContext'
 import MeasurementUnits from 'src/components/MeasurementUnit/MeasurementUnits'
+import { useSearch } from 'src/contexts/SearchContext'
 
 export const QUERY: TypedDocumentNode<
   FindMeasurementUnits,
@@ -28,7 +28,6 @@ export const QUERY: TypedDocumentNode<
       dimension
       description
       conversionFactor
-      category
       baseUnit
       createdAt
       updatedAt

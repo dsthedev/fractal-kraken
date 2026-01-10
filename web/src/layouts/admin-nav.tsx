@@ -31,6 +31,7 @@ const AdminNav = () => {
   const adminMenuItems: AdminMenuItem[] = [
     { label: 'Users', route: routes.users },
     { label: 'Units', route: routes.measurementUnits },
+    { label: 'Services', route: routes.services },
     // Add more admin items here as needed
   ]
 

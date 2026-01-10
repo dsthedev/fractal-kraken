@@ -16,9 +16,9 @@ import { parse } from 'csv-parse/sync'
 // Override via environment: FORCE_SEED_MEASUREMENT_UNITS=true yarn cedar prisma db seed
 
 const seedConfig = {
-  users: {
-    enabled: true,
-    force: false, // Set to true to always reseed users
+  fakeUsers: {
+    enabled: false,
+    force: false, // Set to true to always reseed fakeUsers
   },
   measurementUnits: {
     enabled: true,
@@ -33,7 +33,7 @@ const seedConfig = {
 // SEED FUNCTIONS
 // ============================================================================
 
-const seedUsers = async () => {
+const seedFakeUsers = async () => {
   const count = 10
 
   for (let i = 0; i < count; i++) {
@@ -124,8 +124,8 @@ const seedRegistry: Record<
     check: () => Promise<boolean> // Returns true if data already exists
   }
 > = {
-  users: {
-    fn: seedUsers,
+  fakeUsers: {
+    fn: seedFakeUsers,
     check: () => db.user.findFirst().then((u) => !!u),
   },
   measurementUnits: {

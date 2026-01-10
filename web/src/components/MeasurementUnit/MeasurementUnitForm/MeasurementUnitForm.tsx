@@ -14,6 +14,27 @@ import {
   Submit,
 } from '@cedarjs/forms'
 
+// ============================================================================
+// ENUM OPTIONS
+// ============================================================================
+// Define enum options for dimension and category fields
+// These should match the Prisma schema enums
+
+const DIMENSION_OPTIONS = [
+  { value: 'LINEAR', label: 'Linear' },
+  { value: 'SQUARE', label: 'Square' },
+  { value: 'CUBIC', label: 'Cubic' },
+  { value: 'VOLUME', label: 'Volume' },
+  { value: 'TEMPORAL', label: 'Temporal' },
+  { value: 'COUNT', label: 'Count' },
+  { value: 'AREA', label: 'Area' },
+  { value: 'CUSTOM', label: 'Custom' },
+] as const
+
+// ============================================================================
+// FORM TYPES
+// ============================================================================
+
 type FormMeasurementUnit = NonNullable<
   EditMeasurementUnitById['measurementUnit']
 >
@@ -27,6 +48,10 @@ interface MeasurementUnitFormProps {
   error: RWGqlError
   loading: boolean
 }
+
+// ============================================================================
+// MEASUREMENT UNIT FORM COMPONENT
+// ============================================================================
 
 const MeasurementUnitForm = (props: MeasurementUnitFormProps) => {
   const onSubmit = (data: FormMeasurementUnit) => {
@@ -50,7 +75,6 @@ const MeasurementUnitForm = (props: MeasurementUnitFormProps) => {
         >
           Full name
         </Label>
-
         <TextField
           name="fullName"
           defaultValue={props.measurementUnit?.fullName}
@@ -58,7 +82,6 @@ const MeasurementUnitForm = (props: MeasurementUnitFormProps) => {
           errorClassName="rw-input rw-input-error"
           validation={{ required: true }}
         />
-
         <FieldError name="fullName" className="rw-field-error" />
 
         <Label
@@ -68,7 +91,6 @@ const MeasurementUnitForm = (props: MeasurementUnitFormProps) => {
         >
           Plural name
         </Label>
-
         <TextField
           name="pluralName"
           defaultValue={props.measurementUnit?.pluralName}
@@ -76,7 +98,6 @@ const MeasurementUnitForm = (props: MeasurementUnitFormProps) => {
           errorClassName="rw-input rw-input-error"
           validation={{ required: true }}
         />
-
         <FieldError name="pluralName" className="rw-field-error" />
 
         <Label
@@ -86,14 +107,12 @@ const MeasurementUnitForm = (props: MeasurementUnitFormProps) => {
         >
           Short name
         </Label>
-
         <TextField
           name="shortName"
           defaultValue={props.measurementUnit?.shortName}
           className="rw-input"
           errorClassName="rw-input rw-input-error"
         />
-
         <FieldError name="shortName" className="rw-field-error" />
 
         <Label
@@ -103,14 +122,12 @@ const MeasurementUnitForm = (props: MeasurementUnitFormProps) => {
         >
           Symbol
         </Label>
-
         <TextField
           name="symbol"
           defaultValue={props.measurementUnit?.symbol}
           className="rw-input"
           errorClassName="rw-input rw-input-error"
         />
-
         <FieldError name="symbol" className="rw-field-error" />
 
         <Label
@@ -120,14 +137,12 @@ const MeasurementUnitForm = (props: MeasurementUnitFormProps) => {
         >
           Notation
         </Label>
-
         <TextField
           name="notation"
           defaultValue={props.measurementUnit?.notation}
           className="rw-input"
           errorClassName="rw-input rw-input-error"
         />
-
         <FieldError name="notation" className="rw-field-error" />
 
         <Label
@@ -137,113 +152,22 @@ const MeasurementUnitForm = (props: MeasurementUnitFormProps) => {
         >
           Dimension
         </Label>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="measurementUnit-dimension-0"
-            name="dimension"
-            defaultValue="LINEAR"
-            defaultChecked={props.measurementUnit?.dimension?.includes(
-              'LINEAR'
-            )}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Linear</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="measurementUnit-dimension-1"
-            name="dimension"
-            defaultValue="SQUARE"
-            defaultChecked={props.measurementUnit?.dimension?.includes(
-              'SQUARE'
-            )}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Square</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="measurementUnit-dimension-2"
-            name="dimension"
-            defaultValue="CUBIC"
-            defaultChecked={props.measurementUnit?.dimension?.includes('CUBIC')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Cubic</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="measurementUnit-dimension-3"
-            name="dimension"
-            defaultValue="VOLUME"
-            defaultChecked={props.measurementUnit?.dimension?.includes(
-              'VOLUME'
-            )}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Volume</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="measurementUnit-dimension-4"
-            name="dimension"
-            defaultValue="TEMPORAL"
-            defaultChecked={props.measurementUnit?.dimension?.includes(
-              'TEMPORAL'
-            )}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Temporal</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="measurementUnit-dimension-5"
-            name="dimension"
-            defaultValue="COUNT"
-            defaultChecked={props.measurementUnit?.dimension?.includes('COUNT')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Count</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="measurementUnit-dimension-6"
-            name="dimension"
-            defaultValue="AREA"
-            defaultChecked={props.measurementUnit?.dimension?.includes('AREA')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Area</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="measurementUnit-dimension-7"
-            name="dimension"
-            defaultValue="CUSTOM"
-            defaultChecked={props.measurementUnit?.dimension?.includes(
-              'CUSTOM'
-            )}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Custom</div>
-        </div>
-
+        {DIMENSION_OPTIONS.map((option, index) => (
+          <div key={option.value} className="rw-check-radio-items">
+            <RadioField
+              id={`measurementUnit-dimension-${index}`}
+              name="dimension"
+              defaultValue={option.value}
+              defaultChecked={props.measurementUnit?.dimension?.includes(
+                option.value
+              )}
+              className="rw-input"
+              errorClassName="rw-input rw-input-error"
+              validation={{ required: true }}
+            />
+            <div>{option.label}</div>
+          </div>
+        ))}
         <FieldError name="dimension" className="rw-field-error" />
 
         <Label
@@ -253,14 +177,12 @@ const MeasurementUnitForm = (props: MeasurementUnitFormProps) => {
         >
           Description
         </Label>
-
         <TextField
           name="description"
           defaultValue={props.measurementUnit?.description}
           className="rw-input"
           errorClassName="rw-input rw-input-error"
         />
-
         <FieldError name="description" className="rw-field-error" />
 
         <Label
@@ -270,7 +192,6 @@ const MeasurementUnitForm = (props: MeasurementUnitFormProps) => {
         >
           Conversion factor
         </Label>
-
         <TextField
           name="conversionFactor"
           defaultValue={props.measurementUnit?.conversionFactor}
@@ -278,90 +199,7 @@ const MeasurementUnitForm = (props: MeasurementUnitFormProps) => {
           errorClassName="rw-input rw-input-error"
           validation={{ valueAsNumber: true }}
         />
-
         <FieldError name="conversionFactor" className="rw-field-error" />
-
-        <Label
-          name="category"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Category
-        </Label>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="measurementUnit-category-0"
-            name="category"
-            defaultValue="LENGTH"
-            defaultChecked={props.measurementUnit?.category?.includes('LENGTH')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Length</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="measurementUnit-category-1"
-            name="category"
-            defaultValue="AREA"
-            defaultChecked={props.measurementUnit?.category?.includes('AREA')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Area</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="measurementUnit-category-2"
-            name="category"
-            defaultValue="VOLUME"
-            defaultChecked={props.measurementUnit?.category?.includes('VOLUME')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Volume</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="measurementUnit-category-3"
-            name="category"
-            defaultValue="TIME"
-            defaultChecked={props.measurementUnit?.category?.includes('TIME')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Time</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="measurementUnit-category-4"
-            name="category"
-            defaultValue="COUNT"
-            defaultChecked={props.measurementUnit?.category?.includes('COUNT')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Count</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="measurementUnit-category-5"
-            name="category"
-            defaultValue="CUSTOM"
-            defaultChecked={props.measurementUnit?.category?.includes('CUSTOM')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Custom</div>
-        </div>
-
-        <FieldError name="category" className="rw-field-error" />
 
         <Label
           name="baseUnit"
@@ -370,14 +208,12 @@ const MeasurementUnitForm = (props: MeasurementUnitFormProps) => {
         >
           Base unit
         </Label>
-
         <TextField
           name="baseUnit"
           defaultValue={props.measurementUnit?.baseUnit}
           className="rw-input"
           errorClassName="rw-input rw-input-error"
         />
-
         <FieldError name="baseUnit" className="rw-field-error" />
 
         <div className="rw-button-group">

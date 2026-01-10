@@ -14,26 +14,6 @@ generator client {
   binaryTargets = "native"
 }
 
-enum UnitDimension {
-  LINEAR
-  SQUARE
-  CUBIC
-  VOLUME
-  TEMPORAL
-  COUNT
-  AREA
-  CUSTOM
-}
-
-enum UnitCategory {
-  LENGTH
-  AREA
-  VOLUME
-  TIME
-  COUNT
-  CUSTOM
-}
-
 model User {
   id String @id @default(uuid())
 
@@ -49,11 +29,17 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
 
-  // audits Audit[]
-  // estimates Estimate[]
-  // rate      Rate[]
-  // stub      Stub[]
+enum UnitDimension {
+  LINEAR
+  SQUARE
+  CUBIC
+  VOLUME
+  TEMPORAL
+  COUNT
+  AREA
+  CUSTOM
 }
 
 model MeasurementUnit {
@@ -67,12 +53,37 @@ model MeasurementUnit {
   dimension        UnitDimension // Dimension of the unit (e.g., linear, square, cubic).
   description      String? // Square feet is a unit of area measurement. - Detailed description of the unit.
   conversionFactor Float? // 0.092903 - Factor for converting to a standard unit.
-  category         UnitCategory // Category of the unit (e.g., Length, Area, Volume, Time).
   baseUnit         String? // meter - The base unit of measurement related to this unit.
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  // Rate      Rate[]
+}
+
+enum ServiceAction {
+  INSTALL
+  REMOVE
+  REPLACE
+  REPAIR
+  FINISH
+  PREPARE
+  CLEAN
+  MOVE
+  INSPECT
+  CUSTOM
+}
+
+model Service {
+  id Int @id @default(autoincrement())
+  // uuid String @default(uuid())
+
+  action   ServiceAction
+  material String
+  context  String? // patterned, wood, existing, premium, etc.
+
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // model Estimate {

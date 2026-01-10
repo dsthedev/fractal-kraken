@@ -9,7 +9,6 @@ export const schema = gql`
     dimension: UnitDimension!
     description: String
     conversionFactor: Float
-    category: UnitCategory!
     baseUnit: String
     createdAt: DateTime!
     updatedAt: DateTime!
@@ -49,7 +48,6 @@ export const schema = gql`
     dimension: UnitDimension!
     description: String
     conversionFactor: Float
-    category: UnitCategory!
     baseUnit: String
   }
 
@@ -62,7 +60,6 @@ export const schema = gql`
     dimension: UnitDimension
     description: String
     conversionFactor: Float
-    category: UnitCategory
     baseUnit: String
   }
 
