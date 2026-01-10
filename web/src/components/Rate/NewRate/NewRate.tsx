@@ -9,7 +9,7 @@ import { useMutation } from '@cedarjs/web'
 import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
-import RateForm from 'src/components/Rate/RateForm'
+import RateFormWrapper from 'src/components/Rate/RateFormWrapper'
 
 const CREATE_RATE_MUTATION: TypedDocumentNode<
   CreateRateMutation,
@@ -43,7 +43,7 @@ const NewRate = () => {
         <h2 className="rw-heading rw-heading-secondary">New Rate</h2>
       </header>
       <div className="rw-segment-main">
-        <RateForm onSave={onSave} loading={loading} error={error} />
+        <RateFormWrapper onSave={onSave} loading={loading} error={error} />
       </div>
     </div>
   )

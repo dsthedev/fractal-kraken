@@ -13,7 +13,7 @@ import type {
 import { useMutation } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
-import RateForm from 'src/components/Rate/RateForm'
+import RateFormWrapper from 'src/components/Rate/RateFormWrapper'
 
 export const QUERY: TypedDocumentNode<EditRateById> = gql`
   query EditRateById($id: Int!) {
@@ -81,7 +81,12 @@ export const Success = ({ rate }: CellSuccessProps<EditRateById>) => {
         </h2>
       </header>
       <div className="rw-segment-main">
-        <RateForm rate={rate} onSave={onSave} error={error} loading={loading} />
+        <RateFormWrapper
+          rate={rate}
+          onSave={onSave}
+          error={error}
+          loading={loading}
+        />
       </div>
     </div>
   )

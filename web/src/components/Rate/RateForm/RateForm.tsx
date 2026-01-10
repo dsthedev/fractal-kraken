@@ -1,3 +1,5 @@
+import React from 'react'
+
 import type { EditRateById, UpdateRateInput } from 'types/graphql'
 
 import type { RWGqlError } from '@cedarjs/forms'
@@ -6,8 +8,8 @@ import {
   FormError,
   FieldError,
   Label,
-  NumberField,
   TextField,
+  TextAreaField,
   Submit,
 } from '@cedarjs/forms'
 
@@ -18,150 +20,233 @@ interface RateFormProps {
   onSave: (data: UpdateRateInput, id?: FormRate['id']) => void
   error: RWGqlError
   loading: boolean
+  authorId?: string
+  serviceId?: number
+  unitId?: number
+  ServiceDropdown: React.ComponentType<{
+    value?: number
+    onChange: (id: number) => void
+  }>
+  UnitDropdown: React.ComponentType<{
+    value?: number
+    onChange: (id: number) => void
+  }>
 }
 
-const RateForm = (props: RateFormProps) => {
+const HiddenField = ({
+  name,
+  value,
+  required = false,
+  asNumber = false,
+}: {
+  name: string
+  value?: string | number
+  required?: boolean
+  asNumber?: boolean
+}) => (
+  <Label name={name} className="hidden" errorClassName="">
+    {name}
+    <TextField
+      name={name}
+      defaultValue={value}
+      readOnly
+      className="hidden"
+      errorClassName=""
+      validation={
+        required ? { required: true, valueAsNumber: asNumber } : undefined
+      }
+    />
+    <FieldError name={name} className="" />
+  </Label>
+)
+
+interface LabeledFieldProps {
+  name: keyof FormRate
+  label?: string
+  defaultValue?: any
+  required?: boolean
+  readOnly?: boolean
+  type?: 'text' | 'number'
+  textarea?: boolean
+  rows?: number
+  className?: string
+}
+
+const LabeledField = ({
+  name,
+  label,
+  defaultValue,
+  required = false,
+  readOnly = false,
+  type = 'text',
+  textarea = false,
+  rows,
+  className = '',
+}: LabeledFieldProps) => (
+  <>
+    <Label
+      name={name}
+      className="rw-label"
+      errorClassName="rw-label rw-label-error"
+    >
+      {label ?? name}
+    </Label>
+    {textarea ? (
+      <TextAreaField
+        name={name}
+        defaultValue={defaultValue}
+        rows={rows ?? 3}
+        className={`rw-input resize-none ${className}`}
+        errorClassName="rw-input rw-input-error"
+      />
+    ) : (
+      <TextField
+        name={name}
+        defaultValue={defaultValue}
+        className={`rw-input ${className} ${
+          readOnly ? 'bg-gray-100 cursor-not-allowed' : ''
+        }`}
+        errorClassName="rw-input rw-input-error"
+        readOnly={readOnly}
+        validation={
+          required
+            ? { valueAsNumber: type === 'number', required: true }
+            : undefined
+        }
+      />
+    )}
+    <FieldError name={name} className="rw-field-error" />
+  </>
+)
+
+const RateForm = ({
+  rate,
+  onSave,
+  error,
+  loading,
+  authorId,
+  serviceId,
+  unitId,
+  ServiceDropdown,
+  UnitDropdown,
+}: RateFormProps) => {
+  const [selectedService, setSelectedService] = React.useState<
+    number | undefined
+  >(serviceId ?? rate?.serviceId)
+  const [selectedUnit, setSelectedUnit] = React.useState<number | undefined>(
+    unitId ?? rate?.unitId
+  )
+
+  // Keep selected IDs in sync if props change (e.g., edit load)
+  React.useEffect(() => {
+    if (serviceId !== undefined) setSelectedService(serviceId)
+  }, [serviceId])
+
+  React.useEffect(() => {
+    if (unitId !== undefined) setSelectedUnit(unitId)
+  }, [unitId])
+
   const onSubmit = (data: FormRate) => {
-    props.onSave(data, props?.rate?.id)
+    const finalServiceId = selectedService
+    const finalUnitId = selectedUnit
+    const finalAuthorId = authorId ?? String(data.authorId)
+
+    if (!finalServiceId || !finalUnitId) {
+      throw new Error('Service and Unit must be selected before saving')
+    }
+    if (!finalAuthorId) {
+      throw new Error('Author ID is required')
+    }
+
+    onSave(
+      {
+        ...data,
+        serviceId: finalServiceId,
+        unitId: finalUnitId,
+        authorId: finalAuthorId,
+        subAmount: parseFloat(String(data.subAmount)),
+        retailAmount: parseFloat(String(data.retailAmount)),
+        currency: data.currency || 'USD',
+      },
+      rate?.id
+    )
   }
 
   return (
     <div className="rw-form-wrapper">
-      <Form<FormRate> onSubmit={onSubmit} error={props.error}>
+      <Form<FormRate> onSubmit={onSubmit} error={error}>
         <FormError
-          error={props.error}
+          error={error}
           wrapperClassName="rw-form-error-wrapper"
           titleClassName="rw-form-error-title"
           listClassName="rw-form-error-list"
         />
 
-        <Label
-          name="serviceId"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Service id
-        </Label>
-
-        <NumberField
-          name="serviceId"
-          defaultValue={props.rate?.serviceId}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          validation={{ required: true }}
-        />
-
-        <FieldError name="serviceId" className="rw-field-error" />
-
-        <Label
-          name="unitId"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Unit id
-        </Label>
-
-        <NumberField
-          name="unitId"
-          defaultValue={props.rate?.unitId}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          validation={{ required: true }}
-        />
-
-        <FieldError name="unitId" className="rw-field-error" />
-
-        <Label
-          name="subAmount"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Sub amount
-        </Label>
-
-        <TextField
-          name="subAmount"
-          defaultValue={props.rate?.subAmount}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          validation={{ valueAsNumber: true, required: true }}
-        />
-
-        <FieldError name="subAmount" className="rw-field-error" />
-
-        <Label
-          name="retailAmount"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Retail amount
-        </Label>
-
-        <TextField
-          name="retailAmount"
-          defaultValue={props.rate?.retailAmount}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          validation={{ valueAsNumber: true, required: true }}
-        />
-
-        <FieldError name="retailAmount" className="rw-field-error" />
-
-        <Label
-          name="currency"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Currency
-        </Label>
-
-        <TextField
-          name="currency"
-          defaultValue={props.rate?.currency}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          validation={{ required: true }}
-        />
-
-        <FieldError name="currency" className="rw-field-error" />
-
-        <Label
+        {/* Hidden author (registered) */}
+        <HiddenField
           name="authorId"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Author id
-        </Label>
-
-        <TextField
-          name="authorId"
-          defaultValue={props.rate?.authorId}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          validation={{ required: true }}
+          value={authorId ?? rate?.authorId}
+          required
+          asNumber={false}
         />
 
-        <FieldError name="authorId" className="rw-field-error" />
+        {/* Service + Unit Row (Dropdowns) */}
+        <div className="flex gap-4 mt-2">
+          <div className="flex-1">
+            <ServiceDropdown
+              value={selectedService}
+              onChange={setSelectedService}
+            />
+          </div>
+          <div className="flex-1">
+            <UnitDropdown value={selectedUnit} onChange={setSelectedUnit} />
+          </div>
+        </div>
 
-        <Label
-          name="description"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Description
-        </Label>
+        {/* Sub + Retail + Currency Row */}
+        <div className="flex gap-4 mt-4 items-end">
+          <div className="flex-1">
+            <LabeledField
+              name="subAmount"
+              label="Sub amount"
+              defaultValue={rate?.subAmount}
+              required
+              type="number"
+            />
+          </div>
+          <div className="flex-1">
+            <LabeledField
+              name="retailAmount"
+              label="Retail amount"
+              defaultValue={rate?.retailAmount}
+              required
+              type="number"
+            />
+          </div>
+          <div className="w-24">
+            <LabeledField
+              name="currency"
+              label="Currency"
+              defaultValue={rate?.currency ?? 'USD'}
+              readOnly
+              className="text-center"
+            />
+          </div>
+        </div>
 
-        <TextField
-          name="description"
-          defaultValue={props.rate?.description}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
+        {/* Description */}
+        <div className="mt-4">
+          <LabeledField
+            name="description"
+            label="Description"
+            defaultValue={rate?.description}
+            textarea
+            rows={4}
+          />
+        </div>
 
-        <FieldError name="description" className="rw-field-error" />
-
-        <div className="rw-button-group">
-          <Submit disabled={props.loading} className="rw-button rw-button-blue">
+        <div className="rw-button-group mt-6">
+          <Submit disabled={loading} className="rw-button rw-button-blue">
             Save
           </Submit>
         </div>

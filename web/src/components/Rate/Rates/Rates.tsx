@@ -49,33 +49,33 @@ const RatesList = ({ rates }: FindRates) => {
       <table className="rw-table">
         <thead>
           <tr>
-            <th>Id</th>
-            <th>Service id</th>
-            <th>Unit id</th>
-            <th>Sub amount</th>
-            <th>Retail amount</th>
-            <th>Currency</th>
-            <th>Author id</th>
-            <th>Description</th>
-            <th>Created at</th>
-            <th>Updated at</th>
+            {/* <th>Id</th> */}
+            <th>Service</th>
+            <th>Unit</th>
+            <th>Sub $</th>
+            <th>Retail $</th>
+            {/* <th>Currency</th> */}
+            {/* <th>Author id</th> */}
+            {/* <th>Description</th> */}
+            {/* <th>Created at</th> */}
+            {/* <th>Updated at</th> */}
             <th>&nbsp;</th>
           </tr>
         </thead>
         <tbody>
           {rates.map((rate) => (
             <tr key={rate.id}>
-              <td>{truncate(rate.id)}</td>
+              {/* <td>{truncate(rate.id)}</td> */}
               <td>{truncate(rate.serviceId)}</td>
               <td>{truncate(rate.unitId)}</td>
               <td>{truncate(rate.subAmount)}</td>
               <td>{truncate(rate.retailAmount)}</td>
-              <td>{truncate(rate.currency)}</td>
-              <td>{truncate(rate.authorId)}</td>
-              <td>{truncate(rate.description)}</td>
-              <td>{timeTag(rate.createdAt)}</td>
-              <td>{timeTag(rate.updatedAt)}</td>
-              <td>
+              {/* <td>{truncate(rate.currency)}</td> */}
+              {/* <td>{truncate(rate.authorId)}</td> */}
+              {/* <td>{truncate(rate.description)}</td> */}
+              {/* <td>{timeTag(rate.createdAt)}</td> */}
+              {/* <td>{timeTag(rate.updatedAt)}</td> */}
+              <td className="print:hidden">
                 <nav className="rw-table-actions">
                   <Link
                     to={routes.rate({ id: rate.id })}

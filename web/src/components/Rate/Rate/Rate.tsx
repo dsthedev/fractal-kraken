@@ -53,16 +53,16 @@ const Rate = ({ rate }: Props) => {
         </header>
         <table className="rw-table">
           <tbody>
-            <tr>
+            {/* <tr>
               <th>Id</th>
               <td>{rate.id}</td>
-            </tr>
+            </tr> */}
             <tr>
-              <th>Service id</th>
+              <th>Service</th>
               <td>{rate.serviceId}</td>
             </tr>
             <tr>
-              <th>Unit id</th>
+              <th>Unit</th>
               <td>{rate.unitId}</td>
             </tr>
             <tr>
@@ -77,7 +77,7 @@ const Rate = ({ rate }: Props) => {
               <th>Currency</th>
               <td>{rate.currency}</td>
             </tr>
-            <tr>
+            {/* <tr>
               <th>Author id</th>
               <td>{rate.authorId}</td>
             </tr>
@@ -92,7 +92,7 @@ const Rate = ({ rate }: Props) => {
             <tr>
               <th>Updated at</th>
               <td>{timeTag(rate.updatedAt)}</td>
-            </tr>
+            </tr> */}
           </tbody>
         </table>
       </div>
