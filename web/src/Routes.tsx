@@ -1,6 +1,7 @@
 import { Router, Route, Set, PrivateSet } from '@cedarjs/router'
 
 import AdminScaffoldLayout from 'src/layouts/AdminScaffoldLayout'
+import ScaffoldLayout from 'src/layouts/ScaffoldLayout'
 import WrapperLayout from 'src/layouts/WrapperLayout'
 
 import { useAuth } from './auth.js'
@@ -9,6 +10,14 @@ const Routes = () => {
   return (
     <Router useAuth={useAuth}>
       <PrivateSet wrap={WrapperLayout as any} unauthenticated="login" roles={['guest', 'admin']}>
+        <Set wrap={AdminScaffoldLayout} title="Rates" titleTo="rates" buttonLabel="New Rate" buttonTo="newRate" showSearch={true}>
+          <Route path="/rates" page={RateRatesPage} name="rates" />
+        </Set>
+        <Set wrap={AdminScaffoldLayout} title="Rates" titleTo="rates" buttonLabel="New Rate" buttonTo="newRate">
+          <Route path="/rates/new" page={RateNewRatePage} name="newRate" />
+          <Route path="/rates/{id:Int}/edit" page={RateEditRatePage} name="editRate" />
+          <Route path="/rates/{id:Int}" page={RateRatePage} name="rate" />
+        </Set>
         <Set wrap={AdminScaffoldLayout as any} title="Services" titleTo="services" buttonLabel="New Service" buttonTo="newService" showSearch={true}>
           <Route path="/services" page={ServiceServicesPage} name="services" />
         </Set>
