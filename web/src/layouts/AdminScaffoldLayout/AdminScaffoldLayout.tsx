@@ -1,0 +1,88 @@
+import { Link, routes } from '@cedarjs/router'
+import { Toaster } from '@cedarjs/web/toast'
+
+import { SearchProvider, useSearch } from 'src/contexts/SearchContext'
+
+// ============================================================================
+// SEARCH INPUT COMPONENT
+// ============================================================================
+// Extracted into its own component for clarity
+// Uses the useSearch hook to access search context
+
+const SearchInput = () => {
+  const { searchQuery, setSearchQuery } = useSearch()
+
+  return (
+    <input
+      type="text"
+      placeholder="Search..."
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      className="raw-input"
+    />
+  )
+}
+
+// ============================================================================
+// ADMIN SCAFFOLD LAYOUT PROPS
+// ============================================================================
+
+type LayoutProps = {
+  title: string
+  titleTo: keyof typeof routes
+  buttonLabel: string
+  buttonTo: keyof typeof routes
+  children: React.ReactNode
+  showSearch?: boolean // Optional prop to enable search functionality
+}
+
+// ============================================================================
+// ADMIN SCAFFOLD LAYOUT CONTENT
+// ============================================================================
+// Inner component that uses the search context
+// Separated from the main component to allow SearchProvider to wrap both
+// the search input and children, so they share the same context
+
+const AdminScaffoldLayoutContent = ({
+  title,
+  titleTo,
+  buttonLabel,
+  buttonTo,
+  showSearch = false,
+  children,
+}: LayoutProps) => {
+  return (
+    <div className="rw-scaffold">
+      <Toaster toastOptions={{ className: 'rw-toast', duration: 6000 }} />
+      <header className="rw-header">
+        <h1 className="rw-heading rw-heading-primary">
+          <Link to={routes[titleTo]()} className="rw-link">
+            {title}
+          </Link>
+        </h1>
+        {/* Search input only renders if showSearch prop is true */}
+        {showSearch && <SearchInput />}
+        <Link to={routes[buttonTo]()} className="rw-button rw-button-green">
+          <div className="rw-button-icon">+</div> {buttonLabel}
+        </Link>
+      </header>
+      <main className="rw-main">{children}</main>
+    </div>
+  )
+}
+
+// ============================================================================
+// ADMIN SCAFFOLD LAYOUT (EXPORTED)
+// ============================================================================
+// Main component that wraps content in SearchProvider
+// This ensures SearchContext is available to both the search input and children
+
+const AdminScaffoldLayout = (props: LayoutProps) => {
+  return (
+    <SearchProvider>
+      <AdminScaffoldLayoutContent {...props} />
+    </SearchProvider>
+  )
+}
+
+export default AdminScaffoldLayout

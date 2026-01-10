@@ -10,6 +10,7 @@ import type {
   TypedDocumentNode,
 } from '@cedarjs/web'
 
+import { useSearch } from 'src/contexts/SearchContext'
 import MeasurementUnits from 'src/components/MeasurementUnit/MeasurementUnits'
 
 export const QUERY: TypedDocumentNode<
@@ -55,5 +56,34 @@ export const Failure = ({ error }: CellFailureProps<FindMeasurementUnits>) => (
 export const Success = ({
   measurementUnits,
 }: CellSuccessProps<FindMeasurementUnits, FindMeasurementUnitsVariables>) => {
-  return <MeasurementUnits measurementUnits={measurementUnits} />
+  // ========================================================================
+  // SEARCH FILTERING
+  // ========================================================================
+  // Get the search query from the AdminScaffoldLayout context
+  const { searchQuery } = useSearch()
+
+  // Filter units based on concatenated search across multiple fields
+  // This allows users to search by any combination of unit attributes
+  const filteredUnits = measurementUnits.filter((unit) => {
+    // Concatenate all searchable fields into a single string
+    // Include: fullName, pluralName, shortName, symbol, description,
+    //          baseUnit, dimension, and category
+    const searchableText = [
+      unit.fullName,
+      unit.pluralName,
+      unit.shortName || '',
+      unit.symbol || '',
+      unit.description || '',
+      unit.baseUnit || '',
+      unit.dimension || '',
+      unit.category || '',
+    ]
+      .join(' ')
+      .toLowerCase()
+
+    // Return true if any part of the searchable text includes the query
+    return searchableText.includes(searchQuery.toLowerCase())
+  })
+
+  return <MeasurementUnits measurementUnits={filteredUnits} />
 }

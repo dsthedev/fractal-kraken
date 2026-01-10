@@ -12,7 +12,7 @@ import {
 } from 'src/components/ui/dropdown-menu'
 
 // ============================================================================
-// ADMIN MENU CONFIGURATION
+// ADMIN MENU CONFIGURATION TYPE
 // ============================================================================
 
 type AdminMenuItem = {
@@ -20,18 +20,19 @@ type AdminMenuItem = {
   route: () => string
 }
 
-const adminMenuItems: AdminMenuItem[] = [
-  { label: 'Users', route: routes.users },
-  { label: 'Units', route: routes.measurementUnits },
-  // Add more admin items here as needed
-]
-
 // ============================================================================
 // ADMIN NAV COMPONENT
 // ============================================================================
 
 const AdminNav = () => {
   const { isAuthenticated, currentUser } = useAuth()
+
+  // Define menu items inside component so routes are evaluated at render time
+  const adminMenuItems: AdminMenuItem[] = [
+    { label: 'Users', route: routes.users },
+    { label: 'Units', route: routes.measurementUnits },
+    // Add more admin items here as needed
+  ]
 
   if (isAuthenticated && currentUser.roles.includes('admin')) {
     return (
