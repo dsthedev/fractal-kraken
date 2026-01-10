@@ -49,10 +49,6 @@ interface MeasurementUnitFormProps {
   loading: boolean
 }
 
-// ============================================================================
-// MEASUREMENT UNIT FORM COMPONENT
-// ============================================================================
-
 const MeasurementUnitForm = (props: MeasurementUnitFormProps) => {
   const onSubmit = (data: FormMeasurementUnit) => {
     props.onSave(data, props?.measurementUnit?.id)

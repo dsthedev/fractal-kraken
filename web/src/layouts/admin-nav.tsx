@@ -11,23 +11,14 @@ import {
   DropdownMenuItem,
 } from 'src/components/ui/dropdown-menu'
 
-// ============================================================================
-// ADMIN MENU CONFIGURATION TYPE
-// ============================================================================
-
 type AdminMenuItem = {
   label: string
   route: () => string
 }
 
-// ============================================================================
-// ADMIN NAV COMPONENT
-// ============================================================================
-
 const AdminNav = () => {
   const { isAuthenticated, currentUser } = useAuth()
 
-  // Define menu items inside component so routes are evaluated at render time
   const adminMenuItems: AdminMenuItem[] = [
     { label: 'Users', route: routes.users },
     { label: 'Units', route: routes.measurementUnits },

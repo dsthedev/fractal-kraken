@@ -1,6 +1,6 @@
 import { Menu } from 'lucide-react'
 
-import { Link, routes } from '@cedarjs/router'
+import { navigate, routes } from '@cedarjs/router'
 
 import { useAuth } from 'src/auth'
 import { Button } from 'src/components/ui/button'
@@ -11,8 +11,19 @@ import {
   DropdownMenuItem,
 } from 'src/components/ui/dropdown-menu'
 
+type MenuItem = {
+  label: string
+  route: () => string
+}
+
 const Nav = () => {
   const { isAuthenticated, currentUser, logOut } = useAuth()
+
+  const menuItems: MenuItem[] = [
+    { label: 'Home', route: routes.home },
+    { label: 'Contact', route: routes.contact },
+    // Add more admin items here as needed
+  ]
 
   return (
     <DropdownMenu>
@@ -22,20 +33,22 @@ const Nav = () => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
-        <DropdownMenuItem onSelect={() => (window.location.href = '/')}>
-          Home
-        </DropdownMenuItem>
+        {menuItems.map((item) => (
+          <DropdownMenuItem
+            key={item.label}
+            onSelect={() => {
+              navigate(item.route())
+            }}
+          >
+            {item.label}
+          </DropdownMenuItem>
+        ))}
         {!isAuthenticated ? (
           <>
             <DropdownMenuItem
               onSelect={() => (window.location.href = '/login')}
             >
               Login
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onSelect={() => (window.location.href = '/signup')}
-            >
-              Signup
             </DropdownMenuItem>
           </>
         ) : (

@@ -6,6 +6,7 @@
   ],
   "devDependencies": {
     "@cedarjs/auth-dbauth-setup": "2.3.0",
+    "@cedarjs/cli-storybook-vite": "2.3.0",
     "@cedarjs/core": "2.3.0",
     "@cedarjs/project-config": "2.3.0",
     "@cedarjs/testing": "2.3.0"

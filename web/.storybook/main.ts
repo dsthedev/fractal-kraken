@@ -1,0 +1,15 @@
+import type { StorybookConfig } from 'storybook-framework-cedarjs'
+
+import { getPaths, importStatementPath } from '@cedarjs/project-config'
+
+const cedarProjectPaths = getPaths()
+
+const config: StorybookConfig = {
+  framework: 'storybook-framework-cedarjs',
+  stories: [
+    `${importStatementPath(cedarProjectPaths.web.src)}/**/*.@(mdx|stories.@(js|jsx|ts|tsx))`,
+  ],
+  addons: ['@storybook/addon-essentials'],
+}
+
+export default config

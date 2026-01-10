@@ -11,4 +11,18 @@ dns.setDefaultResultOrder('verbatim')
 
 export default defineConfig({
   plugins: [cedar(), tailwindcss()],
+  server: {
+    proxy: {
+      '/.netlify/functions': {
+        target: 'http://localhost:8911',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/graphql': {
+        target: 'http://localhost:8911',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 })

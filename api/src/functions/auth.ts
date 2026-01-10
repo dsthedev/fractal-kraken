@@ -7,7 +7,7 @@ import type { DbAuthHandlerOptions, UserType } from '@cedarjs/auth-dbauth-api'
 
 import { cookieName } from 'src/lib/auth'
 import { db } from 'src/lib/db'
-import { sendResetPasswordEmail } from 'src/lib/mail'
+import { sendResetPasswordEmail } from 'src/lib/mailer'
 
 export const handler = async (
   event: APIGatewayProxyEvent,

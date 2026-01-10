@@ -32,6 +32,8 @@ This is a **CedarJS** (formerly Redwood) full-stack web application with monorep
 
 ### Key Tech Stack
 - **Backend**: GraphQL (Apollo), Prisma ORM, DbAuth (built-in auth), Nodemailer for email
+ - **Backend**: GraphQL (Apollo), Prisma ORM, DbAuth (built-in auth), Nodemailer for email
+ - **Mailer**: CedarJS mailer is used for transactional email (see https://cedarjs.com/docs/mailer)
 - **Frontend**: React 18, Tailwind CSS v4 (with @tailwindcss/vite), React Hook Form, Zod validation
 - **Database**: PostgreSQL with Prisma migrations
 - **UI**: Radix UI primitives (`@radix-ui/*`), ShadCN, custom scaffold components

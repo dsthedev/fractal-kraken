@@ -6,9 +6,15 @@
     "@cedarjs/api": "2.3.0",
     "@cedarjs/auth-dbauth-api": "2.3.0",
     "@cedarjs/graphql-server": "2.3.0",
+    "@cedarjs/mailer-core": "2.3.0",
+    "@cedarjs/mailer-handler-nodemailer": "2.3.0",
+    "@cedarjs/mailer-renderer-react-email": "2.3.0",
+    "@react-email/components": "^1.0.4",
     "nodemailer": "^7.0.12"
   },
   "devDependencies": {
+    "@cedarjs/mailer-handler-in-memory": "2.3.0",
+    "@cedarjs/mailer-handler-studio": "2.3.0",
     "@types/nodemailer": "^7"
   }
 }
