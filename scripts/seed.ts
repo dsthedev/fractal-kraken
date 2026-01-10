@@ -24,6 +24,10 @@ const seedConfig = {
     enabled: true,
     force: false, // Set to true to always reseed measurement units
   },
+  services: {
+    enabled: true,
+    force: false,
+  },
   // Add more data types here as needed:
   // services: { enabled: true, force: false },
   // rates: { enabled: true, force: false },
@@ -110,6 +114,54 @@ const seedMeasurementUnits = async () => {
   }
 }
 
+const seedServices = async () => {
+  const csvPath = path.resolve('./scripts/data/inferred_services.csv')
+
+  if (!fs.existsSync(csvPath)) {
+    console.info('Skipping Service seed: inferred_services.csv not found')
+    return 0
+  }
+
+  try {
+    const csvContent = fs.readFileSync(csvPath, 'utf-8')
+    const records = parse(csvContent, {
+      columns: true,
+      skip_empty_lines: true,
+    }) as Array<Record<string, string>>
+
+    let seeded = 0
+    for (const record of records) {
+      const where = {
+        action: record.action as any,
+        material: record.material || '',
+        description: record.description || '',
+      }
+
+      const exists = await db.service.findFirst({ where })
+      if (exists && !seedConfig.services?.force) {
+        continue
+      }
+
+      if (!exists) {
+        await db.service.create({
+          data: {
+            action: record.action as any,
+            material: record.material || '',
+            context: record.context || null,
+            description: record.description || null,
+          },
+        })
+        seeded++
+      }
+    }
+
+    return seeded
+  } catch (error) {
+    console.error('Error seeding Service:', error)
+    return 0
+  }
+}
+
 // ============================================================================
 // SEED REGISTRY
 // ============================================================================
@@ -131,6 +183,10 @@ const seedRegistry: Record<
   measurementUnits: {
     fn: seedMeasurementUnits,
     check: () => db.measurementUnit.findFirst().then((u) => !!u),
+  },
+  services: {
+    fn: seedServices,
+    check: () => db.service.findFirst().then((u) => !!u),
   },
 }
 

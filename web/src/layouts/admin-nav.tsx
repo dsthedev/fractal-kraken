@@ -32,6 +32,7 @@ const AdminNav = () => {
     { label: 'Users', route: routes.users },
     { label: 'Units', route: routes.measurementUnits },
     { label: 'Services', route: routes.services },
+    { label: 'Sandbox', route: routes.sandbox },
     // Add more admin items here as needed
   ]
 

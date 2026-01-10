@@ -206,7 +206,7 @@
   @apply ml-0;
 }
 .rw-table-actions {
-  @apply flex justify-end items-center h-4 pr-1;
+  @apply flex justify-end items-center h-4 pr-1 print:hidden;
 }
 .rw-table-actions .rw-button {
   @apply bg-transparent;

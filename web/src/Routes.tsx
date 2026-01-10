@@ -38,6 +38,8 @@ const Routes = () => {
       </PrivateSet>
 
       <Set wrap={WrapperLayout}>
+        <Route path="/sandbox" page={SandboxPage} name="sandbox" />
+
         <Route path="/login" page={LoginPage} name="login" />
         <Route path="/signup" page={SignupPage} name="signup" />
         <Route path="/forgot-password" page={ForgotPasswordPage} name="forgotPassword" />
