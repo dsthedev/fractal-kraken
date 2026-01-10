@@ -91,7 +91,6 @@ const seedMeasurementUnits = async () => {
           conversionFactor: record.conversionFactor
             ? parseFloat(record.conversionFactor)
             : null,
-          category: record.category as any, // Enum value
           baseUnit: record.baseUnit || null,
         },
       })
