@@ -14,6 +14,26 @@ generator client {
   binaryTargets = "native"
 }
 
+enum UnitDimension {
+  LINEAR
+  SQUARE
+  CUBIC
+  VOLUME
+  TEMPORAL
+  COUNT
+  AREA
+  CUSTOM
+}
+
+enum UnitCategory {
+  LENGTH
+  AREA
+  VOLUME
+  TIME
+  COUNT
+  CUSTOM
+}
+
 model User {
   id String @id @default(uuid())
 
@@ -34,6 +54,25 @@ model User {
   // estimates Estimate[]
   // rate      Rate[]
   // stub      Stub[]
+}
+
+model MeasurementUnit {
+  id Int @id @default(autoincrement())
+
+  fullName         String // square foot - Full name of the unit of measurement.
+  pluralName       String // square feet - Full plural name of the unit of measurement.
+  shortName        String? // sqft - Abbreviated name of the unit of measurement.
+  symbol           String? // ft² - Symbolic notation used for the unit of measurement.
+  notation         String? // ' - Notation used for the unit (e.g., feet is ' and inches is ").
+  dimension        UnitDimension // Dimension of the unit (e.g., linear, square, cubic).
+  description      String? // Square feet is a unit of area measurement. - Detailed description of the unit.
+  conversionFactor Float? // 0.092903 - Factor for converting to a standard unit.
+  category         UnitCategory // Category of the unit (e.g., Length, Area, Volume, Time).
+  baseUnit         String? // meter - The base unit of measurement related to this unit.
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  // Rate      Rate[]
 }
 
 // model Estimate {
@@ -108,25 +147,4 @@ model User {
 
 //   createdAt DateTime @default(now())
 //   updatedAt DateTime @updatedAt
-// }
-
-// // Units of Measurement
-// // used to quickly identify which of the numerous forms of a units name may be. perhaps it could be a string, but why not make things more complicated?
-// model MeasurementUnit {
-//   id Int @id @default(autoincrement())
-
-//   fullName         String // square foot - Full name of the unit of measurement.
-//   pluralName       String // square feet - Full plural name of the unit of measurement.
-//   shortName        String? // sqft - Abbreviated name of the unit of measurement.
-//   symbol           String? // ft² - Symbolic notation used for the unit of measurement.
-//   notation         String? // ' - Notation used for the unit (e.g., feet is ' and inches is ").
-//   dimension        String? // square - Dimension of the unit (e.g., linear, square, cubic).
-//   description      String? // Square feet is a unit of area measurement. - Detailed description of the unit.
-//   conversionFactor Float? // 0.092903 - Factor for converting to a standard unit.
-//   category         String? // Area - Category of the unit (e.g., Length, Area, Volume, Time).
-//   baseUnit         String? // meter - The base unit of measurement related to this unit.
-
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-//   Rate      Rate[]
 // }

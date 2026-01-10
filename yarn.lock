@@ -10694,6 +10694,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"csv-parse@npm:^6.1.0":
+  version: 6.1.0
+  resolution: "csv-parse@npm:6.1.0"
+  checksum: 10c0/098c69e5b3b50d4bf65401dc3b2f1bd66f272fe985be99d7cb9f14ad33a7218f0f5695a03a82720cf47141d242bf44b4836ff32900751bef087057bc6e6715a2
+  languageName: node
+  linkType: hard
+
 "damerau-levenshtein@npm:^1.0.8":
   version: 1.0.8
   resolution: "damerau-levenshtein@npm:1.0.8"
@@ -18289,6 +18296,7 @@ __metadata:
     "@cedarjs/core": "npm:2.3.0"
     "@cedarjs/project-config": "npm:2.3.0"
     "@cedarjs/testing": "npm:2.3.0"
+    csv-parse: "npm:^6.1.0"
   languageName: unknown
   linkType: soft
 

@@ -132,6 +132,14 @@ scenario('returns all users', async (scenario: StandardScenario) => {
 ```
 Scenarios defined in `*.scenarios.ts` files via Faker-generated data.
 
+### Reference Data & Unit Conversions
+**Phase 1 reference data** includes foundational lookup tables like `MeasurementUnit`. Key patterns:
+- **Fixed vocabularies** use Prisma enums (e.g., `UnitDimension`, `UnitCategory`) to enforce data integrity
+- **Conversion logic** lives in component utilities (`web/src/lib/unitConversions.ts`), not in resolvers
+- **ConversionFactor** on MeasurementUnit enables calculators to normalize across units: `baseValue = rawValue × conversionFactor`
+- Example: Convert 100 sq ft to sq yd: `(100 × 0.092903) / 0.836127 ≈ 11.1 sq yd`
+- Export/import CSV data via scripts for bulk updates to reference data
+
 ## File Organization
 
 ### Backend

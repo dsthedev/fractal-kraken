@@ -11,6 +11,25 @@ import {
   DropdownMenuItem,
 } from 'src/components/ui/dropdown-menu'
 
+// ============================================================================
+// ADMIN MENU CONFIGURATION
+// ============================================================================
+
+type AdminMenuItem = {
+  label: string
+  route: () => string
+}
+
+const adminMenuItems: AdminMenuItem[] = [
+  { label: 'Users', route: routes.users },
+  { label: 'Units', route: routes.measurementUnits },
+  // Add more admin items here as needed
+]
+
+// ============================================================================
+// ADMIN NAV COMPONENT
+// ============================================================================
+
 const AdminNav = () => {
   const { isAuthenticated, currentUser } = useAuth()
 
@@ -23,13 +42,16 @@ const AdminNav = () => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" side="top">
-          <DropdownMenuItem
-            onSelect={() => {
-              navigate(routes.users())
-            }}
-          >
-            Users
-          </DropdownMenuItem>
+          {adminMenuItems.map((item) => (
+            <DropdownMenuItem
+              key={item.label}
+              onSelect={() => {
+                navigate(item.route())
+              }}
+            >
+              {item.label}
+            </DropdownMenuItem>
+          ))}
         </DropdownMenuContent>
       </DropdownMenu>
     )
