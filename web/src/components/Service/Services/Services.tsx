@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 import type {
   DeleteServiceMutation,
   DeleteServiceMutationVariables,
@@ -10,7 +12,7 @@ import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
 import { QUERY } from 'src/components/Service/ServicesCell'
-import { formatEnum, timeTag, truncate } from 'src/lib/formatters.js'
+import { formatEnum, truncate } from 'src/lib/formatters.js'
 
 const DELETE_SERVICE_MUTATION: TypedDocumentNode<
   DeleteServiceMutation,
@@ -24,6 +26,11 @@ const DELETE_SERVICE_MUTATION: TypedDocumentNode<
 `
 
 const ServicesList = ({ services }: FindServices) => {
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof FindServices['services'][0]
+    direction: 'asc' | 'desc'
+  }>({ key: 'id', direction: 'asc' })
+
   const [deleteService] = useMutation(DELETE_SERVICE_MUTATION, {
     onCompleted: () => {
       toast.success('Service deleted')
@@ -38,10 +45,46 @@ const ServicesList = ({ services }: FindServices) => {
     awaitRefetchQueries: true,
   })
 
+  const handleSort = (key: keyof FindServices['services'][0]) => {
+    if (sortConfig.key === key) {
+      // Cycle through: asc -> desc -> remove (back to default)
+      if (sortConfig.direction === 'asc') {
+        setSortConfig({ key, direction: 'desc' })
+      } else {
+        // Reset to default
+        setSortConfig({ key: 'id', direction: 'asc' })
+      }
+    } else {
+      // New column clicked, start with asc
+      setSortConfig({ key, direction: 'asc' })
+    }
+  }
+
+  const sortedServices = [...services].sort((a, b) => {
+    const aValue = a[sortConfig.key]
+    const bValue = b[sortConfig.key]
+
+    if (aValue === null || aValue === undefined) return 1
+    if (bValue === null || bValue === undefined) return -1
+
+    if (aValue < bValue) {
+      return sortConfig.direction === 'asc' ? -1 : 1
+    }
+    if (aValue > bValue) {
+      return sortConfig.direction === 'asc' ? 1 : -1
+    }
+    return 0
+  })
+
   const onDeleteClick = (id: DeleteServiceMutationVariables['id']) => {
     if (confirm('Are you sure you want to delete service ' + id + '?')) {
       deleteService({ variables: { id } })
     }
+  }
+
+  const SortIcon = ({ columnKey }: { columnKey: string }) => {
+    if (sortConfig.key !== columnKey) return null
+    return sortConfig.direction === 'asc' ? ' ↑' : ' ↓'
   }
 
   return (
@@ -50,9 +93,27 @@ const ServicesList = ({ services }: FindServices) => {
         <thead>
           <tr>
             {/* <th>Id</th> */}
-            <th>Action</th>
-            <th>Material</th>
-            <th>Context</th>
+            <th
+              onClick={() => handleSort('action')}
+              className="cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              Action
+              <SortIcon columnKey="action" />
+            </th>
+            <th
+              onClick={() => handleSort('material')}
+              className="cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              Material
+              <SortIcon columnKey="material" />
+            </th>
+            <th
+              onClick={() => handleSort('context')}
+              className="cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              Context
+              <SortIcon columnKey="context" />
+            </th>
             {/* <th>Description</th> */}
             {/* <th>Created at</th> */}
             {/* <th>Updated at</th> */}
@@ -60,7 +121,7 @@ const ServicesList = ({ services }: FindServices) => {
           </tr>
         </thead>
         <tbody>
-          {services.map((service) => (
+          {sortedServices.map((service) => (
             <tr key={service.id}>
               {/* <td>{truncate(service.id)}</td> */}
               <td>{formatEnum(service.action)}</td>

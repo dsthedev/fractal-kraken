@@ -69,6 +69,7 @@ enum ServiceAction {
   CLEAN
   MOVE
   INSPECT
+  PERFORM
   CUSTOM
 }
 

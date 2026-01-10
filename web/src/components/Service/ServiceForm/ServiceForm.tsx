@@ -22,6 +22,7 @@ const ACTION_OPTIONS = [
   { value: 'CLEAN', label: 'Clean' },
   { value: 'MOVE', label: 'Move' },
   { value: 'INSPECT', label: 'Inspect' },
+  { value: 'PERFORM', label: 'Perform' },
   { value: 'CUSTOM', label: 'Custom' },
 ] as const
 

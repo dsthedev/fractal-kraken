@@ -1,6 +1,7 @@
 import { Link, routes } from '@cedarjs/router'
 import { Toaster } from '@cedarjs/web/toast'
 
+import { Input } from 'src/components/ui/input'
 import { SearchProvider, useSearch } from 'src/contexts/SearchContext'
 
 // ============================================================================
@@ -13,12 +14,12 @@ const SearchInput = () => {
   const { searchQuery, setSearchQuery } = useSearch()
 
   return (
-    <input
+    <Input
       type="text"
       placeholder="Search..."
       value={searchQuery}
       onChange={(e) => setSearchQuery(e.target.value)}
-      className="raw-input"
+      className="max-w-sm"
     />
   )
 }
