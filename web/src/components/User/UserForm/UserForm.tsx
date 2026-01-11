@@ -10,6 +10,8 @@ import {
   Submit,
 } from '@cedarjs/forms'
 
+import { EMAIL_VALIDATION } from 'src/lib/validation'
+
 type UserUpdateFormFields = {
   email: string
   name?: string
@@ -54,7 +56,7 @@ const UserForm = (props: UserFormProps) => {
           defaultValue={props.user?.email}
           className="rw-input"
           errorClassName="rw-input rw-input-error"
-          validation={{ required: true }}
+          validation={EMAIL_VALIDATION}
         />
         <FieldError name="email" className="rw-field-error" />
 
