@@ -1,12 +1,14 @@
 export const schema = gql`
+  scalar Decimal
+
   type Rate {
     id: Int!
     serviceId: Int!
     service: Service!
     unitId: Int!
     unit: MeasurementUnit!
-    subAmount: Float!
-    retailAmount: Float!
+    subAmount: Decimal!
+    retailAmount: Decimal!
     currency: String!
     authorId: String!
     author: User!
@@ -25,6 +27,12 @@ export const schema = gql`
     ratesCount: Int!
   }
 
+  type ConversionResult {
+    success: Boolean!
+    message: String!
+    count: Int!
+  }
+
   type Query {
     rates: [Rate!]! @requireAuth
     rate(id: Int!): Rate @requireAuth
@@ -33,8 +41,8 @@ export const schema = gql`
   input CreateRateInput {
     serviceId: Int!
     unitId: Int!
-    subAmount: Float!
-    retailAmount: Float!
+    subAmount: Decimal!
+    retailAmount: Decimal!
     currency: String!
     authorId: String!
     estimatedMinutesPerUnit: Int
@@ -44,8 +52,8 @@ export const schema = gql`
   input UpdateRateInput {
     serviceId: Int
     unitId: Int
-    subAmount: Float
-    retailAmount: Float
+    subAmount: Decimal
+    retailAmount: Decimal
     currency: String
     authorId: String
     estimatedMinutesPerUnit: Int
@@ -57,5 +65,6 @@ export const schema = gql`
     updateRate(id: Int!, input: UpdateRateInput!): Rate! @requireAuth
     deleteRate(id: Int!): Rate! @requireAuth
     parseRatesData: ParsedRatesData! @requireAuth
+    convertRatesToDecimal: ConversionResult! @requireAuth
   }
 `

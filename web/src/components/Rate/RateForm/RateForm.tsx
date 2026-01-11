@@ -13,6 +13,8 @@ import {
   Submit,
 } from '@cedarjs/forms'
 
+import { CurrencyField } from 'src/components/ui/currency-field'
+
 type FormRate = NonNullable<EditRateById['rate']>
 
 interface RateFormProps {
@@ -156,8 +158,7 @@ const RateForm = ({
     const finalAuthorId = authorId ?? String(data.authorId)
     const minutesValue =
       data.estimatedMinutesPerUnit === undefined ||
-      data.estimatedMinutesPerUnit === null ||
-      data.estimatedMinutesPerUnit === ''
+      data.estimatedMinutesPerUnit === null
         ? undefined
         : Number(data.estimatedMinutesPerUnit)
 
@@ -174,8 +175,8 @@ const RateForm = ({
         serviceId: finalServiceId,
         unitId: finalUnitId,
         authorId: finalAuthorId,
-        subAmount: parseFloat(String(data.subAmount)),
-        retailAmount: parseFloat(String(data.retailAmount)),
+        subAmount: data.subAmount,
+        retailAmount: data.retailAmount,
         estimatedMinutesPerUnit: minutesValue,
         currency: data.currency || 'USD',
       },
@@ -217,21 +218,19 @@ const RateForm = ({
         {/* Sub + Retail + Currency Row */}
         <div className="flex gap-4 mt-4 items-end">
           <div className="flex-1">
-            <LabeledField
+            <CurrencyField
               name="subAmount"
               label="Sub amount"
               defaultValue={rate?.subAmount}
               required
-              type="number"
             />
           </div>
           <div className="flex-1">
-            <LabeledField
+            <CurrencyField
               name="retailAmount"
               label="Retail amount"
               defaultValue={rate?.retailAmount}
               required
-              type="number"
             />
           </div>
           <div className="w-24">

@@ -27,9 +27,10 @@ model User {
 
   roles String @default("guest")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  rates     Rate[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  rates         Rate[]
+  billableItems BillableItem[]
 }
 
 enum UnitDimension {
@@ -56,9 +57,10 @@ model MeasurementUnit {
   conversionFactor Float? // 0.092903 - Factor for converting to a standard unit.
   baseUnit         String? // meter - The base unit of measurement related to this unit.
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  rates     Rate[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  rates         Rate[]
+  billableItems BillableItem[]
 }
 
 enum ServiceAction {
@@ -86,9 +88,10 @@ model Service {
 
   description String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  rates     Rate[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  rates         Rate[]
+  billableItems BillableItem[]
 }
 
 model Rate {
@@ -100,8 +103,8 @@ model Rate {
   unitId Int
   unit   MeasurementUnit @relation(fields: [unitId], references: [id])
 
-  subAmount    Decimal
-  retailAmount Decimal
+  subAmount    Decimal @db.Decimal(10, 2)
+  retailAmount Decimal @db.Decimal(10, 2)
   currency     String  @default("USD")
 
   authorId String
@@ -118,23 +121,36 @@ model Rate {
   @@index([serviceId, unitId])
 }
 
-// model BillableItem {
-//   id          Int    @id @default(autoincrement())
-//   uuid        String @default(uuid())
-//   quantity    Int    @default(0)
-//   unit        String
-//   service     String
-//   description String
+enum PricingType {
+  SUB
+  RETAIL
+}
 
-// estimateTimeToComplete Int    @default(0)
-// actualTimeToComplete   Int    @default(0)
+model BillableItem {
+  id Int @id @default(autoincrement())
 
-//   rate        Int    @default(0)
-//   subtotal    Int    @default(0)
+  serviceId Int
+  service   Service @relation(fields: [serviceId], references: [id])
 
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-// }
+  unitId Int
+  unit   MeasurementUnit @relation(fields: [unitId], references: [id])
+
+  unitPrice   Decimal     @db.Decimal(10, 2) // Dollars (prefilled from Rate, manually overridable)
+  pricingType PricingType
+
+  quantity Decimal @db.Decimal(10, 4) // Allow fractional quantities (e.g., 1.5 sqft)
+  subtotal Decimal @db.Decimal(10, 2) // Dollars (quantity × unitPrice, calculated server-side)
+
+  estimatedMinutesPerUnit Int?
+
+  notes String?
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
 
 // model Estimate {
 //   id   Int     @id @default(autoincrement())
