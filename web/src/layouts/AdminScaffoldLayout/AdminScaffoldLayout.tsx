@@ -55,7 +55,7 @@ const AdminScaffoldLayoutContent = ({
   return (
     <div className="rw-scaffold">
       <Toaster toastOptions={{ className: 'rw-toast', duration: 6000 }} />
-      <header className="rw-header">
+      <header className="rw-header flex print:hidden">
         <h1 className="rw-heading rw-heading-primary">
           <Link to={routes[titleTo]()} className="rw-link">
             {title}

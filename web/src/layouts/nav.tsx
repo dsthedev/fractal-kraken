@@ -21,10 +21,12 @@ const Nav = () => {
 
   const menuItems: MenuItem[] = [
     { label: 'Home', route: routes.home },
+    // { label: 'Contact', route: routes.contact },
+  ]
+
+  const adminMenuItems: MenuItem[] = [
     // { label: 'Services', route: routes.services },
     { label: 'My Rates', route: routes.rates },
-    // { label: 'Contact', route: routes.contact },
-    // Add more admin items here as needed
   ]
 
   return (
@@ -54,9 +56,21 @@ const Nav = () => {
             </DropdownMenuItem>
           </>
         ) : (
-          <DropdownMenuItem onSelect={logOut}>
-            Logout ({currentUser?.email})
-          </DropdownMenuItem>
+          <>
+            {adminMenuItems.map((item) => (
+              <DropdownMenuItem
+                key={item.label}
+                onSelect={() => {
+                  navigate(item.route())
+                }}
+              >
+                {item.label}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuItem onSelect={logOut}>
+              Logout ({currentUser?.email})
+            </DropdownMenuItem>
+          </>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

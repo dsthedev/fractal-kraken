@@ -32,7 +32,7 @@ const AdminNav = () => {
   if (isAuthenticated && currentUser.roles.includes('admin')) {
     return (
       <DropdownMenu>
-        <DropdownMenuTrigger asChild className="print:hidden">
+        <DropdownMenuTrigger asChild>
           <Button variant="outline">
             <KeySquare />
           </Button>

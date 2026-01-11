@@ -20,7 +20,13 @@ export const ExportButton = ({
   }
 
   return (
-    <Button variant="outline" size="sm" onClick={handleExport} {...props}>
+    <Button
+      className="print:hidden"
+      variant="outline"
+      size="sm"
+      onClick={handleExport}
+      {...props}
+    >
       {label}
     </Button>
   )

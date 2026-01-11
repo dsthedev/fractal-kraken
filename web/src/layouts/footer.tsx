@@ -10,7 +10,7 @@ const Footer = () => {
         <li>
           <Link to={routes.home()}>&copy; {process.env.PROJECT_NAME}</Link>
         </li>
-        <li className="flex justify-center gap-4">
+        <li className="flex justify-center gap-4 print:hidden">
           <ModeCycle />
           <AdminNav />
         </li>
