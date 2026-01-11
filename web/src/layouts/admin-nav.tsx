@@ -20,11 +20,12 @@ const AdminNav = () => {
   const { isAuthenticated, currentUser } = useAuth()
 
   const adminMenuItems: AdminMenuItem[] = [
-    { label: 'Users', route: routes.users },
-    { label: 'Units', route: routes.measurementUnits },
-    { label: 'Services', route: routes.services },
-    { label: 'Rates', route: routes.rates },
+    { label: 'Entities', route: routes.entities },
     { label: 'Billable Items', route: routes.billableItems },
+    { label: 'Rates', route: routes.rates },
+    { label: 'Services', route: routes.services },
+    { label: 'Units', route: routes.measurementUnits },
+    { label: 'Users', route: routes.users },
     { label: 'Sandbox', route: routes.sandbox },
     // Add more admin items here as needed
   ]

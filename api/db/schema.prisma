@@ -27,6 +27,12 @@ model User {
 
   roles String @default("guest")
 
+  defaultEntityId Int?
+  defaultEntity   Entity? @relation("defaultEntity", fields: [defaultEntityId], references: [id])
+
+  defaultRetailerEntityId Int?
+  defaultRetailerEntity   Entity? @relation("defaultRetailerEntity", fields: [defaultRetailerEntityId], references: [id])
+
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   rates         Rate[]
@@ -150,6 +156,45 @@ model BillableItem {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum EntityType {
+  CONTRACTOR
+  INSTALLER
+  CLIENT
+  RETAILER
+  SUPPLIER
+  COMPANY
+  INDIVIDUAL
+  OTHER
+}
+
+model Entity {
+  id Int @id @default(autoincrement())
+
+  type EntityType
+
+  name        String
+  contactName String?
+
+  email String?
+  phone String?
+
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  postalCode   String?
+  country      String? @default("US")
+  // latitude     Decimal? @db.Decimal(9, 6)
+  // longitude    Decimal? @db.Decimal(9, 6)
+
+  notes String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  usersDefault  User[]   @relation("defaultEntity")
+  usersRetailer User[]   @relation("defaultRetailerEntity")
 }
 
 // model Estimate {

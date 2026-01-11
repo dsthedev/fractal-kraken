@@ -57,21 +57,19 @@ export const checkboxInputTag = (checked: boolean) => {
   return <input type="checkbox" checked={checked} disabled />
 }
 
-export const currencyDisplay = (value: number | string | null | undefined) => {
-  if (value === null || value === undefined) return ''
-
-  // Convert to number if string
-  const num = typeof value === 'string' ? parseFloat(value) : value
-
-  if (isNaN(num)) return ''
-
-  // Format with 2 decimals, hide .00
-  const formatted = num.toFixed(2)
-  const [dollars, cents] = formatted.split('.')
-
-  if (cents === '00') {
-    return `$${parseInt(dollars).toLocaleString()}`
+export const currencyDisplay = (value: string | number | null | undefined) => {
+  if (value === null || value === undefined) {
+    return '$0.00'
   }
 
-  return `$${parseInt(dollars).toLocaleString()}.${cents}`
+  const numValue = typeof value === 'string' ? parseFloat(value) : value
+
+  if (isNaN(numValue)) {
+    return '$0.00'
+  }
+
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(numValue)
 }

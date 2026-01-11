@@ -77,9 +77,11 @@ const BillableItemsList = ({ billableItems }: FindBillableItems) => {
               {/* <td>{formatEnum(billableItem.pricingType)}</td> */}
               <td>{truncate(billableItem.quantity)}</td>
               <td>
-                {calculateSubtotal(
-                  billableItem.unitPrice,
-                  billableItem.quantity
+                {currencyDisplay(
+                  calculateSubtotal(
+                    billableItem.unitPrice,
+                    billableItem.quantity
+                  )
                 )}
               </td>
               {/* <td>{truncate(billableItem.estimatedMinutesPerUnit)}</td> */}
