@@ -37,9 +37,12 @@ interface EntityFormProps {
   onSave: (data: UpdateEntityInput, id?: FormEntity['id']) => void
   error: RWGqlError
   loading: boolean
+  initialValues?: Partial<UpdateEntityInput>
 }
 
 const EntityForm = (props: EntityFormProps) => {
+  const initial = { ...props.entity, ...props.initialValues }
+
   const onSubmit = (data: FormEntity) => {
     props.onSave(data, props?.entity?.id)
   }
@@ -54,11 +57,7 @@ const EntityForm = (props: EntityFormProps) => {
 
   return (
     <div className="rw-form-wrapper">
-      <Form<FormEntity>
-        onSubmit={onSubmit}
-        error={props.error}
-        schema={entityValidationSchema}
-      >
+      <Form<FormEntity> onSubmit={onSubmit} error={props.error}>
         <FormError
           error={props.error}
           wrapperClassName="rw-form-error-wrapper"
@@ -76,7 +75,7 @@ const EntityForm = (props: EntityFormProps) => {
 
         <SelectField
           name="type"
-          defaultValue={props.entity?.type || 'CONTRACTOR'}
+          defaultValue={initial.type || 'CONTRACTOR'}
           className="rw-input"
           errorClassName="rw-input rw-input-error"
           validation={{ required: 'Type is required' }}
@@ -106,7 +105,7 @@ const EntityForm = (props: EntityFormProps) => {
 
             <TextField
               name="name"
-              defaultValue={props.entity?.name}
+              defaultValue={initial.name}
               className="rw-input"
               errorClassName="rw-input rw-input-error"
               validation={{ required: true }}
@@ -126,7 +125,7 @@ const EntityForm = (props: EntityFormProps) => {
 
             <TextField
               name="contactName"
-              defaultValue={props.entity?.contactName}
+              defaultValue={initial.contactName}
               className="rw-input"
               errorClassName="rw-input rw-input-error"
             />
@@ -148,8 +147,7 @@ const EntityForm = (props: EntityFormProps) => {
 
             <TextField
               name="email"
-              type="email"
-              defaultValue={props.entity?.email}
+              defaultValue={initial.email}
               className="rw-input"
               errorClassName="rw-input rw-input-error"
             />
@@ -168,7 +166,7 @@ const EntityForm = (props: EntityFormProps) => {
 
             <TextField
               name="phone"
-              defaultValue={props.entity?.phone}
+              defaultValue={initial.phone}
               className="rw-input"
               errorClassName="rw-input rw-input-error"
               onChange={handlePhoneChange}
@@ -192,7 +190,7 @@ const EntityForm = (props: EntityFormProps) => {
 
           <TextField
             name="addressLine1"
-            defaultValue={props.entity?.addressLine1}
+              defaultValue={initial.addressLine1}
             className="rw-input"
             errorClassName="rw-input rw-input-error"
             placeholder="Street address"
@@ -212,7 +210,7 @@ const EntityForm = (props: EntityFormProps) => {
 
           <TextField
             name="addressLine2"
-            defaultValue={props.entity?.addressLine2}
+              defaultValue={initial.addressLine2}
             className="rw-input"
             errorClassName="rw-input rw-input-error"
             placeholder="Apartment, suite, etc."
@@ -234,7 +232,7 @@ const EntityForm = (props: EntityFormProps) => {
 
             <TextField
               name="city"
-              defaultValue={props.entity?.city}
+              defaultValue={initial.city}
               className="rw-input"
               errorClassName="rw-input rw-input-error"
             />
@@ -253,7 +251,7 @@ const EntityForm = (props: EntityFormProps) => {
 
             <TextField
               name="state"
-              defaultValue={props.entity?.state}
+              defaultValue={initial.state}
               className="rw-input"
               errorClassName="rw-input rw-input-error"
               placeholder="TX"
@@ -273,7 +271,7 @@ const EntityForm = (props: EntityFormProps) => {
 
             <TextField
               name="postalCode"
-              defaultValue={props.entity?.postalCode}
+              defaultValue={initial.postalCode}
               className="rw-input"
               errorClassName="rw-input rw-input-error"
             />
@@ -294,7 +292,7 @@ const EntityForm = (props: EntityFormProps) => {
 
           <TextField
             name="country"
-            defaultValue={props.entity?.country}
+              defaultValue={initial.country}
             className="rw-input"
             errorClassName="rw-input rw-input-error"
             placeholder="US"
@@ -315,7 +313,7 @@ const EntityForm = (props: EntityFormProps) => {
 
           <TextAreaField
             name="notes"
-            defaultValue={props.entity?.notes}
+              defaultValue={initial.notes}
             className="rw-input"
             errorClassName="rw-input rw-input-error"
             rows={6}
