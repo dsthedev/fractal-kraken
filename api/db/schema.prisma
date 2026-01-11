@@ -65,6 +65,7 @@ enum ServiceAction {
   INSTALL
   REMOVE
   REPLACE
+  RESET
   REPAIR
   FINISH
   PREPARE

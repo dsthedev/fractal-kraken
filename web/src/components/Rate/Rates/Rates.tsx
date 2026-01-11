@@ -9,6 +9,8 @@ import { useMutation } from '@cedarjs/web'
 import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
+import MeasurementUnitCell from 'src/components/FindMeasurementUnitByIdCell'
+import ServiceCell from 'src/components/FindServiceByIdCell'
 import { QUERY } from 'src/components/Rate/RatesCell'
 import { timeTag, truncate } from 'src/lib/formatters.js'
 
@@ -66,8 +68,14 @@ const RatesList = ({ rates }: FindRates) => {
           {rates.map((rate) => (
             <tr key={rate.id}>
               {/* <td>{truncate(rate.id)}</td> */}
-              <td>{truncate(rate.serviceId)}</td>
-              <td>{truncate(rate.unitId)}</td>
+              <td>
+                <ServiceCell id={rate.serviceId} />
+              </td>
+              <td>
+                <MeasurementUnitCell id={rate.unitId} />
+              </td>
+              {/* <td>{truncate(rate.serviceId)}</td>
+              <td>{truncate(rate.unitId)}</td> */}
               <td>{truncate(rate.subAmount)}</td>
               <td>{truncate(rate.retailAmount)}</td>
               {/* <td>{truncate(rate.currency)}</td> */}
