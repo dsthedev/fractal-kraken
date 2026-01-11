@@ -48,15 +48,15 @@ const Service = ({ service }: Props) => {
       <div className="rw-segment">
         <header className="rw-segment-header">
           <h2 className="rw-heading rw-heading-secondary">
-            Service {service.id} Detail
+            {formatEnum(service.action)} {service.material} {service.context}
           </h2>
         </header>
         <table className="rw-table">
           <tbody>
-            <tr>
+            {/* <tr>
               <th>Id</th>
               <td>{service.id}</td>
-            </tr>
+            </tr> */}
             <tr>
               <th>Action</th>
               <td>{formatEnum(service.action)}</td>
@@ -73,14 +73,14 @@ const Service = ({ service }: Props) => {
               <th>Description</th>
               <td>{service.description}</td>
             </tr>
-            <tr>
+            {/* <tr>
               <th>Created at</th>
               <td>{timeTag(service.createdAt)}</td>
             </tr>
             <tr>
               <th>Updated at</th>
               <td>{timeTag(service.updatedAt)}</td>
-            </tr>
+            </tr> */}
           </tbody>
         </table>
       </div>

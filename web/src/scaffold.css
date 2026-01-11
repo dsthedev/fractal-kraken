@@ -137,7 +137,10 @@
   @apply text-red-600;
 }
 .rw-input {
-  @apply block my-4 w-full p-2 bg-white text-black border border-gray-400 rounded outline-none;
+  @apply block my-2 w-full p-1 text-black border border-gray-400 rounded outline-none;
+}
+.dark .rw-input {
+  @apply dark:bg-slate-900 dark:text-white;
 }
 .rw-check-radio-items {
   @apply flex justify-items-center;
@@ -243,4 +246,15 @@
 }
 .rw-webauthn-wrapper h2 {
   @apply mb-4 text-xl font-bold;
+}
+
+select.rw-input {
+  @apply p-2 pr-8 leading-none;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M6.707 10.293a1 1 0 0 0-1.414 1.414l6 6a1 1 0 0 0 1.414 0l6-6a1 1 0 1 0-1.414-1.414L12 15.586l-5.293-5.293Z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 1rem 1rem;
 }

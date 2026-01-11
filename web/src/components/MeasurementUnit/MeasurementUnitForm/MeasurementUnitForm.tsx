@@ -10,16 +10,14 @@ import {
   FieldError,
   Label,
   TextField,
-  RadioField,
+  SelectField,
+  TextAreaField,
   Submit,
 } from '@cedarjs/forms'
 
 // ============================================================================
 // ENUM OPTIONS
 // ============================================================================
-// Define enum options for dimension and category fields
-// These should match the Prisma schema enums
-
 const DIMENSION_OPTIONS = [
   { value: 'LINEAR', label: 'Linear' },
   { value: 'SQUARE', label: 'Square' },
@@ -34,7 +32,6 @@ const DIMENSION_OPTIONS = [
 // ============================================================================
 // FORM TYPES
 // ============================================================================
-
 type FormMeasurementUnit = NonNullable<
   EditMeasurementUnitById['measurementUnit']
 >
@@ -64,83 +61,100 @@ const MeasurementUnitForm = (props: MeasurementUnitFormProps) => {
           listClassName="rw-form-error-list"
         />
 
-        <Label
-          name="fullName"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Full name
-        </Label>
-        <TextField
-          name="fullName"
-          defaultValue={props.measurementUnit?.fullName}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          validation={{ required: true }}
-        />
-        <FieldError name="fullName" className="rw-field-error" />
+        {/* 50/50: Full name + Plural name */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label
+              name="fullName"
+              className="rw-label"
+              errorClassName="rw-label rw-label-error"
+            >
+              Full name
+            </Label>
+            <TextField
+              name="fullName"
+              defaultValue={props.measurementUnit?.fullName}
+              className="rw-input"
+              errorClassName="rw-input rw-input-error"
+              validation={{ required: true }}
+            />
+            <FieldError name="fullName" className="rw-field-error" />
+          </div>
 
-        <Label
-          name="pluralName"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Plural name
-        </Label>
-        <TextField
-          name="pluralName"
-          defaultValue={props.measurementUnit?.pluralName}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          validation={{ required: true }}
-        />
-        <FieldError name="pluralName" className="rw-field-error" />
+          <div>
+            <Label
+              name="pluralName"
+              className="rw-label"
+              errorClassName="rw-label rw-label-error"
+            >
+              Plural name
+            </Label>
+            <TextField
+              name="pluralName"
+              defaultValue={props.measurementUnit?.pluralName}
+              className="rw-input"
+              errorClassName="rw-input rw-input-error"
+              validation={{ required: true }}
+            />
+            <FieldError name="pluralName" className="rw-field-error" />
+          </div>
+        </div>
 
-        <Label
-          name="shortName"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Short name
-        </Label>
-        <TextField
-          name="shortName"
-          defaultValue={props.measurementUnit?.shortName}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-        <FieldError name="shortName" className="rw-field-error" />
+        {/* 33/33/33: Short name + Symbol + Notation */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <Label
+              name="shortName"
+              className="rw-label"
+              errorClassName="rw-label rw-label-error"
+            >
+              Short name
+            </Label>
+            <TextField
+              name="shortName"
+              defaultValue={props.measurementUnit?.shortName}
+              className="rw-input"
+              errorClassName="rw-input rw-input-error"
+            />
+            <FieldError name="shortName" className="rw-field-error" />
+          </div>
 
-        <Label
-          name="symbol"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Symbol
-        </Label>
-        <TextField
-          name="symbol"
-          defaultValue={props.measurementUnit?.symbol}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-        <FieldError name="symbol" className="rw-field-error" />
+          <div>
+            <Label
+              name="symbol"
+              className="rw-label"
+              errorClassName="rw-label rw-label-error"
+            >
+              Symbol
+            </Label>
+            <TextField
+              name="symbol"
+              defaultValue={props.measurementUnit?.symbol}
+              className="rw-input"
+              errorClassName="rw-input rw-input-error"
+            />
+            <FieldError name="symbol" className="rw-field-error" />
+          </div>
 
-        <Label
-          name="notation"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Notation
-        </Label>
-        <TextField
-          name="notation"
-          defaultValue={props.measurementUnit?.notation}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-        <FieldError name="notation" className="rw-field-error" />
+          <div>
+            <Label
+              name="notation"
+              className="rw-label"
+              errorClassName="rw-label rw-label-error"
+            >
+              Notation
+            </Label>
+            <TextField
+              name="notation"
+              defaultValue={props.measurementUnit?.notation}
+              className="rw-input"
+              errorClassName="rw-input rw-input-error"
+            />
+            <FieldError name="notation" className="rw-field-error" />
+          </div>
+        </div>
 
+        {/* Dimension dropdown */}
         <Label
           name="dimension"
           className="rw-label"
@@ -148,24 +162,22 @@ const MeasurementUnitForm = (props: MeasurementUnitFormProps) => {
         >
           Dimension
         </Label>
-        {DIMENSION_OPTIONS.map((option, index) => (
-          <div key={option.value} className="rw-check-radio-items">
-            <RadioField
-              id={`measurementUnit-dimension-${index}`}
-              name="dimension"
-              defaultValue={option.value}
-              defaultChecked={props.measurementUnit?.dimension?.includes(
-                option.value
-              )}
-              className="rw-input"
-              errorClassName="rw-input rw-input-error"
-              validation={{ required: true }}
-            />
-            <div>{option.label}</div>
-          </div>
-        ))}
+        <SelectField
+          name="dimension"
+          defaultValue={props.measurementUnit?.dimension}
+          className="rw-input"
+          errorClassName="rw-input rw-input-error"
+          validation={{ required: true }}
+        >
+          {DIMENSION_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </SelectField>
         <FieldError name="dimension" className="rw-field-error" />
 
+        {/* Description textarea */}
         <Label
           name="description"
           className="rw-label"
@@ -173,44 +185,52 @@ const MeasurementUnitForm = (props: MeasurementUnitFormProps) => {
         >
           Description
         </Label>
-        <TextField
+        <TextAreaField
           name="description"
           defaultValue={props.measurementUnit?.description}
           className="rw-input"
           errorClassName="rw-input rw-input-error"
+          rows={4}
         />
         <FieldError name="description" className="rw-field-error" />
 
-        <Label
-          name="conversionFactor"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Conversion factor
-        </Label>
-        <TextField
-          name="conversionFactor"
-          defaultValue={props.measurementUnit?.conversionFactor}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          validation={{ valueAsNumber: true }}
-        />
-        <FieldError name="conversionFactor" className="rw-field-error" />
+        {/* 50/50: Conversion factor + Base unit */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label
+              name="conversionFactor"
+              className="rw-label"
+              errorClassName="rw-label rw-label-error"
+            >
+              Conversion factor
+            </Label>
+            <TextField
+              name="conversionFactor"
+              defaultValue={props.measurementUnit?.conversionFactor}
+              className="rw-input"
+              errorClassName="rw-input rw-input-error"
+              validation={{ valueAsNumber: true }}
+            />
+            <FieldError name="conversionFactor" className="rw-field-error" />
+          </div>
 
-        <Label
-          name="baseUnit"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Base unit
-        </Label>
-        <TextField
-          name="baseUnit"
-          defaultValue={props.measurementUnit?.baseUnit}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-        <FieldError name="baseUnit" className="rw-field-error" />
+          <div>
+            <Label
+              name="baseUnit"
+              className="rw-label"
+              errorClassName="rw-label rw-label-error"
+            >
+              Base unit
+            </Label>
+            <TextField
+              name="baseUnit"
+              defaultValue={props.measurementUnit?.baseUnit}
+              className="rw-input"
+              errorClassName="rw-input rw-input-error"
+            />
+            <FieldError name="baseUnit" className="rw-field-error" />
+          </div>
+        </div>
 
         <div className="rw-button-group">
           <Submit disabled={props.loading} className="rw-button rw-button-blue">

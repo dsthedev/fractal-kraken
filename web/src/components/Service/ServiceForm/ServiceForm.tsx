@@ -16,6 +16,7 @@ const ACTION_OPTIONS = [
   { value: 'INSTALL', label: 'Install' },
   { value: 'REMOVE', label: 'Remove' },
   { value: 'REPLACE', label: 'Replace' },
+  { value: 'RESET', label: 'Reset' },
   { value: 'REPAIR', label: 'Repair' },
   { value: 'FINISH', label: 'Finish' },
   { value: 'PREPARE', label: 'Prepare' },

@@ -13,7 +13,7 @@ import { toast } from '@cedarjs/web/toast'
 
 import { ExportButton } from 'src/components/ExportButton/ExportButton'
 import { QUERY } from 'src/components/Rate/RatesCell'
-import { truncate, currencyDisplay } from 'src/lib/formatters.js'
+import { truncate, currencyDisplay, formatEnum } from 'src/lib/formatters.js'
 import { todayAsYYYYMMDD } from 'src/lib/utils'
 
 const DELETE_RATE_MUTATION: TypedDocumentNode<
@@ -163,7 +163,7 @@ const RatesList = ({ rates }: FindRates) => {
               {/* <td>{truncate(rate.id)}</td> */}
               <td>
                 {[
-                  rate.service?.action,
+                  formatEnum(rate.service?.action),
                   rate.service?.material,
                   rate.service?.context,
                 ]

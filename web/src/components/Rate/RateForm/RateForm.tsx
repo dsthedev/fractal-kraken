@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { Pencil } from 'lucide-react'
 import type { EditRateById, UpdateRateInput } from 'types/graphql'
 
 import type { RWGqlError } from '@cedarjs/forms'
@@ -12,7 +13,9 @@ import {
   TextAreaField,
   Submit,
 } from '@cedarjs/forms'
+import { navigate } from '@cedarjs/router'
 
+import { Button } from 'src/components/ui/button'
 import { CurrencyField } from 'src/components/ui/currency-field'
 
 type FormRate = NonNullable<EditRateById['rate']>
@@ -204,14 +207,46 @@ const RateForm = ({
 
         {/* Service + Unit Row (Dropdowns) */}
         <div className="flex gap-4 mt-2">
-          <div className="flex-1">
-            <ServiceDropdown
-              value={selectedService}
-              onChange={setSelectedService}
-            />
+          <div className="flex-1 flex gap-2 items-end">
+            <Button
+              variant="outline"
+              className="-translate-y-2"
+              size="sm"
+              type="button"
+              onClick={() => {
+                if (selectedService) {
+                  navigate(routes.editService({ id: selectedService }))
+                }
+              }}
+              disabled={!selectedService}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <div className="flex-1">
+              <ServiceDropdown
+                value={selectedService}
+                onChange={setSelectedService}
+              />
+            </div>
           </div>
-          <div className="flex-1">
-            <UnitDropdown value={selectedUnit} onChange={setSelectedUnit} />
+          <div className="flex-1 flex gap-2 items-end border-l pl-4">
+            <div className="flex-1">
+              <UnitDropdown value={selectedUnit} onChange={setSelectedUnit} />
+            </div>
+            <Button
+              variant="outline"
+              className="-translate-y-2"
+              size="sm"
+              type="button"
+              onClick={() => {
+                if (selectedUnit) {
+                  navigate(routes.editMeasurementUnit({ id: selectedUnit }))
+                }
+              }}
+              disabled={!selectedUnit}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
           </div>
         </div>
 
