@@ -1,3 +1,4 @@
+import { Pencil, Trash2 } from 'lucide-react'
 import type {
   DeleteEntityMutation,
   DeleteEntityMutationVariables,
@@ -72,7 +73,14 @@ const EntitiesList = ({ entities }: FindEntities) => {
             <tr key={entity.id}>
               {/* <td>{truncate(entity.id)}</td> */}
               {/* <td>{formatEnum(entity.type)}</td> */}
-              <td>{truncate(entity.name)}</td>
+              <td>
+                <Link
+                  to={routes.entity({ id: entity.id })}
+                  title={'Show ' + entity.name + ' details'}
+                >
+                  {truncate(entity.name)}
+                </Link>
+              </td>
               <td>{truncate(entity.contactName)}</td>
               <td>{truncate(entity.email)}</td>
               <td>{truncate(entity.phone)}</td>
@@ -88,26 +96,19 @@ const EntitiesList = ({ entities }: FindEntities) => {
               <td>
                 <nav className="rw-table-actions">
                   <Link
-                    to={routes.entity({ id: entity.id })}
-                    title={'Show entity ' + entity.id + ' detail'}
-                    className="rw-button rw-button-small"
-                  >
-                    Show
-                  </Link>
-                  <Link
                     to={routes.editEntity({ id: entity.id })}
-                    title={'Edit entity ' + entity.id}
+                    title={'Edit ' + entity.name}
                     className="rw-button rw-button-small rw-button-blue"
                   >
-                    Edit
+                    <Pencil className="h-4 w-4" />
                   </Link>
                   <button
                     type="button"
-                    title={'Delete entity ' + entity.id}
+                    title={'Delete ' + entity.name}
                     className="rw-button rw-button-small rw-button-red"
                     onClick={() => onDeleteClick(entity.id)}
                   >
-                    Delete
+                    <Trash2 className="h-4 w-4" />
                   </button>
                 </nav>
               </td>

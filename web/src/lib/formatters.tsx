@@ -73,3 +73,7 @@ export const currencyDisplay = (value: string | number | null | undefined) => {
     currency: 'USD',
   }).format(numValue)
 }
+
+export const fullServiceDisplay = (action, material, context) => {
+  return [action, material, context].filter(Boolean).join(' ')
+}

@@ -1,7 +1,15 @@
 import React from 'react'
 
-import { Pencil } from 'lucide-react'
+import { Pencil, X } from 'lucide-react'
 import type { EditRateById, UpdateRateInput } from 'types/graphql'
+import type {
+  EditServiceById,
+  UpdateServiceInput,
+  UpdateServiceMutationVariables,
+  EditMeasurementUnitById,
+  UpdateMeasurementUnitInput,
+  UpdateMeasurementUnitMutationVariables,
+} from 'types/graphql'
 
 import type { RWGqlError } from '@cedarjs/forms'
 import {
@@ -14,9 +22,98 @@ import {
   Submit,
 } from '@cedarjs/forms'
 import { navigate, routes } from '@cedarjs/router'
+import { useQuery, useMutation } from '@cedarjs/web'
+import type { TypedDocumentNode } from '@cedarjs/web'
+import { toast } from '@cedarjs/web/toast'
 
+import MeasurementUnitForm from 'src/components/MeasurementUnit/MeasurementUnitForm'
+import ServiceForm from 'src/components/Service/ServiceForm'
 import { Button } from 'src/components/ui/button'
 import { CurrencyField } from 'src/components/ui/currency-field'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from 'src/components/ui/dialog'
+
+// Query and mutation for Service
+const SERVICE_QUERY: TypedDocumentNode<EditServiceById> = gql`
+  query EditServiceById($id: Int!) {
+    service: service(id: $id) {
+      id
+      action
+      material
+      context
+      description
+      createdAt
+      updatedAt
+    }
+  }
+`
+
+const UPDATE_SERVICE_MUTATION: TypedDocumentNode<
+  EditServiceById,
+  UpdateServiceMutationVariables
+> = gql`
+  mutation UpdateServiceMutation($id: Int!, $input: UpdateServiceInput!) {
+    updateService(id: $id, input: $input) {
+      id
+      action
+      material
+      context
+      description
+      createdAt
+      updatedAt
+    }
+  }
+`
+
+// Query and mutation for MeasurementUnit
+const UNIT_QUERY: TypedDocumentNode<EditMeasurementUnitById> = gql`
+  query EditMeasurementUnitById($id: Int!) {
+    measurementUnit: measurementUnit(id: $id) {
+      id
+      fullName
+      pluralName
+      shortName
+      symbol
+      notation
+      dimension
+      description
+      conversionFactor
+      baseUnit
+      createdAt
+      updatedAt
+    }
+  }
+`
+
+const UPDATE_UNIT_MUTATION: TypedDocumentNode<
+  EditMeasurementUnitById,
+  UpdateMeasurementUnitMutationVariables
+> = gql`
+  mutation UpdateMeasurementUnitMutation(
+    $id: Int!
+    $input: UpdateMeasurementUnitInput!
+  ) {
+    updateMeasurementUnit(id: $id, input: $input) {
+      id
+      fullName
+      pluralName
+      shortName
+      symbol
+      notation
+      dimension
+      description
+      conversionFactor
+      baseUnit
+      createdAt
+      updatedAt
+    }
+  }
+`
 
 type FormRate = NonNullable<EditRateById['rate']>
 
@@ -145,6 +242,10 @@ const RateForm = ({
   const [selectedUnit, setSelectedUnit] = React.useState<number | undefined>(
     unitId ?? rate?.unitId
   )
+  const [editDialogOpen, setEditDialogOpen] = React.useState(false)
+  const [editingType, setEditingType] = React.useState<
+    'service' | 'unit' | null
+  >(null)
 
   // Keep selected IDs in sync if props change (e.g., edit load)
   React.useEffect(() => {
@@ -210,12 +311,11 @@ const RateForm = ({
           <div className="flex-1 flex gap-2 items-end">
             <Button
               variant="outline"
-              className="-translate-y-2"
-              size="sm"
               type="button"
               onClick={() => {
                 if (selectedService) {
-                  navigate(routes.editService({ id: selectedService }))
+                  setEditingType('service')
+                  setEditDialogOpen(true)
                 }
               }}
               disabled={!selectedService}
@@ -235,12 +335,11 @@ const RateForm = ({
             </div>
             <Button
               variant="outline"
-              className="-translate-y-2"
-              size="sm"
               type="button"
               onClick={() => {
                 if (selectedUnit) {
-                  navigate(routes.editMeasurementUnit({ id: selectedUnit }))
+                  setEditingType('unit')
+                  setEditDialogOpen(true)
                 }
               }}
               disabled={!selectedUnit}
@@ -305,6 +404,181 @@ const RateForm = ({
           </Submit>
         </div>
       </Form>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingType === 'service'
+                ? 'Edit Service'
+                : 'Edit Measurement Unit'}
+            </DialogTitle>
+            <DialogClose asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-4 top-4"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogClose>
+          </DialogHeader>
+
+          {editingType === 'service' && selectedService && (
+            <ServiceEditDialogContent
+              serviceId={selectedService}
+              onSave={() => setEditDialogOpen(false)}
+            />
+          )}
+
+          {editingType === 'unit' && selectedUnit && (
+            <UnitEditDialogContent
+              unitId={selectedUnit}
+              onSave={() => setEditDialogOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
+/**
+ * Edit dialog content for Service
+ * Loads and displays the ServiceForm in the dialog
+ */
+const ServiceEditDialogContent = ({
+  serviceId,
+  onSave,
+}: {
+  serviceId: number
+  onSave: () => void
+}) => {
+  const { data, loading, error } = useQuery<EditServiceById>(SERVICE_QUERY, {
+    variables: { id: serviceId },
+  })
+
+  const [updateService, { loading: saving, error: saveError }] = useMutation(
+    UPDATE_SERVICE_MUTATION,
+    {
+      onCompleted: () => {
+        toast.success('Service updated')
+        onSave()
+      },
+      onError: (error) => {
+        toast.error(error.message)
+      },
+    }
+  )
+
+  if (loading) {
+    return (
+      <div className="py-4 text-center text-sm text-muted-foreground">
+        Loading...
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="py-4 text-center text-sm text-red-500">
+        Failed to load service
+      </div>
+    )
+  }
+
+  if (!data?.service) {
+    return (
+      <div className="py-4 text-center text-sm text-muted-foreground">
+        Service not found
+      </div>
+    )
+  }
+
+  const handleSave = (input: UpdateServiceInput) => {
+    updateService({ variables: { id: serviceId, input } })
+  }
+
+  return (
+    <div className="py-4">
+      <ServiceForm
+        service={data.service}
+        onSave={handleSave}
+        error={saveError}
+        loading={saving}
+      />
+    </div>
+  )
+}
+
+/**
+ * Edit dialog content for MeasurementUnit
+ * Loads and displays the MeasurementUnitForm in the dialog
+ */
+const UnitEditDialogContent = ({
+  unitId,
+  onSave,
+}: {
+  unitId: number
+  onSave: () => void
+}) => {
+  const { data, loading, error } = useQuery<EditMeasurementUnitById>(
+    UNIT_QUERY,
+    {
+      variables: { id: unitId },
+    }
+  )
+
+  const [updateUnit, { loading: saving, error: saveError }] = useMutation(
+    UPDATE_UNIT_MUTATION,
+    {
+      onCompleted: () => {
+        toast.success('Measurement unit updated')
+        onSave()
+      },
+      onError: (error) => {
+        toast.error(error.message)
+      },
+    }
+  )
+
+  if (loading) {
+    return (
+      <div className="py-4 text-center text-sm text-muted-foreground">
+        Loading...
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="py-4 text-center text-sm text-red-500">
+        Failed to load measurement unit
+      </div>
+    )
+  }
+
+  if (!data?.measurementUnit) {
+    return (
+      <div className="py-4 text-center text-sm text-muted-foreground">
+        Measurement unit not found
+      </div>
+    )
+  }
+
+  const handleSave = (input: UpdateMeasurementUnitInput) => {
+    updateUnit({ variables: { id: unitId, input } })
+  }
+
+  return (
+    <div className="py-4">
+      <MeasurementUnitForm
+        measurementUnit={data.measurementUnit}
+        onSave={handleSave}
+        error={saveError}
+        loading={saving}
+      />
     </div>
   )
 }

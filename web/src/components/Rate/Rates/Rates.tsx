@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { Pencil, Trash2 } from 'lucide-react'
 import type {
   DeleteRateMutation,
   DeleteRateMutationVariables,
@@ -13,7 +14,12 @@ import { toast } from '@cedarjs/web/toast'
 
 import { ExportButton } from 'src/components/ExportButton/ExportButton'
 import { QUERY } from 'src/components/Rate/RatesCell'
-import { truncate, currencyDisplay, formatEnum } from 'src/lib/formatters.js'
+import {
+  truncate,
+  currencyDisplay,
+  formatEnum,
+  fullServiceDisplay,
+} from 'src/lib/formatters.js'
 import { todayAsYYYYMMDD } from 'src/lib/utils'
 
 const DELETE_RATE_MUTATION: TypedDocumentNode<
@@ -162,13 +168,24 @@ const RatesList = ({ rates }: FindRates) => {
             <tr key={rate.id}>
               {/* <td>{truncate(rate.id)}</td> */}
               <td>
-                {[
-                  formatEnum(rate.service?.action),
-                  rate.service?.material,
-                  rate.service?.context,
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
+                <Link
+                  to={routes.rate({ id: rate.id })}
+                  title={
+                    'Show ' +
+                    fullServiceDisplay(
+                      formatEnum(rate.service?.action),
+                      rate.service?.material,
+                      rate.service?.context
+                    ) +
+                    ' details'
+                  }
+                >
+                  {fullServiceDisplay(
+                    formatEnum(rate.service?.action),
+                    rate.service?.material,
+                    rate.service?.context
+                  )}
+                </Link>
               </td>
               <td>{rate.unit?.shortName || 'N/A'}</td>
               {/* <td>{truncate(rate.serviceId)}</td>
@@ -184,18 +201,11 @@ const RatesList = ({ rates }: FindRates) => {
               <td className="print:hidden">
                 <nav className="rw-table-actions">
                   <Link
-                    to={routes.rate({ id: rate.id })}
-                    title={'Show rate ' + rate.id + ' detail'}
-                    className="rw-button rw-button-small"
-                  >
-                    Show
-                  </Link>
-                  <Link
                     to={routes.editRate({ id: rate.id })}
                     title={'Edit rate ' + rate.id}
                     className="rw-button rw-button-small rw-button-blue"
                   >
-                    Edit
+                    <Pencil className="h-4 w-4" />
                   </Link>
                   <button
                     type="button"
@@ -203,7 +213,7 @@ const RatesList = ({ rates }: FindRates) => {
                     className="rw-button rw-button-small rw-button-red"
                     onClick={() => onDeleteClick(rate.id)}
                   >
-                    Delete
+                    <Trash2 className="h-4 w-4" />
                   </button>
                 </nav>
               </td>
