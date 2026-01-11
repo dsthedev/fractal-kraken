@@ -41,14 +41,16 @@ const Nav = () => {
       <DropdownMenuContent align="start">
         {!isAuthenticated ? (
           <>
-            <DropdownMenuItem
-              key={item.label}
-              onSelect={() => {
-                navigate(item.route())
-              }}
-            >
-              {item.label}
-            </DropdownMenuItem>
+            {menuItems.map((item) => (
+              <DropdownMenuItem
+                key={item.label}
+                onSelect={() => {
+                  navigate(item.route())
+                }}
+              >
+                {item.label}
+              </DropdownMenuItem>
+            ))}
             <DropdownMenuItem
               onSelect={() => (window.location.href = '/login')}
             >
