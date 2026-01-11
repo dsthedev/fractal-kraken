@@ -6,6 +6,8 @@ import type {
 
 import { db } from 'src/lib/db'
 
+import { parseRatesData as parseRatesDataService } from './parseRatesData'
+
 export const rates: QueryResolvers['rates'] = () => {
   return db.rate.findMany()
 }
@@ -33,6 +35,10 @@ export const deleteRate: MutationResolvers['deleteRate'] = ({ id }) => {
   return db.rate.delete({
     where: { id },
   })
+}
+
+export const parseRatesData: MutationResolvers['parseRatesData'] = async () => {
+  return parseRatesDataService()
 }
 
 export const Rate: RateRelationResolvers = {

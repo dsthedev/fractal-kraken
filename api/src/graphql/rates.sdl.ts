@@ -15,6 +15,15 @@ export const schema = gql`
     updatedAt: DateTime!
   }
 
+  type ParsedRatesData {
+    unitsPath: String!
+    servicesPath: String!
+    ratesPath: String!
+    unitsCount: Int!
+    servicesCount: Int!
+    ratesCount: Int!
+  }
+
   type Query {
     rates: [Rate!]! @requireAuth
     rate(id: Int!): Rate @requireAuth
@@ -44,5 +53,6 @@ export const schema = gql`
     createRate(input: CreateRateInput!): Rate! @requireAuth
     updateRate(id: Int!, input: UpdateRateInput!): Rate! @requireAuth
     deleteRate(id: Int!): Rate! @requireAuth
+    parseRatesData: ParsedRatesData! @requireAuth
   }
 `

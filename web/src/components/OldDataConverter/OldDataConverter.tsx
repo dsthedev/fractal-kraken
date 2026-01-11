@@ -1,5 +1,7 @@
 import { useState } from 'react'
 
+import { useMutation } from '@cedarjs/web'
+
 type ConvertedRow = {
   description?: string
   value?: number
@@ -8,6 +10,28 @@ type ConvertedRow = {
   task?: string
   material?: string
 }
+
+interface ParsedRatesData {
+  unitsPath: string
+  servicesPath: string
+  ratesPath: string
+  unitsCount: number
+  servicesCount: number
+  ratesCount: number
+}
+
+const PARSE_RATES_DATA_MUTATION = gql`
+  mutation ParseRatesData {
+    parseRatesData {
+      unitsPath
+      servicesPath
+      ratesPath
+      unitsCount
+      servicesCount
+      ratesCount
+    }
+  }
+`
 
 const parseCsv = (text: string) => {
   const lines = text.split(/\r?\n/).filter(Boolean)
@@ -157,6 +181,11 @@ const OldDataConverter = () => {
   const [inferredRows, setInferredRows] = useState<
     Record<string, string>[] | null
   >(null)
+  const [parsedRates, setParsedRates] = useState<ParsedRatesData | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const [parseRatesData] = useMutation(PARSE_RATES_DATA_MUTATION)
 
   const handleFile = (file?: File) => {
     if (!file) return
@@ -172,6 +201,23 @@ const OldDataConverter = () => {
       setInferredRows(null)
     }
     reader.readAsText(file)
+  }
+
+  const handleParseRatesData = async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const result = await parseRatesData()
+      if (result.data?.parseRatesData) {
+        setParsedRates(result.data.parseRatesData)
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Failed to parse rates data'
+      )
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -281,6 +327,86 @@ const OldDataConverter = () => {
               Clear
             </button>
           </div>
+        </div>
+      )}
+
+      <div className="pt-4 border-t">
+        <h2 className="text-lg font-semibold mb-4">
+          Parse Existing Rates Data
+        </h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Parse the old rates CSV file from the database and extract into
+          separate units, services, and rates with matching IDs.
+        </p>
+        <button
+          className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-50"
+          onClick={handleParseRatesData}
+          disabled={isLoading}
+        >
+          {isLoading ? 'Parsing...' : 'Parse Rates Data'}
+        </button>
+      </div>
+
+      {error && (
+        <div className="mt-4 p-3 rounded bg-red-100 text-red-800">
+          <p className="font-semibold">Error</p>
+          <p className="text-sm">{error}</p>
+        </div>
+      )}
+
+      {parsedRates && (
+        <div className="mt-4 border rounded p-4 bg-green-50">
+          <h3 className="font-semibold mb-3">Parse Results</h3>
+          <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="p-3 bg-white rounded border">
+              <p className="text-sm font-medium">Units Created</p>
+              <p className="text-2xl font-bold">{parsedRates.unitsCount}</p>
+            </div>
+            <div className="p-3 bg-white rounded border">
+              <p className="text-sm font-medium">Services Created</p>
+              <p className="text-2xl font-bold">{parsedRates.servicesCount}</p>
+            </div>
+            <div className="p-3 bg-white rounded border">
+              <p className="text-sm font-medium">Rates Created</p>
+              <p className="text-2xl font-bold">{parsedRates.ratesCount}</p>
+            </div>
+          </div>
+
+          <div className="space-y-2 text-sm">
+            <p>
+              <span className="font-medium">Units file:</span>
+              <br />
+              <code className="bg-white px-2 py-1 rounded border text-xs">
+                {parsedRates.unitsPath}
+              </code>
+            </p>
+            <p>
+              <span className="font-medium">Services file:</span>
+              <br />
+              <code className="bg-white px-2 py-1 rounded border text-xs">
+                {parsedRates.servicesPath}
+              </code>
+            </p>
+            <p>
+              <span className="font-medium">Rates file:</span>
+              <br />
+              <code className="bg-white px-2 py-1 rounded border text-xs">
+                {parsedRates.ratesPath}
+              </code>
+            </p>
+          </div>
+
+          <p className="text-xs text-gray-600 mt-3">
+            Files have been created in the scripts/data directory. The IDs are
+            synchronized between units, services, and rates.
+          </p>
+
+          <button
+            className="mt-4 px-3 py-1 rounded border text-sm"
+            onClick={() => setParsedRates(null)}
+          >
+            Clear
+          </button>
         </div>
       )}
     </div>

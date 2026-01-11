@@ -13,12 +13,14 @@ export const schema = gql`
     INSTALL
     REMOVE
     REPLACE
+    RESET
     REPAIR
     FINISH
     PREPARE
     CLEAN
     MOVE
     INSPECT
+    PERFORM
     CUSTOM
   }
 
