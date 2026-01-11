@@ -1,4 +1,5 @@
 import type { EditEntityById, UpdateEntityInput } from 'types/graphql'
+import { z } from 'zod'
 
 import type { RWGqlError } from '@cedarjs/forms'
 import {
@@ -6,12 +7,30 @@ import {
   FormError,
   FieldError,
   Label,
-  RadioField,
+  SelectField,
   TextField,
+  TextAreaField,
   Submit,
 } from '@cedarjs/forms'
 
+import { applyPhonePaste, formatPhoneNumber } from 'src/lib/phoneFormatter'
+
 type FormEntity = NonNullable<EditEntityById['entity']>
+
+const entityValidationSchema = z.object({
+  type: z.string(),
+  name: z.string().min(1, 'Name is required'),
+  contactName: z.string().optional(),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
+  phone: z.string().optional(),
+  addressLine1: z.string().optional(),
+  addressLine2: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  postalCode: z.string().optional(),
+  country: z.string().optional(),
+  notes: z.string().optional(),
+})
 
 interface EntityFormProps {
   entity?: EditEntityById['entity']
@@ -25,9 +44,21 @@ const EntityForm = (props: EntityFormProps) => {
     props.onSave(data, props?.entity?.id)
   }
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.target.value = formatPhoneNumber(e.target.value)
+  }
+
+  const handlePhonePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    applyPhonePaste(e)
+  }
+
   return (
     <div className="rw-form-wrapper">
-      <Form<FormEntity> onSubmit={onSubmit} error={props.error}>
+      <Form<FormEntity>
+        onSubmit={onSubmit}
+        error={props.error}
+        schema={entityValidationSchema}
+      >
         <FormError
           error={props.error}
           wrapperClassName="rw-form-error-wrapper"
@@ -43,291 +74,255 @@ const EntityForm = (props: EntityFormProps) => {
           Type
         </Label>
 
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="entity-type-0"
-            name="type"
-            defaultValue="CONTRACTOR"
-            defaultChecked={props.entity?.type?.includes('CONTRACTOR')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Contractor</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="entity-type-1"
-            name="type"
-            defaultValue="INSTALLER"
-            defaultChecked={props.entity?.type?.includes('INSTALLER')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Installer</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="entity-type-2"
-            name="type"
-            defaultValue="CLIENT"
-            defaultChecked={props.entity?.type?.includes('CLIENT')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Client</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="entity-type-3"
-            name="type"
-            defaultValue="RETAILER"
-            defaultChecked={props.entity?.type?.includes('RETAILER')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Retailer</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="entity-type-4"
-            name="type"
-            defaultValue="SUPPLIER"
-            defaultChecked={props.entity?.type?.includes('SUPPLIER')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Supplier</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="entity-type-5"
-            name="type"
-            defaultValue="COMPANY"
-            defaultChecked={props.entity?.type?.includes('COMPANY')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Company</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="entity-type-6"
-            name="type"
-            defaultValue="INDIVIDUAL"
-            defaultChecked={props.entity?.type?.includes('INDIVIDUAL')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Individual</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="entity-type-7"
-            name="type"
-            defaultValue="OTHER"
-            defaultChecked={props.entity?.type?.includes('OTHER')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Other</div>
-        </div>
+        <SelectField
+          name="type"
+          defaultValue={props.entity?.type || 'CONTRACTOR'}
+          className="rw-input"
+          errorClassName="rw-input rw-input-error"
+          validation={{ required: 'Type is required' }}
+        >
+          <option value="CONTRACTOR">Contractor</option>
+          <option value="INSTALLER">Installer</option>
+          <option value="CLIENT">Client</option>
+          <option value="RETAILER">Retailer</option>
+          <option value="SUPPLIER">Supplier</option>
+          <option value="COMPANY">Company</option>
+          <option value="INDIVIDUAL">Individual</option>
+          <option value="OTHER">Other</option>
+        </SelectField>
 
         <FieldError name="type" className="rw-field-error" />
 
-        <Label
-          name="name"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Name
-        </Label>
+        {/* Name and Contact Name - 50/50 row */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <Label
+              name="name"
+              className="rw-label"
+              errorClassName="rw-label rw-label-error"
+            >
+              Name
+            </Label>
 
-        <TextField
-          name="name"
-          defaultValue={props.entity?.name}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          validation={{ required: true }}
-        />
+            <TextField
+              name="name"
+              defaultValue={props.entity?.name}
+              className="rw-input"
+              errorClassName="rw-input rw-input-error"
+              validation={{ required: true }}
+            />
 
-        <FieldError name="name" className="rw-field-error" />
+            <FieldError name="name" className="rw-field-error" />
+          </div>
 
-        <Label
-          name="contactName"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Contact name
-        </Label>
+          <div>
+            <Label
+              name="contactName"
+              className="rw-label"
+              errorClassName="rw-label rw-label-error"
+            >
+              Contact name
+            </Label>
 
-        <TextField
-          name="contactName"
-          defaultValue={props.entity?.contactName}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
+            <TextField
+              name="contactName"
+              defaultValue={props.entity?.contactName}
+              className="rw-input"
+              errorClassName="rw-input rw-input-error"
+            />
 
-        <FieldError name="contactName" className="rw-field-error" />
+            <FieldError name="contactName" className="rw-field-error" />
+          </div>
+        </div>
 
-        <Label
-          name="email"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Email
-        </Label>
+        {/* Email and Phone - 50/50 row */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <Label
+              name="email"
+              className="rw-label"
+              errorClassName="rw-label rw-label-error"
+            >
+              Email
+            </Label>
 
-        <TextField
-          name="email"
-          defaultValue={props.entity?.email}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
+            <TextField
+              name="email"
+              type="email"
+              defaultValue={props.entity?.email}
+              className="rw-input"
+              errorClassName="rw-input rw-input-error"
+            />
 
-        <FieldError name="email" className="rw-field-error" />
+            <FieldError name="email" className="rw-field-error" />
+          </div>
 
-        <Label
-          name="phone"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Phone
-        </Label>
+          <div>
+            <Label
+              name="phone"
+              className="rw-label"
+              errorClassName="rw-label rw-label-error"
+            >
+              Phone
+            </Label>
 
-        <TextField
-          name="phone"
-          defaultValue={props.entity?.phone}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
+            <TextField
+              name="phone"
+              defaultValue={props.entity?.phone}
+              className="rw-input"
+              errorClassName="rw-input rw-input-error"
+              onChange={handlePhoneChange}
+              onPaste={handlePhonePaste}
+              placeholder="(XXX) XXX-XXXX"
+            />
 
-        <FieldError name="phone" className="rw-field-error" />
+            <FieldError name="phone" className="rw-field-error" />
+          </div>
+        </div>
 
-        <Label
-          name="addressLine1"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Address line1
-        </Label>
+        {/* Address Fields */}
+        <div>
+          <Label
+            name="addressLine1"
+            className="rw-label"
+            errorClassName="rw-label rw-label-error"
+          >
+            Address line 1
+          </Label>
 
-        <TextField
-          name="addressLine1"
-          defaultValue={props.entity?.addressLine1}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
+          <TextField
+            name="addressLine1"
+            defaultValue={props.entity?.addressLine1}
+            className="rw-input"
+            errorClassName="rw-input rw-input-error"
+            placeholder="Street address"
+          />
 
-        <FieldError name="addressLine1" className="rw-field-error" />
+          <FieldError name="addressLine1" className="rw-field-error" />
+        </div>
 
-        <Label
-          name="addressLine2"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Address line2
-        </Label>
+        <div>
+          <Label
+            name="addressLine2"
+            className="rw-label"
+            errorClassName="rw-label rw-label-error"
+          >
+            Address line 2
+          </Label>
 
-        <TextField
-          name="addressLine2"
-          defaultValue={props.entity?.addressLine2}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
+          <TextField
+            name="addressLine2"
+            defaultValue={props.entity?.addressLine2}
+            className="rw-input"
+            errorClassName="rw-input rw-input-error"
+            placeholder="Apartment, suite, etc."
+          />
 
-        <FieldError name="addressLine2" className="rw-field-error" />
+          <FieldError name="addressLine2" className="rw-field-error" />
+        </div>
 
-        <Label
-          name="city"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          City
-        </Label>
+        {/* City, State, Postal Code - Medium and up layout */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div>
+            <Label
+              name="city"
+              className="rw-label"
+              errorClassName="rw-label rw-label-error"
+            >
+              City
+            </Label>
 
-        <TextField
-          name="city"
-          defaultValue={props.entity?.city}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
+            <TextField
+              name="city"
+              defaultValue={props.entity?.city}
+              className="rw-input"
+              errorClassName="rw-input rw-input-error"
+            />
 
-        <FieldError name="city" className="rw-field-error" />
+            <FieldError name="city" className="rw-field-error" />
+          </div>
 
-        <Label
-          name="state"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          State
-        </Label>
+          <div>
+            <Label
+              name="state"
+              className="rw-label"
+              errorClassName="rw-label rw-label-error"
+            >
+              State
+            </Label>
 
-        <TextField
-          name="state"
-          defaultValue={props.entity?.state}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
+            <TextField
+              name="state"
+              defaultValue={props.entity?.state}
+              className="rw-input"
+              errorClassName="rw-input rw-input-error"
+              placeholder="TX"
+            />
 
-        <FieldError name="state" className="rw-field-error" />
+            <FieldError name="state" className="rw-field-error" />
+          </div>
 
-        <Label
-          name="postalCode"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Postal code
-        </Label>
+          <div>
+            <Label
+              name="postalCode"
+              className="rw-label"
+              errorClassName="rw-label rw-label-error"
+            >
+              Postal code
+            </Label>
 
-        <TextField
-          name="postalCode"
-          defaultValue={props.entity?.postalCode}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
+            <TextField
+              name="postalCode"
+              defaultValue={props.entity?.postalCode}
+              className="rw-input"
+              errorClassName="rw-input rw-input-error"
+            />
 
-        <FieldError name="postalCode" className="rw-field-error" />
+            <FieldError name="postalCode" className="rw-field-error" />
+          </div>
+        </div>
 
-        <Label
-          name="country"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Country
-        </Label>
+        {/* Country */}
+        <div>
+          <Label
+            name="country"
+            className="rw-label"
+            errorClassName="rw-label rw-label-error"
+          >
+            Country
+          </Label>
 
-        <TextField
-          name="country"
-          defaultValue={props.entity?.country}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
+          <TextField
+            name="country"
+            defaultValue={props.entity?.country}
+            className="rw-input"
+            errorClassName="rw-input rw-input-error"
+            placeholder="US"
+          />
 
-        <FieldError name="country" className="rw-field-error" />
+          <FieldError name="country" className="rw-field-error" />
+        </div>
 
-        <Label
-          name="notes"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Notes
-        </Label>
+        {/* Notes */}
+        <div>
+          <Label
+            name="notes"
+            className="rw-label"
+            errorClassName="rw-label rw-label-error"
+          >
+            Notes
+          </Label>
 
-        <TextField
-          name="notes"
-          defaultValue={props.entity?.notes}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
+          <TextAreaField
+            name="notes"
+            defaultValue={props.entity?.notes}
+            className="rw-input"
+            errorClassName="rw-input rw-input-error"
+            rows={6}
+          />
 
-        <FieldError name="notes" className="rw-field-error" />
+          <FieldError name="notes" className="rw-field-error" />
+        </div>
 
         <div className="rw-button-group">
           <Submit disabled={props.loading} className="rw-button rw-button-blue">
