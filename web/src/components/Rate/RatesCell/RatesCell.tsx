@@ -20,6 +20,7 @@ export const QUERY: TypedDocumentNode<FindRates, FindRatesVariables> = gql`
       retailAmount
       currency
       authorId
+      estimatedMinutesPerUnit
       description
       createdAt
       updatedAt
@@ -30,6 +31,7 @@ export const QUERY: TypedDocumentNode<FindRates, FindRatesVariables> = gql`
       }
       unit {
         fullName
+        shortName
       }
     }
   }
@@ -63,6 +65,7 @@ export const Success = ({
       r.service?.material,
       r.service?.context,
       r.unit?.fullName,
+      r.estimatedMinutesPerUnit,
       r.description,
       r.subAmount,
       r.retailAmount,

@@ -107,7 +107,8 @@ model Rate {
   authorId String
   author   User   @relation(fields: [authorId], references: [id])
 
-  description String?
+  estimatedMinutesPerUnit Int?
+  description             String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -116,6 +117,24 @@ model Rate {
   @@index([authorId])
   @@index([serviceId, unitId])
 }
+
+// model BillableItem {
+//   id          Int    @id @default(autoincrement())
+//   uuid        String @default(uuid())
+//   quantity    Int    @default(0)
+//   unit        String
+//   service     String
+//   description String
+
+// estimateTimeToComplete Int    @default(0)
+// actualTimeToComplete   Int    @default(0)
+
+//   rate        Int    @default(0)
+//   subtotal    Int    @default(0)
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
 
 // model Estimate {
 //   id   Int     @id @default(autoincrement())
@@ -155,22 +174,4 @@ model Rate {
 
 //   author   User? @relation(fields: [authorId], references: [id])
 //   authorId Int?
-// }
-
-// model BillableItem {
-//   id          Int    @id @default(autoincrement())
-//   uuid        String @default(uuid())
-//   quantity    Int    @default(0)
-//   unit        String
-//   service     String
-//   description String
-
-// estimateTimeToComplete Int    @default(0)
-// actualTimeToComplete   Int    @default(0)
-
-//   rate        Int    @default(0)
-//   subtotal    Int    @default(0)
-
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
 // }

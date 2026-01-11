@@ -22,6 +22,7 @@ interface RateFormProps {
   loading: boolean
   authorId?: string
   serviceId?: number
+  estimatedMinutesPerUnit?: number
   unitId?: number
   ServiceDropdown: React.ComponentType<{
     value?: number
@@ -109,8 +110,11 @@ const LabeledField = ({
         errorClassName="rw-input rw-input-error"
         readOnly={readOnly}
         validation={
-          required
-            ? { valueAsNumber: type === 'number', required: true }
+          type === 'number' || required
+            ? {
+                ...(required ? { required: true } : {}),
+                ...(type === 'number' ? { valueAsNumber: true } : {}),
+              }
             : undefined
         }
       />
@@ -150,6 +154,12 @@ const RateForm = ({
     const finalServiceId = selectedService
     const finalUnitId = selectedUnit
     const finalAuthorId = authorId ?? String(data.authorId)
+    const minutesValue =
+      data.estimatedMinutesPerUnit === undefined ||
+      data.estimatedMinutesPerUnit === null ||
+      data.estimatedMinutesPerUnit === ''
+        ? undefined
+        : Number(data.estimatedMinutesPerUnit)
 
     if (!finalServiceId || !finalUnitId) {
       throw new Error('Service and Unit must be selected before saving')
@@ -166,6 +176,7 @@ const RateForm = ({
         authorId: finalAuthorId,
         subAmount: parseFloat(String(data.subAmount)),
         retailAmount: parseFloat(String(data.retailAmount)),
+        estimatedMinutesPerUnit: minutesValue,
         currency: data.currency || 'USD',
       },
       rate?.id
@@ -232,6 +243,15 @@ const RateForm = ({
               className="text-center"
             />
           </div>
+        </div>
+
+        <div className="mt-4">
+          <LabeledField
+            name="estimatedMinutesPerUnit"
+            label="Estimated Minutes per Unit"
+            defaultValue={rate?.estimatedMinutesPerUnit}
+            type="number"
+          />
         </div>
 
         {/* Description */}

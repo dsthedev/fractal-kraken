@@ -150,6 +150,7 @@ const RatesList = ({ rates }: FindRates) => {
             </th>
             {/* <th>Currency</th> */}
             {/* <th>Author id</th> */}
+            <th>{'eMpU'}</th>
             {/* <th>Description</th> */}
             {/* <th>Created at</th> */}
             {/* <th>Updated at</th> */}
@@ -161,17 +162,22 @@ const RatesList = ({ rates }: FindRates) => {
             <tr key={rate.id}>
               {/* <td>{truncate(rate.id)}</td> */}
               <td>
-                {[rate.service?.action, rate.service?.material, rate.service?.context]
+                {[
+                  rate.service?.action,
+                  rate.service?.material,
+                  rate.service?.context,
+                ]
                   .filter(Boolean)
                   .join(' ')}
               </td>
-              <td>{rate.unit?.fullName || 'N/A'}</td>
+              <td>{rate.unit?.shortName || 'N/A'}</td>
               {/* <td>{truncate(rate.serviceId)}</td>
               <td>{truncate(rate.unitId)}</td> */}
               <td>{currencyDisplay(rate.subAmount)}</td>
               <td>{currencyDisplay(rate.retailAmount)}</td>
               {/* <td>{truncate(rate.currency)}</td> */}
               {/* <td>{truncate(rate.authorId)}</td> */}
+              <td>{truncate(rate.estimatedMinutesPerUnit)}</td>
               {/* <td>{truncate(rate.description)}</td> */}
               {/* <td>{timeTag(rate.createdAt)}</td> */}
               {/* <td>{timeTag(rate.updatedAt)}</td> */}

@@ -19,9 +19,18 @@ export const QUERY: TypedDocumentNode<FindRateById, FindRateByIdVariables> =
         retailAmount
         currency
         authorId
+        estimatedMinutesPerUnit
         description
         createdAt
         updatedAt
+        service {
+          action
+          material
+          context
+        }
+        unit {
+          fullName
+        }
       }
     }
   `

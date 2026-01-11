@@ -23,11 +23,20 @@ export const QUERY: TypedDocumentNode<EditRateById> = gql`
       unitId
       subAmount
       retailAmount
+      estimatedMinutesPerUnit
       currency
       authorId
       description
       createdAt
       updatedAt
+      service {
+        action
+        material
+        context
+      }
+      unit {
+        fullName
+      }
     }
   }
 `
@@ -43,6 +52,7 @@ const UPDATE_RATE_MUTATION: TypedDocumentNode<
       unitId
       subAmount
       retailAmount
+      estimatedMinutesPerUnit
       currency
       authorId
       description
@@ -77,7 +87,8 @@ export const Success = ({ rate }: CellSuccessProps<EditRateById>) => {
     <div className="rw-segment">
       <header className="rw-segment-header">
         <h2 className="rw-heading rw-heading-secondary">
-          Edit Rate {rate?.id}
+          {rate?.service.action} {rate?.service.material}{' '}
+          {rate?.service.context}{' '}
         </h2>
       </header>
       <div className="rw-segment-main">

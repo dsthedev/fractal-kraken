@@ -10,6 +10,7 @@ export const schema = gql`
     currency: String!
     authorId: String!
     author: User!
+    estimatedMinutesPerUnit: Int
     description: String
     createdAt: DateTime!
     updatedAt: DateTime!
@@ -36,6 +37,7 @@ export const schema = gql`
     retailAmount: Float!
     currency: String!
     authorId: String!
+    estimatedMinutesPerUnit: Int
     description: String
   }
 
@@ -46,6 +48,7 @@ export const schema = gql`
     retailAmount: Float
     currency: String
     authorId: String
+    estimatedMinutesPerUnit: Int
     description: String
   }
 
