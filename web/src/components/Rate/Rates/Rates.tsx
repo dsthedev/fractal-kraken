@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 import type {
   DeleteRateMutation,
   DeleteRateMutationVariables,
@@ -9,10 +11,8 @@ import { useMutation } from '@cedarjs/web'
 import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
-import MeasurementUnitCell from 'src/components/FindMeasurementUnitByIdCell'
-import ServiceCell from 'src/components/FindServiceByIdCell'
 import { QUERY } from 'src/components/Rate/RatesCell'
-import { timeTag, truncate } from 'src/lib/formatters.js'
+import { truncate } from 'src/lib/formatters.js'
 
 const DELETE_RATE_MUTATION: TypedDocumentNode<
   DeleteRateMutation,
@@ -25,7 +25,18 @@ const DELETE_RATE_MUTATION: TypedDocumentNode<
   }
 `
 
+// Define a custom type for sortable fields including nested paths
+type SortableField =
+  | keyof FindRates['rates'][0]
+  | 'service.action'
+  | 'unit.fullName'
+
 const RatesList = ({ rates }: FindRates) => {
+  const [sortConfig, setSortConfig] = useState<{
+    key: SortableField
+    direction: 'asc' | 'desc'
+  }>({ key: 'id', direction: 'asc' })
+
   const [deleteRate] = useMutation(DELETE_RATE_MUTATION, {
     onCompleted: () => {
       toast.success('Rate deleted')
@@ -40,10 +51,65 @@ const RatesList = ({ rates }: FindRates) => {
     awaitRefetchQueries: true,
   })
 
+  const handleSort = (key: SortableField) => {
+    if (sortConfig.key === key) {
+      // Cycle through: asc -> desc -> remove (back to default)
+      if (sortConfig.direction === 'asc') {
+        setSortConfig({ key, direction: 'desc' })
+      } else {
+        // Reset to default
+        setSortConfig({ key: 'id', direction: 'asc' })
+      }
+    } else {
+      // New column clicked, start with asc
+      setSortConfig({ key, direction: 'asc' })
+    }
+  }
+
+  // Helper function to get nested property value
+  const getNestedValue = (obj: FindRates['rates'][0], path: SortableField) => {
+    if (path === 'service.action') {
+      return obj.service?.action
+    }
+    if (path === 'unit.fullName') {
+      return obj.unit?.fullName
+    }
+    return obj[path as keyof FindRates['rates'][0]]
+  }
+
+  const sortedRates = [...rates].sort((a, b) => {
+    const aValue = getNestedValue(a, sortConfig.key)
+    const bValue = getNestedValue(b, sortConfig.key)
+
+    if (aValue === null || aValue === undefined) return 1
+    if (bValue === null || bValue === undefined) return -1
+
+    // Handle string comparison (case-insensitive)
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      const comparison = aValue
+        .toLowerCase()
+        .localeCompare(bValue.toLowerCase())
+      return sortConfig.direction === 'asc' ? comparison : -comparison
+    }
+
+    if (aValue < bValue) {
+      return sortConfig.direction === 'asc' ? -1 : 1
+    }
+    if (aValue > bValue) {
+      return sortConfig.direction === 'asc' ? 1 : -1
+    }
+    return 0
+  })
+
   const onDeleteClick = (id: DeleteRateMutationVariables['id']) => {
     if (confirm('Are you sure you want to delete rate ' + id + '?')) {
       deleteRate({ variables: { id } })
     }
+  }
+
+  const SortIcon = ({ columnKey }: { columnKey: SortableField }) => {
+    if (sortConfig.key !== columnKey) return null
+    return sortConfig.direction === 'asc' ? ' ↑' : ' ↓'
   }
 
   return (
@@ -52,10 +118,34 @@ const RatesList = ({ rates }: FindRates) => {
         <thead>
           <tr>
             {/* <th>Id</th> */}
-            <th>Service</th>
-            <th>Unit</th>
-            <th>Sub $</th>
-            <th>Retail $</th>
+            <th
+              onClick={() => handleSort('service.action')}
+              className="cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              Service
+              <SortIcon columnKey="service.action" />
+            </th>
+            <th
+              onClick={() => handleSort('unit.fullName')}
+              className="cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              Unit
+              <SortIcon columnKey="unit.fullName" />
+            </th>
+            <th
+              onClick={() => handleSort('subAmount')}
+              className="cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              Sub $
+              <SortIcon columnKey="subAmount" />
+            </th>
+            <th
+              onClick={() => handleSort('retailAmount')}
+              className="cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              Retail $
+              <SortIcon columnKey="retailAmount" />
+            </th>
             {/* <th>Currency</th> */}
             {/* <th>Author id</th> */}
             {/* <th>Description</th> */}
@@ -65,15 +155,17 @@ const RatesList = ({ rates }: FindRates) => {
           </tr>
         </thead>
         <tbody>
-          {rates.map((rate) => (
+          {sortedRates.map((rate) => (
             <tr key={rate.id}>
               {/* <td>{truncate(rate.id)}</td> */}
               <td>
-                <ServiceCell id={rate.serviceId} />
+                {rate.service?.action +
+                  ' ' +
+                  rate.service?.material +
+                  ' ' +
+                  rate.service?.context}
               </td>
-              <td>
-                <MeasurementUnitCell id={rate.unitId} />
-              </td>
+              <td>{rate.unit?.fullName || 'N/A'}</td>
               {/* <td>{truncate(rate.serviceId)}</td>
               <td>{truncate(rate.unitId)}</td> */}
               <td>{truncate(rate.subAmount)}</td>

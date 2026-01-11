@@ -48,7 +48,12 @@ export const Success = ({
   const { searchQuery } = useSearch()
 
   const filtered = services.filter((s) => {
-    const searchable = [s.action, s.material, s.context || '', s.description || '']
+    const searchable = [
+      s.action,
+      s.material,
+      s.context || '',
+      s.description || '',
+    ]
       .join(' ')
       .toLowerCase()
 

@@ -8,6 +8,7 @@ import type {
 } from '@cedarjs/web'
 
 import Rates from 'src/components/Rate/Rates'
+import { useSearch } from 'src/contexts/SearchContext'
 
 export const QUERY: TypedDocumentNode<FindRates, FindRatesVariables> = gql`
   query FindRates {
@@ -22,6 +23,14 @@ export const QUERY: TypedDocumentNode<FindRates, FindRatesVariables> = gql`
       description
       createdAt
       updatedAt
+      service {
+        action
+        material
+        context
+      }
+      unit {
+        fullName
+      }
     }
   }
 `
@@ -46,5 +55,24 @@ export const Failure = ({ error }: CellFailureProps<FindRates>) => (
 export const Success = ({
   rates,
 }: CellSuccessProps<FindRates, FindRatesVariables>) => {
-  return <Rates rates={rates} />
+  const { searchQuery } = useSearch()
+
+  const filtered = rates.filter((r) => {
+    const searchable = [
+      r.service?.action,
+      r.service?.material,
+      r.service?.context,
+      r.unit?.fullName,
+      r.description,
+      r.subAmount,
+      r.retailAmount,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+
+    return searchable.includes(searchQuery.toLowerCase())
+  })
+
+  return <Rates rates={filtered} />
 }
