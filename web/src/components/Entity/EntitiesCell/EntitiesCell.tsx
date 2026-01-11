@@ -8,6 +8,7 @@ import type {
 } from '@cedarjs/web'
 
 import Entities from 'src/components/Entity/Entities'
+import { useSearch } from 'src/contexts/SearchContext'
 
 export const QUERY: TypedDocumentNode<FindEntities, FindEntitiesVariables> =
   gql`
@@ -52,5 +53,21 @@ export const Failure = ({ error }: CellFailureProps<FindEntities>) => (
 export const Success = ({
   entities,
 }: CellSuccessProps<FindEntities, FindEntitiesVariables>) => {
-  return <Entities entities={entities} />
+  const { searchQuery } = useSearch()
+
+  // Filter entities based on search query
+  const filteredEntities =
+    entities?.filter((entity) => {
+      const query = searchQuery.toLowerCase()
+      return (
+        entity.name?.toLowerCase().includes(query) ||
+        entity.contactName?.toLowerCase().includes(query) ||
+        entity.email?.toLowerCase().includes(query) ||
+        entity.phone?.toLowerCase().includes(query) ||
+        entity.city?.toLowerCase().includes(query) ||
+        entity.state?.toLowerCase().includes(query)
+      )
+    }) || []
+
+  return <Entities entities={filteredEntities} />
 }

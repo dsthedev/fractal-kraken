@@ -10,6 +10,7 @@ const Routes = () => {
   return (
     <Router useAuth={useAuth}>
       <PrivateSet wrap={WrapperLayout as any} unauthenticated="login" roles={['guest', 'admin']}>
+        <Route path="/dashboard" page={DashboardPage} name="dashboard" />
         <Set wrap={AdminScaffoldLayout} title="Entities" titleTo="entities" buttonLabel="New Entity" buttonTo="newEntity">
           <Route path="/entities/new" page={EntityNewEntityPage} name="newEntity" />
           <Route path="/entities/{id:Int}/edit" page={EntityEditEntityPage} name="editEntity" />

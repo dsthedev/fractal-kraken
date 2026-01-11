@@ -8,6 +8,10 @@ export const schema = gql`
     resetToken: String
     resetTokenExpiresAt: DateTime
     roles: String!
+    defaultEntityId: Int
+    defaultEntity: Entity
+    defaultRetailerEntityId: Int
+    defaultRetailerEntity: Entity
     createdAt: DateTime!
     updatedAt: DateTime!
   }
@@ -25,6 +29,8 @@ export const schema = gql`
     resetToken: String
     resetTokenExpiresAt: DateTime
     roles: String!
+    defaultEntityId: Int
+    defaultRetailerEntityId: Int
   }
 
   input UpdateUserInput {
@@ -35,6 +41,8 @@ export const schema = gql`
     resetToken: String
     resetTokenExpiresAt: DateTime
     roles: String
+    defaultEntityId: Int
+    defaultRetailerEntityId: Int
   }
 
   type Mutation {
