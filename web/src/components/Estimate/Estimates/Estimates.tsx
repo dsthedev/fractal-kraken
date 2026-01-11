@@ -1,3 +1,4 @@
+import { Pencil, Trash2Icon } from 'lucide-react'
 import type {
   DeleteEstimateMutation,
   DeleteEstimateMutationVariables,
@@ -10,7 +11,13 @@ import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
 import { QUERY } from 'src/components/Estimate/EstimatesCell'
-import { formatEnum, timeTag, truncate } from 'src/lib/formatters.js'
+import { Button } from 'src/components/ui/button'
+import {
+  currencyDisplay,
+  formatEnum,
+  timeTagMDY,
+  truncate,
+} from 'src/lib/formatters.js'
 
 const DELETE_ESTIMATE_MUTATION: TypedDocumentNode<
   DeleteEstimateMutation,
@@ -49,11 +56,11 @@ const EstimatesList = ({ estimates }: FindEstimates) => {
       <table className="rw-table">
         <thead>
           <tr>
-            <th>Id</th>
-            <th>Uuid</th>
-            <th>Title</th>
+            {/* <th>Id</th>
+            <th>Uuid</th> */}
             <th>Status</th>
-            <th>Installer entity id</th>
+            <th>Title</th>
+            {/* <th>Installer entity id</th>
             <th>Client entity id</th>
             <th>Retailer entity id</th>
             <th>Job address line1</th>
@@ -61,27 +68,37 @@ const EstimatesList = ({ estimates }: FindEstimates) => {
             <th>Job city</th>
             <th>Job state</th>
             <th>Job postal code</th>
-            <th>Job country</th>
-            <th>Subtotal</th>
-            <th>Tax total</th>
+            <th>Job country</th> */}
+            {/* <th>Subtotal</th>
+            <th>Tax total</th> */}
             <th>Total</th>
-            <th>Estimated minutes total</th>
+            {/* <th>Estimated minutes total</th>
             <th>Author id</th>
-            <th>Notes</th>
+            <th>Notes</th> */}
             <th>Created at</th>
-            <th>Updated at</th>
-            <th>Entity id</th>
+            {/* <th>Updated at</th>
+            <th>Entity id</th> */}
             <th>&nbsp;</th>
           </tr>
         </thead>
         <tbody>
           {estimates.map((estimate) => (
             <tr key={estimate.id}>
-              <td>{truncate(estimate.id)}</td>
-              <td>{truncate(estimate.uuid)}</td>
-              <td>{truncate(estimate.title)}</td>
+              {/* <td>{truncate(estimate.id)}</td>
+              <td>{truncate(estimate.uuid)}</td> */}
               <td>{formatEnum(estimate.status)}</td>
-              <td>{truncate(estimate.installerEntityId)}</td>
+              <td>
+                <Button asChild variant="outline">
+                  <Link
+                    to={routes.estimate({ id: estimate.id })}
+                    title={'Show estimate ' + estimate.id + ' detail'}
+                    className=""
+                  >
+                    {truncate(estimate.title)}
+                  </Link>
+                </Button>
+              </td>
+              {/* <td>{truncate(estimate.installerEntityId)}</td>
               <td>{truncate(estimate.clientEntityId)}</td>
               <td>{truncate(estimate.retailerEntityId)}</td>
               <td>{truncate(estimate.jobAddressLine1)}</td>
@@ -89,31 +106,24 @@ const EstimatesList = ({ estimates }: FindEstimates) => {
               <td>{truncate(estimate.jobCity)}</td>
               <td>{truncate(estimate.jobState)}</td>
               <td>{truncate(estimate.jobPostalCode)}</td>
-              <td>{truncate(estimate.jobCountry)}</td>
-              <td>{truncate(estimate.subtotal)}</td>
-              <td>{truncate(estimate.taxTotal)}</td>
-              <td>{truncate(estimate.total)}</td>
-              <td>{truncate(estimate.estimatedMinutesTotal)}</td>
+              <td>{truncate(estimate.jobCountry)}</td> */}
+              {/* <td>{truncate(estimate.subtotal)}</td>
+              <td>{truncate(estimate.taxTotal)}</td> */}
+              <td>{currencyDisplay(estimate.total)}</td>
+              {/* <td>{truncate(estimate.estimatedMinutesTotal)}</td>
               <td>{truncate(estimate.authorId)}</td>
-              <td>{truncate(estimate.notes)}</td>
-              <td>{timeTag(estimate.createdAt)}</td>
-              <td>{timeTag(estimate.updatedAt)}</td>
-              <td>{truncate(estimate.entityId)}</td>
+              <td>{truncate(estimate.notes)}</td> */}
+              <td>{timeTagMDY(estimate.createdAt)}</td>
+              {/* <td>{timeTag(estimate.updatedAt)}</td> */}
+              {/* <td>{truncate(estimate.entityId)}</td> */}
               <td>
                 <nav className="rw-table-actions">
-                  <Link
-                    to={routes.estimate({ id: estimate.id })}
-                    title={'Show estimate ' + estimate.id + ' detail'}
-                    className="rw-button rw-button-small"
-                  >
-                    Show
-                  </Link>
                   <Link
                     to={routes.editEstimate({ id: estimate.id })}
                     title={'Edit estimate ' + estimate.id}
                     className="rw-button rw-button-small rw-button-blue"
                   >
-                    Edit
+                    <Pencil />
                   </Link>
                   <button
                     type="button"
@@ -121,7 +131,7 @@ const EstimatesList = ({ estimates }: FindEstimates) => {
                     className="rw-button rw-button-small rw-button-red"
                     onClick={() => onDeleteClick(estimate.id)}
                   >
-                    Delete
+                    <Trash2Icon />
                   </button>
                 </nav>
               </td>

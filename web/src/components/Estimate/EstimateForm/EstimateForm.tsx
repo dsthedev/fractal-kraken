@@ -1,4 +1,11 @@
-import type { EditEstimateById, UpdateEstimateInput } from 'types/graphql'
+import { useState } from 'react'
+
+import type {
+  EditEstimateById,
+  UpdateEstimateInput,
+  Entity,
+} from 'types/graphql'
+import { v4 as uuidv4 } from 'uuid'
 
 import type { RWGqlError } from '@cedarjs/forms'
 import {
@@ -7,10 +14,33 @@ import {
   FieldError,
   Label,
   TextField,
-  RadioField,
   NumberField,
   Submit,
 } from '@cedarjs/forms'
+
+import { useAuth } from 'src/auth'
+import { Button } from 'src/components/ui/button'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from 'src/components/ui/command'
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from 'src/components/ui/dialog'
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from 'src/components/ui/popover'
+import { cn, getWeekNumber } from 'src/lib/utils'
 
 type FormEstimate = NonNullable<EditEstimateById['estimate']>
 
@@ -19,11 +49,61 @@ interface EstimateFormProps {
   onSave: (data: UpdateEstimateInput, id?: FormEstimate['id']) => void
   error: RWGqlError
   loading: boolean
+  entities?: Entity[]
+}
+
+// Helper function to build title from components
+const buildTitle = (
+  weekNumber: string,
+  retailerName?: string,
+  clientName?: string
+): string => {
+  const parts = [weekNumber]
+  if (retailerName) parts.push(retailerName)
+  if (clientName) parts.push(clientName)
+  return parts.join(' - ')
 }
 
 const EstimateForm = (props: EstimateFormProps) => {
+  const { currentUser } = useAuth()
+  const [openStatus, setOpenStatus] = useState(false)
+  const [openRetailer, setOpenRetailer] = useState(false)
+  const [openClient, setOpenClient] = useState(false)
+  const [openInstaller, setOpenInstaller] = useState(false)
+  const [selectedStatus, setSelectedStatus] = useState<string>(
+    props.estimate?.status || 'DRAFT'
+  )
+  const [selectedRetailerEntity, setSelectedRetailerEntity] = useState<
+    Entity | undefined
+  >(props.estimate?.retailerEntity || undefined)
+  const [selectedClientEntity, setSelectedClientEntity] = useState<
+    Entity | undefined
+  >(props.estimate?.clientEntity || undefined)
+  const [selectedInstallerEntity, setSelectedInstallerEntity] = useState<
+    Entity | undefined
+  >(props.estimate?.installerEntity || undefined)
+
+  const isNewEstimate = !props.estimate
+  const weekNumber = getWeekNumber(new Date())
+  const currentTitle = buildTitle(
+    weekNumber,
+    selectedRetailerEntity?.name,
+    selectedClientEntity?.name
+  )
+
   const onSubmit = (data: FormEstimate) => {
-    props.onSave(data, props?.estimate?.id)
+    // Ensure required fields are set properly
+    const submitData = {
+      ...data,
+      uuid: data.uuid || uuidv4(),
+      status: selectedStatus,
+      installerEntityId: selectedInstallerEntity?.id,
+      clientEntityId: selectedClientEntity?.id,
+      retailerEntityId: selectedRetailerEntity?.id,
+      authorId: currentUser?.id || data.authorId,
+      jobCountry: 'United States',
+    }
+    props.onSave(submitData, props?.estimate?.id)
   }
 
   return (
@@ -36,24 +116,16 @@ const EstimateForm = (props: EstimateFormProps) => {
           listClassName="rw-form-error-list"
         />
 
-        <Label
-          name="uuid"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Uuid
-        </Label>
-
+        {/* UUID - Visually hidden, auto-generated for new estimates */}
         <TextField
           name="uuid"
-          defaultValue={props.estimate?.uuid}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
+          defaultValue={props.estimate?.uuid || uuidv4()}
+          className="hidden"
+          errorClassName="hidden"
           validation={{ required: true }}
         />
 
-        <FieldError name="uuid" className="rw-field-error" />
-
+        {/* Title - Auto-generated based on week number, retailer, and client */}
         <Label
           name="title"
           className="rw-label"
@@ -64,13 +136,15 @@ const EstimateForm = (props: EstimateFormProps) => {
 
         <TextField
           name="title"
-          defaultValue={props.estimate?.title}
+          defaultValue={isNewEstimate ? currentTitle : props.estimate?.title}
           className="rw-input"
           errorClassName="rw-input rw-input-error"
+          readOnly={isNewEstimate}
         />
 
         <FieldError name="title" className="rw-field-error" />
 
+        {/* Status - Combobox with DRAFT as default for new estimates */}
         <Label
           name="status"
           className="rw-label"
@@ -79,133 +153,350 @@ const EstimateForm = (props: EstimateFormProps) => {
           Status
         </Label>
 
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="estimate-status-0"
-            name="status"
-            defaultValue="DRAFT"
-            defaultChecked={props.estimate?.status?.includes('DRAFT')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Draft</div>
+        <div className="flex gap-2">
+          <Popover open={openStatus} onOpenChange={setOpenStatus}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={openStatus}
+                className={cn(
+                  'flex-1 justify-between',
+                  !selectedStatus && 'text-muted-foreground'
+                )}
+              >
+                {selectedStatus || 'Draft'}
+                <svg
+                  className="ml-2 h-4 w-4 shrink-0 opacity-50"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M7 10l5 5 5-5H7z" />
+                </svg>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="p-0 w-fit">
+              <Command>
+                <CommandInput placeholder="Search status..." />
+                <CommandEmpty>No status found.</CommandEmpty>
+                <CommandList>
+                  <CommandGroup>
+                    {['DRAFT', 'SENT', 'ACCEPTED', 'REJECTED', 'EXPIRED'].map(
+                      (status) => (
+                        <CommandItem
+                          key={status}
+                          value={status}
+                          onSelect={(value) => {
+                            setSelectedStatus(value)
+                            setOpenStatus(false)
+                          }}
+                        >
+                          {status}
+                        </CommandItem>
+                      )
+                    )}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
 
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="estimate-status-1"
-            name="status"
-            defaultValue="SENT"
-            defaultChecked={props.estimate?.status?.includes('SENT')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Sent</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="estimate-status-2"
-            name="status"
-            defaultValue="ACCEPTED"
-            defaultChecked={props.estimate?.status?.includes('ACCEPTED')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Accepted</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="estimate-status-3"
-            name="status"
-            defaultValue="REJECTED"
-            defaultChecked={props.estimate?.status?.includes('REJECTED')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Rejected</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            id="estimate-status-4"
-            name="status"
-            defaultValue="EXPIRED"
-            defaultChecked={props.estimate?.status?.includes('EXPIRED')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Expired</div>
-        </div>
+        <input type="hidden" name="status" value={selectedStatus} />
 
         <FieldError name="status" className="rw-field-error" />
 
+        {/* Installer Entity - Combobox with New Entity button */}
         <Label
           name="installerEntityId"
           className="rw-label"
           errorClassName="rw-label rw-label-error"
         >
-          Installer entity id
+          Installer
         </Label>
 
-        <NumberField
+        <div className="flex gap-2">
+          <Popover open={openInstaller} onOpenChange={setOpenInstaller}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={openInstaller}
+                className={cn(
+                  'flex-1 justify-between',
+                  !selectedInstallerEntity && 'text-muted-foreground'
+                )}
+              >
+                {selectedInstallerEntity?.name || 'Select installer...'}
+                <svg
+                  className="ml-2 h-4 w-4 shrink-0 opacity-50"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M7 10l5 5 5-5H7z" />
+                </svg>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="p-0 w-fit">
+              <Command>
+                <CommandInput placeholder="Search installers..." />
+                <CommandEmpty>No installers found.</CommandEmpty>
+                <CommandList>
+                  <CommandGroup>
+                    {props.entities
+                      ?.filter((e) =>
+                        ['INSTALLER', 'CONTRACTOR'].includes(e.type)
+                      )
+                      .map((entity) => (
+                        <CommandItem
+                          key={entity.id}
+                          value={entity.name}
+                          onSelect={() => {
+                            setSelectedInstallerEntity(entity)
+                            setOpenInstaller(false)
+                          }}
+                        >
+                          {entity.name}
+                        </CommandItem>
+                      ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="icon">
+                +
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Installer</DialogTitle>
+              </DialogHeader>
+              <p className="text-sm text-muted-foreground">
+                Feature for adding new installers coming soon
+              </p>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <input
+          type="hidden"
           name="installerEntityId"
-          defaultValue={props.estimate?.installerEntityId}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          emptyAs={'undefined'}
+          value={
+            selectedInstallerEntity?.id ||
+            props.estimate?.installerEntityId ||
+            ''
+          }
         />
 
         <FieldError name="installerEntityId" className="rw-field-error" />
 
+        {/* Client Entity - Combobox with New Entity button */}
         <Label
           name="clientEntityId"
           className="rw-label"
           errorClassName="rw-label rw-label-error"
         >
-          Client entity id
+          Client
         </Label>
 
-        <NumberField
+        <div className="flex gap-2">
+          <Popover open={openClient} onOpenChange={setOpenClient}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={openClient}
+                className={cn(
+                  'flex-1 justify-between',
+                  !selectedClientEntity && 'text-muted-foreground'
+                )}
+              >
+                {selectedClientEntity?.name || 'Select client...'}
+                <svg
+                  className="ml-2 h-4 w-4 shrink-0 opacity-50"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M7 10l5 5 5-5H7z" />
+                </svg>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="p-0 w-fit">
+              <Command>
+                <CommandInput placeholder="Search clients..." />
+                <CommandEmpty>No clients found.</CommandEmpty>
+                <CommandList>
+                  <CommandGroup>
+                    {props.entities
+                      ?.filter((e) => ['CLIENT'].includes(e.type))
+                      .map((entity) => (
+                        <CommandItem
+                          key={entity.id}
+                          value={entity.name}
+                          onSelect={() => {
+                            setSelectedClientEntity(entity)
+                            setOpenClient(false)
+                          }}
+                        >
+                          {entity.name}
+                        </CommandItem>
+                      ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="icon">
+                +
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Client</DialogTitle>
+              </DialogHeader>
+              <p className="text-sm text-muted-foreground">
+                Feature for adding new clients coming soon
+              </p>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <input
+          type="hidden"
           name="clientEntityId"
-          defaultValue={props.estimate?.clientEntityId}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          emptyAs={'undefined'}
+          value={
+            selectedClientEntity?.id || props.estimate?.clientEntityId || ''
+          }
         />
 
         <FieldError name="clientEntityId" className="rw-field-error" />
 
+        {/* Retailer Entity - Combobox with New Entity button */}
         <Label
           name="retailerEntityId"
           className="rw-label"
           errorClassName="rw-label rw-label-error"
         >
-          Retailer entity id
+          Retailer
         </Label>
 
-        <NumberField
+        <div className="flex gap-2">
+          <Popover open={openRetailer} onOpenChange={setOpenRetailer}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={openRetailer}
+                className={cn(
+                  'flex-1 justify-between',
+                  !selectedRetailerEntity && 'text-muted-foreground'
+                )}
+              >
+                {selectedRetailerEntity?.name || 'Select retailer...'}
+                <svg
+                  className="ml-2 h-4 w-4 shrink-0 opacity-50"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M7 10l5 5 5-5H7z" />
+                </svg>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="p-0 w-fit">
+              <Command>
+                <CommandInput placeholder="Search retailers..." />
+                <CommandEmpty>No retailers found.</CommandEmpty>
+                <CommandList>
+                  <CommandGroup>
+                    {props.entities
+                      ?.filter((e) => ['RETAILER'].includes(e.type))
+                      .map((entity) => (
+                        <CommandItem
+                          key={entity.id}
+                          value={entity.name}
+                          onSelect={() => {
+                            setSelectedRetailerEntity(entity)
+                            setOpenRetailer(false)
+                          }}
+                        >
+                          {entity.name}
+                        </CommandItem>
+                      ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="icon">
+                +
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Retailer</DialogTitle>
+              </DialogHeader>
+              <p className="text-sm text-muted-foreground">
+                Feature for adding new retailers coming soon
+              </p>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <input
+          type="hidden"
           name="retailerEntityId"
-          defaultValue={props.estimate?.retailerEntityId}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          emptyAs={'undefined'}
+          value={
+            selectedRetailerEntity?.id || props.estimate?.retailerEntityId || ''
+          }
         />
 
         <FieldError name="retailerEntityId" className="rw-field-error" />
 
+        {/* Job Address Fields - Auto-filled from client address if selected */}
         <Label
           name="jobAddressLine1"
           className="rw-label"
           errorClassName="rw-label rw-label-error"
         >
-          Job address line1
+          Job Address Line 1
         </Label>
 
         <TextField
           name="jobAddressLine1"
-          defaultValue={props.estimate?.jobAddressLine1}
+          defaultValue={
+            selectedClientEntity?.addressLine1 ||
+            props.estimate?.jobAddressLine1
+          }
           className="rw-input"
           errorClassName="rw-input rw-input-error"
         />
@@ -217,12 +508,15 @@ const EstimateForm = (props: EstimateFormProps) => {
           className="rw-label"
           errorClassName="rw-label rw-label-error"
         >
-          Job address line2
+          Job Address Line 2
         </Label>
 
         <TextField
           name="jobAddressLine2"
-          defaultValue={props.estimate?.jobAddressLine2}
+          defaultValue={
+            selectedClientEntity?.addressLine2 ||
+            props.estimate?.jobAddressLine2
+          }
           className="rw-input"
           errorClassName="rw-input rw-input-error"
         />
@@ -234,12 +528,12 @@ const EstimateForm = (props: EstimateFormProps) => {
           className="rw-label"
           errorClassName="rw-label rw-label-error"
         >
-          Job city
+          Job City
         </Label>
 
         <TextField
           name="jobCity"
-          defaultValue={props.estimate?.jobCity}
+          defaultValue={selectedClientEntity?.city || props.estimate?.jobCity}
           className="rw-input"
           errorClassName="rw-input rw-input-error"
         />
@@ -251,12 +545,12 @@ const EstimateForm = (props: EstimateFormProps) => {
           className="rw-label"
           errorClassName="rw-label rw-label-error"
         >
-          Job state
+          Job State
         </Label>
 
         <TextField
           name="jobState"
-          defaultValue={props.estimate?.jobState}
+          defaultValue={selectedClientEntity?.state || props.estimate?.jobState}
           className="rw-input"
           errorClassName="rw-input rw-input-error"
         />
@@ -268,34 +562,25 @@ const EstimateForm = (props: EstimateFormProps) => {
           className="rw-label"
           errorClassName="rw-label rw-label-error"
         >
-          Job postal code
+          Job Postal Code
         </Label>
 
         <TextField
           name="jobPostalCode"
-          defaultValue={props.estimate?.jobPostalCode}
+          defaultValue={
+            selectedClientEntity?.postalCode || props.estimate?.jobPostalCode
+          }
           className="rw-input"
           errorClassName="rw-input rw-input-error"
         />
 
         <FieldError name="jobPostalCode" className="rw-field-error" />
 
-        <Label
-          name="jobCountry"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Job country
-        </Label>
+        {/* Job Country - Hidden, defaults to United States */}
+        <input type="hidden" name="jobCountry" value="United States" />
 
-        <TextField
-          name="jobCountry"
-          defaultValue={props.estimate?.jobCountry}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="jobCountry" className="rw-field-error" />
+        {/* Author ID - Visually hidden, auto-populated from current user */}
+        <input type="hidden" name="authorId" value={currentUser?.id || ''} />
 
         <Label
           name="subtotal"
@@ -320,7 +605,7 @@ const EstimateForm = (props: EstimateFormProps) => {
           className="rw-label"
           errorClassName="rw-label rw-label-error"
         >
-          Tax total
+          Tax Total
         </Label>
 
         <TextField
@@ -356,7 +641,7 @@ const EstimateForm = (props: EstimateFormProps) => {
           className="rw-label"
           errorClassName="rw-label rw-label-error"
         >
-          Estimated minutes total
+          Estimated Minutes Total
         </Label>
 
         <NumberField
@@ -367,24 +652,6 @@ const EstimateForm = (props: EstimateFormProps) => {
         />
 
         <FieldError name="estimatedMinutesTotal" className="rw-field-error" />
-
-        <Label
-          name="authorId"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Author id
-        </Label>
-
-        <TextField
-          name="authorId"
-          defaultValue={props.estimate?.authorId}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          validation={{ required: true }}
-        />
-
-        <FieldError name="authorId" className="rw-field-error" />
 
         <Label
           name="notes"
@@ -408,7 +675,7 @@ const EstimateForm = (props: EstimateFormProps) => {
           className="rw-label"
           errorClassName="rw-label rw-label-error"
         >
-          Entity id
+          Entity ID
         </Label>
 
         <NumberField

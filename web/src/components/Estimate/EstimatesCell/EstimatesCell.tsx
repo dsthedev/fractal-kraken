@@ -36,6 +36,39 @@ export const QUERY: TypedDocumentNode<FindEstimates, FindEstimatesVariables> =
         createdAt
         updatedAt
         entityId
+        installerEntity {
+          id
+          type
+          name
+          contactName
+          addressLine1
+          addressLine2
+          city
+          state
+          postalCode
+        }
+        clientEntity {
+          id
+          type
+          name
+          contactName
+          addressLine1
+          addressLine2
+          city
+          state
+          postalCode
+        }
+        retailerEntity {
+          id
+          type
+          name
+          contactName
+          addressLine1
+          addressLine2
+          city
+          state
+          postalCode
+        }
       }
     }
   `
@@ -66,6 +99,12 @@ export const Success = ({
     const searchable = [
       estimate.title || '',
       estimate.status || '',
+      estimate.installerEntity?.name || '',
+      estimate.installerEntity?.contactName || '',
+      estimate.clientEntity?.name || '',
+      estimate.clientEntity?.contactName || '',
+      estimate.retailerEntity?.name || '',
+      estimate.retailerEntity?.contactName || '',
       estimate.jobAddressLine1 || '',
       estimate.jobAddressLine2 || '',
       estimate.jobCity || '',
@@ -74,7 +113,6 @@ export const Success = ({
     ]
       .join(' ')
       .toLowerCase()
-
     return searchable.includes(searchQuery.toLowerCase())
   })
 

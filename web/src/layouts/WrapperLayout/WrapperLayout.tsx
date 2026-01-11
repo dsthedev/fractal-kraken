@@ -8,7 +8,7 @@ type WrapperLayoutProps = {
 const WrapperLayout = ({ children }: WrapperLayoutProps) => {
   return (
     <div id="wrapper">
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur p-2 print:hidden">
+      <header className="sticky top-0 z-50 bg-background/40 backdrop-blur p-2 border-b border-slate-400 dark:border-slate-800 shadow-[0_4px_12px_-4px_rgba(0,0,0,0.4)] print:hidden">
         <div className="flex items-center justify-left max-w-[1080px] mx-auto">
           <Nav />
           <span className="text-sm ml-4 text-muted-foreground">

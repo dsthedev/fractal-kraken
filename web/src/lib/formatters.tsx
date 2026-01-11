@@ -77,3 +77,17 @@ export const currencyDisplay = (value: string | number | null | undefined) => {
 export const fullServiceDisplay = (action, material, context) => {
   return [action, material, context].filter(Boolean).join(' ')
 }
+
+export const timeTagMDY = (datetime) => {
+  if (!datetime) return ''
+  const d = new Date(datetime)
+  const mm = String(d.getMonth() + 1).padStart(2)
+  const dd = String(d.getDate()).padStart(2, '0')
+  const yy = String(d.getFullYear()).slice(-2)
+  const mdy = `${mm}/${dd}/${yy}`
+  return (
+    <time dateTime={d.toISOString()} title={d.toLocaleString()}>
+      {mdy}
+    </time>
+  )
+}

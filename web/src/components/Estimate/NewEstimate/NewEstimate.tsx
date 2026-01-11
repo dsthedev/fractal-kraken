@@ -2,14 +2,30 @@ import type {
   CreateEstimateMutation,
   CreateEstimateInput,
   CreateEstimateMutationVariables,
+  FindEntities,
 } from 'types/graphql'
 
 import { navigate, routes } from '@cedarjs/router'
-import { useMutation } from '@cedarjs/web'
+import { useMutation, useQuery } from '@cedarjs/web'
 import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
 import EstimateForm from 'src/components/Estimate/EstimateForm'
+
+const FIND_ENTITIES_QUERY: TypedDocumentNode<FindEntities> = gql`
+  query FindEntitiesForNewEstimate {
+    entities {
+      id
+      type
+      name
+      addressLine1
+      addressLine2
+      city
+      state
+      postalCode
+    }
+  }
+`
 
 const CREATE_ESTIMATE_MUTATION: TypedDocumentNode<
   CreateEstimateMutation,
@@ -23,6 +39,7 @@ const CREATE_ESTIMATE_MUTATION: TypedDocumentNode<
 `
 
 const NewEstimate = () => {
+  const { data: entitiesData } = useQuery(FIND_ENTITIES_QUERY)
   const [createEstimate, { loading, error }] = useMutation(
     CREATE_ESTIMATE_MUTATION,
     {
@@ -46,7 +63,12 @@ const NewEstimate = () => {
         <h2 className="rw-heading rw-heading-secondary">New Estimate</h2>
       </header>
       <div className="rw-segment-main">
-        <EstimateForm onSave={onSave} loading={loading} error={error} />
+        <EstimateForm
+          onSave={onSave}
+          loading={loading}
+          error={error}
+          entities={entitiesData?.entities}
+        />
       </div>
     </div>
   )

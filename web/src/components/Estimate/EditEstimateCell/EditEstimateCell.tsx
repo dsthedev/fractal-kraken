@@ -2,6 +2,7 @@ import type {
   EditEstimateById,
   UpdateEstimateInput,
   UpdateEstimateMutationVariables,
+  FindEntities,
 } from 'types/graphql'
 
 import { navigate, routes } from '@cedarjs/router'
@@ -10,10 +11,36 @@ import type {
   CellFailureProps,
   TypedDocumentNode,
 } from '@cedarjs/web'
-import { useMutation } from '@cedarjs/web'
+import { useMutation, useQuery } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
 import EstimateForm from 'src/components/Estimate/EstimateForm'
+
+const FIND_ENTITIES_QUERY: TypedDocumentNode<FindEntities> = gql`
+  query FindEntitiesForEditEstimate {
+    entities {
+      id
+      type
+      name
+      addressLine1
+      addressLine2
+      city
+      state
+      postalCode
+      contactName
+      email
+      phone
+      createdAt
+      updatedAt
+      usersDefault {
+        id
+      }
+      usersRetailer {
+        id
+      }
+    }
+  }
+`
 
 export const QUERY: TypedDocumentNode<EditEstimateById> = gql`
   query EditEstimateById($id: Int!) {
@@ -23,8 +50,38 @@ export const QUERY: TypedDocumentNode<EditEstimateById> = gql`
       title
       status
       installerEntityId
+      installerEntity {
+        id
+        type
+        name
+        addressLine1
+        addressLine2
+        city
+        state
+        postalCode
+      }
       clientEntityId
+      clientEntity {
+        id
+        type
+        name
+        addressLine1
+        addressLine2
+        city
+        state
+        postalCode
+      }
       retailerEntityId
+      retailerEntity {
+        id
+        type
+        name
+        addressLine1
+        addressLine2
+        city
+        state
+        postalCode
+      }
       jobAddressLine1
       jobAddressLine2
       jobCity
@@ -83,6 +140,7 @@ export const Failure = ({ error }: CellFailureProps) => (
 )
 
 export const Success = ({ estimate }: CellSuccessProps<EditEstimateById>) => {
+  const { data: entitiesData } = useQuery(FIND_ENTITIES_QUERY)
   const [updateEstimate, { loading, error }] = useMutation(
     UPDATE_ESTIMATE_MUTATION,
     {
@@ -116,6 +174,7 @@ export const Success = ({ estimate }: CellSuccessProps<EditEstimateById>) => {
           onSave={onSave}
           error={error}
           loading={loading}
+          entities={entitiesData?.entities}
         />
       </div>
     </div>

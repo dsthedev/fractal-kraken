@@ -27,6 +27,7 @@ const Nav = () => {
   const adminMenuItems: MenuItem[] = [
     // { label: 'Services', route: routes.services },
     { label: 'Dashboard', route: routes.dashboard },
+    { label: 'Estimates', route: routes.estimates },
     { label: 'My Rates', route: routes.rates },
     { label: 'Entities', route: routes.entities },
   ]
