@@ -10,6 +10,14 @@ const Routes = () => {
   return (
     <Router useAuth={useAuth}>
       <PrivateSet wrap={WrapperLayout as any} unauthenticated="login" roles={['guest', 'admin']}>
+        <Set wrap={AdminScaffoldLayout} title="BillableItems" titleTo="billableItems" buttonLabel="New BillableItem" buttonTo="newBillableItem" showSearch={true}>
+          <Route path="/billable-items" page={BillableItemBillableItemsPage} name="billableItems" />
+        </Set>
+        <Set wrap={AdminScaffoldLayout} title="BillableItems" titleTo="billableItems" buttonLabel="New BillableItem" buttonTo="newBillableItem">
+          <Route path="/billable-items/{id:Int}/edit" page={BillableItemEditBillableItemPage} name="editBillableItem" />
+          <Route path="/billable-items/{id:Int}" page={BillableItemBillableItemPage} name="billableItem" />
+          <Route path="/billable-items/new" page={BillableItemNewBillableItemPage} name="newBillableItem" />
+        </Set>
         <Set wrap={AdminScaffoldLayout} title="Rates" titleTo="rates" buttonLabel="New Rate" buttonTo="newRate" showSearch={true}>
           <Route path="/rates" page={RateRatesPage} name="rates" />
         </Set>
