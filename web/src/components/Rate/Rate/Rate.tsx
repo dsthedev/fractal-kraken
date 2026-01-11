@@ -9,7 +9,7 @@ import { useMutation } from '@cedarjs/web'
 import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
-import { timeTag } from 'src/lib/formatters.js'
+import { timeTag, currencyDisplay } from 'src/lib/formatters.js'
 
 const DELETE_RATE_MUTATION: TypedDocumentNode<
   DeleteRateMutation,
@@ -67,11 +67,11 @@ const Rate = ({ rate }: Props) => {
             </tr>
             <tr>
               <th>Sub amount</th>
-              <td>{rate.subAmount}</td>
+              <td>{currencyDisplay(rate.subAmount)}</td>
             </tr>
             <tr>
               <th>Retail amount</th>
-              <td>{rate.retailAmount}</td>
+              <td>{currencyDisplay(rate.retailAmount)}</td>
             </tr>
             <tr>
               <th>Currency</th>

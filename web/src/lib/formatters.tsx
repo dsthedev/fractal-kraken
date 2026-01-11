@@ -56,3 +56,18 @@ export const timeTag = (dateTime?: string) => {
 export const checkboxInputTag = (checked: boolean) => {
   return <input type="checkbox" checked={checked} disabled />
 }
+
+export const currencyDisplay = (amountInCents: number | null | undefined) => {
+  if (amountInCents === null || amountInCents === undefined) {
+    return ''
+  }
+
+  const dollars = amountInCents / 100
+  const isWhole = amountInCents % 100 === 0
+
+  if (isWhole) {
+    return `$${dollars.toFixed(0)}`
+  }
+
+  return `$${dollars.toFixed(2)}`
+}

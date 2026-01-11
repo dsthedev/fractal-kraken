@@ -24,7 +24,7 @@ import { parse } from 'csv-parse/sync'
 
 // Set to true to use inferred CSV files from parseRatesData
 // Set to false to use original CSV files
-const USE_INFERRED_DATA = true
+const USE_INFERRED_DATA = false
 
 const seedConfig = {
   fakeUsers: {

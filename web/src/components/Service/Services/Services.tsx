@@ -11,8 +11,10 @@ import { useMutation } from '@cedarjs/web'
 import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
+import { ExportButton } from 'src/components/ExportButton/ExportButton'
 import { QUERY } from 'src/components/Service/ServicesCell'
 import { formatEnum, truncate } from 'src/lib/formatters.js'
+import { todayAsYYYYMMDD } from 'src/lib/utils'
 
 const DELETE_SERVICE_MUTATION: TypedDocumentNode<
   DeleteServiceMutation,
@@ -160,6 +162,13 @@ const ServicesList = ({ services }: FindServices) => {
           ))}
         </tbody>
       </table>
+
+      <hr className="mb-6" />
+      <ExportButton
+        label="Export All Services"
+        data={services}
+        filename={`${todayAsYYYYMMDD()}-services.csv`}
+      />
     </div>
   )
 }

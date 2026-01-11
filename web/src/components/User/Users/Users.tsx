@@ -9,8 +9,10 @@ import { useMutation } from '@cedarjs/web'
 import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
+import { ExportButton } from 'src/components/ExportButton/ExportButton'
 import { QUERY } from 'src/components/User/UsersCell'
-import { timeTag, truncate } from 'src/lib/formatters.js'
+import { truncate } from 'src/lib/formatters.js'
+import { todayAsYYYYMMDD } from 'src/lib/utils'
 
 const DELETE_USER_MUTATION: TypedDocumentNode<
   DeleteUserMutation,
@@ -89,6 +91,13 @@ const UsersList = ({ users }: FindUsers) => {
           ))}
         </tbody>
       </table>
+
+      <hr className="mb-6" />
+      <ExportButton
+        label="Export All Users"
+        data={users}
+        filename={`${todayAsYYYYMMDD()}-users.csv`}
+      />
     </div>
   )
 }

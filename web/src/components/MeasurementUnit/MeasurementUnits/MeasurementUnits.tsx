@@ -9,8 +9,10 @@ import { useMutation } from '@cedarjs/web'
 import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
+import { ExportButton } from 'src/components/ExportButton/ExportButton'
 import { QUERY } from 'src/components/MeasurementUnit/MeasurementUnitsCell'
-import { formatEnum, timeTag, truncate } from 'src/lib/formatters.js'
+import { truncate } from 'src/lib/formatters.js'
+import { todayAsYYYYMMDD } from 'src/lib/utils'
 
 const DELETE_MEASUREMENT_UNIT_MUTATION: TypedDocumentNode<
   DeleteMeasurementUnitMutation,
@@ -116,6 +118,13 @@ const MeasurementUnitsList = ({ measurementUnits }: FindMeasurementUnits) => {
           ))}
         </tbody>
       </table>
+
+      <hr className="mb-6" />
+      <ExportButton
+        label="Export All Measurement Units"
+        data={measurementUnits}
+        filename={`${todayAsYYYYMMDD()}-measurement-units.csv`}
+      />
     </div>
   )
 }

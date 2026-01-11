@@ -11,8 +11,10 @@ import { useMutation } from '@cedarjs/web'
 import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
+import { ExportButton } from 'src/components/ExportButton/ExportButton'
 import { QUERY } from 'src/components/Rate/RatesCell'
-import { truncate } from 'src/lib/formatters.js'
+import { truncate, currencyDisplay } from 'src/lib/formatters.js'
+import { todayAsYYYYMMDD } from 'src/lib/utils'
 
 const DELETE_RATE_MUTATION: TypedDocumentNode<
   DeleteRateMutation,
@@ -159,17 +161,15 @@ const RatesList = ({ rates }: FindRates) => {
             <tr key={rate.id}>
               {/* <td>{truncate(rate.id)}</td> */}
               <td>
-                {rate.service?.action +
-                  ' ' +
-                  rate.service?.material +
-                  ' ' +
-                  rate.service?.context}
+                {[rate.service?.action, rate.service?.material, rate.service?.context]
+                  .filter(Boolean)
+                  .join(' ')}
               </td>
               <td>{rate.unit?.fullName || 'N/A'}</td>
               {/* <td>{truncate(rate.serviceId)}</td>
               <td>{truncate(rate.unitId)}</td> */}
-              <td>{truncate(rate.subAmount)}</td>
-              <td>{truncate(rate.retailAmount)}</td>
+              <td>{currencyDisplay(rate.subAmount)}</td>
+              <td>{currencyDisplay(rate.retailAmount)}</td>
               {/* <td>{truncate(rate.currency)}</td> */}
               {/* <td>{truncate(rate.authorId)}</td> */}
               {/* <td>{truncate(rate.description)}</td> */}
@@ -205,6 +205,13 @@ const RatesList = ({ rates }: FindRates) => {
           ))}
         </tbody>
       </table>
+
+      <hr className="mb-6" />
+      <ExportButton
+        label="Export All Rates"
+        data={rates}
+        filename={`${todayAsYYYYMMDD()}-rates.csv`}
+      />
     </div>
   )
 }
