@@ -6,6 +6,8 @@ import type {
   TypedDocumentNode,
 } from '@cedarjs/web'
 
+import ServiceCombobox from '../ServiceCombobox'
+
 export const QUERY: TypedDocumentNode<FindServices, FindServicesVariables> =
   gql`
     query FindServices {
@@ -41,28 +43,10 @@ export const Success = ({
   selectedId,
 }: SelectServiceCellSuccessProps) => {
   return (
-    <div className="space-y-2">
-      <label htmlFor="service-select" className="block text-sm font-medium">
-        Service
-      </label>
-      <select
-        id="service-select"
-        className="rw-input"
-        value={selectedId ? String(selectedId) : ''}
-        onChange={(e) => {
-          if (e.target.value) {
-            onSelect(parseInt(e.target.value, 10))
-          }
-        }}
-      >
-        <option value="">Select a service...</option>
-        {services.map((service) => (
-          <option key={service.id} value={String(service.id)}>
-            {service.action} {service.material}
-            {service.context ? ` (${service.context})` : ''}
-          </option>
-        ))}
-      </select>
-    </div>
+    <ServiceCombobox
+      services={services}
+      value={selectedId}
+      onSelect={onSelect}
+    />
   )
 }

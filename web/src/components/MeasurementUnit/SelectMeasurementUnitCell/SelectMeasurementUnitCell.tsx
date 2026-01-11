@@ -9,6 +9,8 @@ import type {
   TypedDocumentNode,
 } from '@cedarjs/web'
 
+import MeasurementUnitCombobox from '../MeasurementUnitCombobox'
+
 export const QUERY: TypedDocumentNode<
   FindMeasurementUnits,
   FindMeasurementUnitsVariables
@@ -56,27 +58,10 @@ export const Success = ({
   selectedId,
 }: SelectMeasurementUnitCellSuccessProps) => {
   return (
-    <div className="space-y-2">
-      <label htmlFor="unit-select" className="block text-sm font-medium">
-        Measurement Unit
-      </label>
-      <select
-        id="unit-select"
-        className="rw-input"
-        value={selectedId ? String(selectedId) : ''}
-        onChange={(e) => {
-          if (e.target.value) {
-            onSelect(parseInt(e.target.value, 10))
-          }
-        }}
-      >
-        <option value="">Select a unit...</option>
-        {measurementUnits.map((unit) => (
-          <option key={unit.id} value={String(unit.id)}>
-            {unit.fullName} {unit.symbol ? `(${unit.symbol})` : ''}
-          </option>
-        ))}
-      </select>
-    </div>
+    <MeasurementUnitCombobox
+      measurementUnits={measurementUnits}
+      value={selectedId}
+      onSelect={onSelect}
+    />
   )
 }

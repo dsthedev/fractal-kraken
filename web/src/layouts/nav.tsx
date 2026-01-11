@@ -26,6 +26,7 @@ const Nav = () => {
 
   const adminMenuItems: MenuItem[] = [
     // { label: 'Services', route: routes.services },
+    { label: 'Dashboard', route: routes.dashboard },
     { label: 'My Rates', route: routes.rates },
     { label: 'Entities', route: routes.entities },
   ]
@@ -38,18 +39,16 @@ const Nav = () => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
-        {menuItems.map((item) => (
-          <DropdownMenuItem
-            key={item.label}
-            onSelect={() => {
-              navigate(item.route())
-            }}
-          >
-            {item.label}
-          </DropdownMenuItem>
-        ))}
         {!isAuthenticated ? (
           <>
+            <DropdownMenuItem
+              key={item.label}
+              onSelect={() => {
+                navigate(item.route())
+              }}
+            >
+              {item.label}
+            </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() => (window.location.href = '/login')}
             >

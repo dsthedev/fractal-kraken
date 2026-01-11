@@ -1,8 +1,14 @@
+import { useState } from 'react'
+
+import { Eye, EyeOff } from 'lucide-react'
+
 import { useAuth } from 'src/auth'
+
 import ConnectedEntities from '../ConnectedEntities'
 
 const UserProfile = () => {
   const { currentUser } = useAuth()
+  const [isIdVisible, setIsIdVisible] = useState(false)
 
   if (!currentUser) {
     return <div>Loading...</div>
@@ -28,7 +34,21 @@ const UserProfile = () => {
           </div>
           <div className="grid grid-cols-[120px_1fr] gap-2">
             <span className="font-medium text-muted-foreground">User ID:</span>
-            <span className="font-mono text-sm">{currentUser.id}</span>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-sm">
+                {isIdVisible
+                  ? currentUser.id
+                  : currentUser.id.substring(0, 4) +
+                    '••••••••••••••••••••••••••••••'}
+              </span>
+              <button
+                onClick={() => setIsIdVisible(!isIdVisible)}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                aria-label={isIdVisible ? 'Hide ID' : 'Show ID'}
+              >
+                {isIdVisible ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
         </div>
       </div>

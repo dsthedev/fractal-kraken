@@ -9,6 +9,8 @@ import type {
   TypedDocumentNode,
 } from '@cedarjs/web'
 
+import EntityCombobox from '../EntityCombobox'
+
 export const QUERY: TypedDocumentNode<
   FindEntitiesForSelectorQuery,
   FindEntitiesForSelectorQueryVariables
@@ -62,27 +64,18 @@ export const Success = ({
 }) => {
   return (
     <div className="space-y-2">
-      <div>
-        <label className="text-sm font-medium">{label}</label>
-        {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
-        )}
-      </div>
-      <select
-        value={currentValue || ''}
-        onChange={(e) => onSelect(parseInt(e.target.value))}
-        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <option value="">Select an entity...</option>
-        {entities.map((entity) => (
-          <option key={entity.id} value={entity.id}>
-            {entity.name} {entity.contactName ? `(${entity.contactName})` : ''}
-            {entity.city && entity.state
-              ? ` - ${entity.city}, ${entity.state}`
-              : ''}
-          </option>
-        ))}
-      </select>
+      <EntityCombobox
+        entities={entities}
+        value={currentValue}
+        onSelect={onSelect}
+        label={label}
+        placeholder="Select an entity..."
+        searchPlaceholder="Search entities..."
+        emptyText="No entities found."
+      />
+      {description && (
+        <p className="text-sm text-muted-foreground">{description}</p>
+      )}
     </div>
   )
 }
