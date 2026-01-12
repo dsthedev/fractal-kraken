@@ -11,6 +11,7 @@ import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
 import { QUERY } from 'src/components/Estimate/EstimatesCell'
+import { ExportButton } from 'src/components/ExportButton/ExportButton'
 import { Button } from 'src/components/ui/button'
 import {
   currencyDisplay,
@@ -18,6 +19,7 @@ import {
   timeTagMDY,
   truncate,
 } from 'src/lib/formatters.js'
+import { todayAsYYYYMMDD } from 'src/lib/utils'
 
 const DELETE_ESTIMATE_MUTATION: TypedDocumentNode<
   DeleteEstimateMutation,
@@ -139,6 +141,13 @@ const EstimatesList = ({ estimates }: FindEstimates) => {
           ))}
         </tbody>
       </table>
+
+      <hr className="mb-6" />
+      <ExportButton
+        label="Export All Estimates"
+        data={estimates}
+        filename={`${todayAsYYYYMMDD()}-estimates.csv`}
+      />
     </div>
   )
 }

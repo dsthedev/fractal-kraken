@@ -225,7 +225,7 @@ const RatesList = ({ rates }: FindRates) => {
       <hr className="mb-6" />
       <ExportButton
         label="Export All Rates"
-        data={rates}
+        data={sortedRates}
         filename={`${todayAsYYYYMMDD()}-rates.csv`}
       />
     </div>

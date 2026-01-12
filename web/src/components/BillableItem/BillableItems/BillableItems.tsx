@@ -10,8 +10,10 @@ import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
 import { QUERY } from 'src/components/BillableItem/BillableItemsCell'
+import { ExportButton } from 'src/components/ExportButton/ExportButton'
 import { calculateSubtotal } from 'src/lib/calculations'
 import { currencyDisplay, formatEnum, truncate } from 'src/lib/formatters.js'
+import { todayAsYYYYMMDD } from 'src/lib/utils'
 
 const DELETE_BILLABLE_ITEM_MUTATION: TypedDocumentNode<
   DeleteBillableItemMutation,
@@ -116,6 +118,13 @@ const BillableItemsList = ({ billableItems }: FindBillableItems) => {
           ))}
         </tbody>
       </table>
+
+      <hr className="mb-6" />
+      <ExportButton
+        label="Export All Billable Items"
+        data={billableItems}
+        filename={`${todayAsYYYYMMDD()}-billable-items.csv`}
+      />
     </div>
   )
 }

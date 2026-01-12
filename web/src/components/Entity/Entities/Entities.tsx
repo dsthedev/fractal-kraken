@@ -11,7 +11,9 @@ import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
 import { QUERY } from 'src/components/Entity/EntitiesCell'
+import { ExportButton } from 'src/components/ExportButton/ExportButton'
 import { truncate } from 'src/lib/formatters.js'
+import { todayAsYYYYMMDD } from 'src/lib/utils'
 
 const DELETE_ENTITY_MUTATION: TypedDocumentNode<
   DeleteEntityMutation,
@@ -116,6 +118,13 @@ const EntitiesList = ({ entities }: FindEntities) => {
           ))}
         </tbody>
       </table>
+
+      <hr className="mb-6" />
+      <ExportButton
+        label="Export All Entities"
+        data={entities}
+        filename={`${todayAsYYYYMMDD()}-entities.csv`}
+      />
     </div>
   )
 }

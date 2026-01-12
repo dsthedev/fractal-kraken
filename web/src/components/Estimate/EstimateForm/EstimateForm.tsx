@@ -24,6 +24,7 @@ import {
   FieldError,
   Label,
   TextField,
+  TextAreaField,
   NumberField,
   Submit,
 } from '@cedarjs/forms'
@@ -55,6 +56,7 @@ import {
   PopoverContent,
 } from 'src/components/ui/popover'
 import { Toggle } from 'src/components/ui/toggle'
+import { currencyDisplay } from 'src/lib/formatters.js'
 import { cn, getWeekNumber } from 'src/lib/utils'
 
 import { EntitySelector } from './EntitySelector'
@@ -291,12 +293,10 @@ const EstimateForm = (props: EstimateFormProps) => {
     updateBillableItem,
     { loading: updateBillableItemLoading, error: updateBillableItemError },
   ] = useMutation(UPDATE_BILLABLE_ITEM_MUTATION, {
-    onCompleted: () => toast.success('Line item updated'),
     onError: (error) => toast.error(error.message),
   })
 
   const [deleteBillableItem] = useMutation(DELETE_BILLABLE_ITEM_MUTATION, {
-    onCompleted: () => toast.success('Line item deleted'),
     onError: (error) => toast.error(error.message),
   })
 
@@ -443,6 +443,24 @@ const EstimateForm = (props: EstimateFormProps) => {
     return `${serviceDisplay}${context} - ${rate.unit?.fullName} - $${Number(amount).toFixed(2)}`
   }
 
+  const buildRateSearchValue = (rate: FindRates['rates'][0]) => {
+    return [
+      rate.service?.action,
+      rate.service?.material,
+      rate.service?.context,
+      rate.unit?.shortName,
+      rate.unit?.fullName,
+      rate.currency,
+      String(rate.subAmount ?? ''),
+      String(rate.retailAmount ?? ''),
+      String(rate.id ?? ''),
+      String(rate.serviceId ?? ''),
+      String(rate.unitId ?? ''),
+    ]
+      .filter(Boolean)
+      .join(' ')
+  }
+
   const handleQuickAddFromRate = async (
     rate: FindRates['rates'][0]
   ): Promise<void> => {
@@ -525,6 +543,7 @@ const EstimateForm = (props: EstimateFormProps) => {
         )
       )
       setEditingBillableItem(null)
+      toast.success('Line item updated')
     }
   }
 
@@ -543,6 +562,7 @@ const EstimateForm = (props: EstimateFormProps) => {
         })
       )
     )
+    toast.success('Line item updated')
   }
 
   const _handleReorder = async (fromIndex: number, toIndex: number) => {
@@ -580,6 +600,8 @@ const EstimateForm = (props: EstimateFormProps) => {
       retailerEntityId: selectedRetailerEntity?.id,
       authorId: currentUser?.id || data.authorId,
       jobCountry: 'United States',
+      subtotal: itemsTotal,
+      total: itemsTotal,
     }
     props.onSave(submitData, props?.estimate?.id)
   }
@@ -805,7 +827,26 @@ const EstimateForm = (props: EstimateFormProps) => {
           key={selectedClientEntity?.id || 'no-client'}
           className="mt-4 space-y-2"
         >
-          <legend className="text-sm font-medium">Job Location</legend>
+          <legend className="text-sm font-medium flex items-center justify-between">
+            <span>Job Location</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="ml-4"
+              onClick={() => {
+                setJobAddressLine1(selectedClientEntity?.addressLine1 || '')
+                setJobAddressLine2(selectedClientEntity?.addressLine2 || '')
+                setJobCity(selectedClientEntity?.city || '')
+                setJobState(selectedClientEntity?.state || '')
+                setJobPostalCode(selectedClientEntity?.postalCode || '')
+              }}
+              disabled={!selectedClientEntity?.id}
+              title="Copy address from client"
+            >
+              Copy from Client
+            </Button>
+          </legend>
 
           <div>
             <Label
@@ -818,10 +859,8 @@ const EstimateForm = (props: EstimateFormProps) => {
 
             <TextField
               name="jobAddressLine1"
-              defaultValue={
-                selectedClientEntity?.addressLine1 ||
-                props.estimate?.jobAddressLine1
-              }
+              value={jobAddressLine1}
+              onChange={(e) => setJobAddressLine1(e.target.value)}
               className="rw-input"
               errorClassName="rw-input rw-input-error"
             />
@@ -840,10 +879,8 @@ const EstimateForm = (props: EstimateFormProps) => {
 
             <TextField
               name="jobAddressLine2"
-              defaultValue={
-                selectedClientEntity?.addressLine2 ||
-                props.estimate?.jobAddressLine2
-              }
+              value={jobAddressLine2}
+              onChange={(e) => setJobAddressLine2(e.target.value)}
               className="rw-input"
               errorClassName="rw-input rw-input-error"
             />
@@ -863,9 +900,8 @@ const EstimateForm = (props: EstimateFormProps) => {
 
               <TextField
                 name="jobCity"
-                defaultValue={
-                  selectedClientEntity?.city || props.estimate?.jobCity
-                }
+                value={jobCity}
+                onChange={(e) => setJobCity(e.target.value)}
                 className="rw-input"
                 errorClassName="rw-input rw-input-error"
               />
@@ -884,9 +920,8 @@ const EstimateForm = (props: EstimateFormProps) => {
 
               <TextField
                 name="jobState"
-                defaultValue={
-                  selectedClientEntity?.state || props.estimate?.jobState
-                }
+                value={jobState}
+                onChange={(e) => setJobState(e.target.value)}
                 className="rw-input"
                 errorClassName="rw-input rw-input-error"
               />
@@ -905,10 +940,8 @@ const EstimateForm = (props: EstimateFormProps) => {
 
               <TextField
                 name="jobPostalCode"
-                defaultValue={
-                  selectedClientEntity?.postalCode ||
-                  props.estimate?.jobPostalCode
-                }
+                value={jobPostalCode}
+                onChange={(e) => setJobPostalCode(e.target.value)}
                 className="rw-input"
                 errorClassName="rw-input rw-input-error"
               />
@@ -1043,11 +1076,11 @@ const EstimateForm = (props: EstimateFormProps) => {
 
           <div className="flex items-center justify-between gap-2 pt-2">
             <div className="text-sm text-muted-foreground">
-              Items subtotal: ${formatMoney(itemsTotal)}
+              Subtotal: ${formatMoney(itemsTotal)}
             </div>
             <div className="flex items-center gap-2">
               {/* Quantity Input for Quick Add */}
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-row gap-1 items-center">
                 <label
                   htmlFor="quickAddQuantity"
                   className="text-xs text-muted-foreground"
@@ -1064,7 +1097,7 @@ const EstimateForm = (props: EstimateFormProps) => {
                       Math.max(1, parseInt(e.target.value) || 1)
                     )
                   }
-                  className="rw-input w-16 h-9"
+                  className="rw-input"
                   disabled={!isPersistedEstimate}
                 />
               </div>
@@ -1080,7 +1113,7 @@ const EstimateForm = (props: EstimateFormProps) => {
                     role="combobox"
                     aria-expanded={openQuickAddCombobox}
                     className={cn(
-                      'w-48 justify-between',
+                      'w-auto justify-between',
                       !selectedQuickAddRate && 'text-muted-foreground'
                     )}
                     disabled={!isPersistedEstimate || ratesLoading}
@@ -1108,17 +1141,28 @@ const EstimateForm = (props: EstimateFormProps) => {
                     <CommandEmpty>No rates found.</CommandEmpty>
                     <CommandList>
                       <CommandGroup>
-                        {ratesData?.rates?.map((rate) => (
-                          <CommandItem
-                            key={rate.id}
-                            value={`rate-${rate.id}`}
-                            onSelect={() => {
-                              setSelectedQuickAddRate(rate)
-                            }}
-                          >
-                            {buildRateLabel(rate)}
-                          </CommandItem>
-                        ))}
+                        {ratesData?.rates
+                          ?.slice()
+                          .sort((a, b) => {
+                            const aAction = a.service?.action || ''
+                            const bAction = b.service?.action || ''
+                            const actionCompare = aAction.localeCompare(bAction)
+                            if (actionCompare !== 0) return actionCompare
+                            const aMaterial = a.service?.material || ''
+                            const bMaterial = b.service?.material || ''
+                            return aMaterial.localeCompare(bMaterial)
+                          })
+                          .map((rate) => (
+                            <CommandItem
+                              key={rate.id}
+                              value={buildRateSearchValue(rate)}
+                              onSelect={() => {
+                                setSelectedQuickAddRate(rate)
+                              }}
+                            >
+                              {buildRateLabel(rate)}
+                            </CommandItem>
+                          ))}
                       </CommandGroup>
                     </CommandList>
                   </Command>
@@ -1127,16 +1171,19 @@ const EstimateForm = (props: EstimateFormProps) => {
 
               {/* Add button with plus icon for quick add */}
               {selectedQuickAddRate && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  title="Add selected rate as item"
-                  onClick={() => handleQuickAddFromRate(selectedQuickAddRate)}
-                  disabled={!isPersistedEstimate}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    title="Add selected rate as item"
+                    onClick={() => handleQuickAddFromRate(selectedQuickAddRate)}
+                    disabled={!isPersistedEstimate}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                  <span>or</span>
+                </>
               )}
 
               {/* Standard Add Item Dialog */}
@@ -1196,41 +1243,21 @@ const EstimateForm = (props: EstimateFormProps) => {
         {/* Author ID - Visually hidden, auto-populated from current user */}
         <input type="hidden" name="authorId" value={currentUser?.id || ''} />
 
-        <Label
-          name="subtotal"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Subtotal
-        </Label>
-
         <TextField
           name="subtotal"
-          defaultValue={props.estimate?.subtotal}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
+          value={itemsTotal}
+          className="hidden"
+          errorClassName="hidden"
           validation={{ valueAsNumber: true, required: true }}
         />
 
-        <FieldError name="subtotal" className="rw-field-error" />
-
-        <Label
-          name="taxTotal"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Tax Total
-        </Label>
-
         <TextField
           name="taxTotal"
-          defaultValue={props.estimate?.taxTotal}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
+          defaultValue={props.estimate?.taxTotal || 0}
+          className="hidden"
+          errorClassName="hidden"
           validation={{ valueAsNumber: true, required: true }}
         />
-
-        <FieldError name="taxTotal" className="rw-field-error" />
 
         <Label
           name="total"
@@ -1240,67 +1267,57 @@ const EstimateForm = (props: EstimateFormProps) => {
           Total
         </Label>
 
+        {/* Display formatted currency, keep actual value in hidden field */}
+        <input
+          type="text"
+          value={currencyDisplay(itemsTotal)}
+          className="rw-input"
+          readOnly
+        />
+
+        {/* Hidden form field to persist numeric total */}
         <TextField
           name="total"
-          defaultValue={props.estimate?.total}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
+          value={itemsTotal}
+          className="hidden"
+          errorClassName="hidden"
           validation={{ valueAsNumber: true, required: true }}
         />
 
         <FieldError name="total" className="rw-field-error" />
 
-        <Label
-          name="estimatedMinutesTotal"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Estimated Minutes Total
-        </Label>
-
         <NumberField
           name="estimatedMinutesTotal"
-          defaultValue={props.estimate?.estimatedMinutesTotal}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
+          defaultValue={props.estimate?.estimatedMinutesTotal || 0}
+          className="hidden"
+          errorClassName="hidden"
         />
-
-        <FieldError name="estimatedMinutesTotal" className="rw-field-error" />
 
         <Label
           name="notes"
-          className="rw-label"
+          className="rw-label text-base font-semibold"
           errorClassName="rw-label rw-label-error"
         >
           Notes
         </Label>
 
-        <TextField
+        <TextAreaField
           name="notes"
           defaultValue={props.estimate?.notes}
           className="rw-input"
           errorClassName="rw-input rw-input-error"
+          rows={8}
         />
 
         <FieldError name="notes" className="rw-field-error" />
 
-        <Label
-          name="entityId"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Entity ID
-        </Label>
-
         <NumberField
           name="entityId"
-          defaultValue={props.estimate?.entityId}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
+          defaultValue={props.estimate?.entityId || undefined}
+          className="hidden"
+          errorClassName="hidden"
           emptyAs={'undefined'}
         />
-
-        <FieldError name="entityId" className="rw-field-error" />
 
         <div className="rw-button-group">
           <Submit disabled={props.loading} className="rw-button rw-button-blue">
