@@ -61,7 +61,7 @@
   @apply text-blue-500;
 }
 .rw-heading {
-  @apply font-semibold;
+  @apply flex print:hidden w-full sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl;
 }
 .rw-heading.rw-heading-primary {
   @apply text-2xl;

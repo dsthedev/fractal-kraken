@@ -4,8 +4,9 @@ import type {
   RateRelationResolvers,
 } from 'types/graphql'
 
-import { db } from 'src/lib/db'
 import { context } from '@cedarjs/graphql-server'
+
+import { db } from 'src/lib/db'
 
 import { parseRatesData as parseRatesDataService } from './parseRatesData'
 
@@ -80,6 +81,88 @@ export const convertRatesToDecimal: MutationResolvers['convertRatesToDecimal'] =
       count: convertedCount,
     }
   }
+
+export const importRates: MutationResolvers['importRates'] = async ({
+  data,
+}) => {
+  const userId = context.currentUser?.id
+  if (!userId) {
+    throw new Error('User not authenticated')
+  }
+
+  let importedCount = 0
+  const errors: string[] = []
+
+  for (const rateData of data) {
+    try {
+      // Check if rate already exists based on service + unit combination
+      const existingRate = await db.rate.findFirst({
+        where: {
+          serviceId: rateData.serviceId,
+          unitId: rateData.unitId,
+          authorId: userId,
+        },
+      })
+
+      if (existingRate) {
+        // Update existing rate
+        await db.rate.update({
+          where: { id: existingRate.id },
+          data: {
+            subAmount: rateData.subAmount,
+            retailAmount: rateData.retailAmount,
+            currency: rateData.currency,
+            estimatedMinutesPerUnit: rateData.estimatedMinutesPerUnit,
+            description: rateData.description,
+          },
+        })
+      } else {
+        // Create new rate
+        await db.rate.create({
+          data: {
+            ...rateData,
+            authorId: userId,
+          },
+        })
+      }
+      importedCount++
+    } catch (error) {
+      errors.push(
+        `Failed to import rate: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+    }
+  }
+
+  const message =
+    errors.length > 0
+      ? `Imported ${importedCount} rates with ${errors.length} errors`
+      : `Successfully imported ${importedCount} rates`
+
+  return {
+    success: errors.length === 0,
+    message,
+    count: importedCount,
+  }
+}
+
+export const deleteAllRates: MutationResolvers['deleteAllRates'] = async () => {
+  const userId = context.currentUser?.id
+  if (!userId) {
+    throw new Error('User not authenticated')
+  }
+
+  const result = await db.rate.deleteMany({
+    where: {
+      authorId: userId,
+    },
+  })
+
+  return {
+    success: true,
+    message: `Successfully deleted all rates`,
+    count: result.count,
+  }
+}
 
 export const Rate: RateRelationResolvers = {
   service: (_obj, { root }) => {

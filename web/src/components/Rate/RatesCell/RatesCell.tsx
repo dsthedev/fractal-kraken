@@ -7,6 +7,7 @@ import type {
   TypedDocumentNode,
 } from '@cedarjs/web'
 
+import { ImportButton } from 'src/components/ImportButton/ImportButton'
 import Rates from 'src/components/Rate/Rates'
 import { useSearch } from 'src/contexts/SearchContext'
 
@@ -46,6 +47,8 @@ export const Empty = () => {
       <Link to={routes.newRate()} className="rw-link">
         Create one?
       </Link>
+      <hr className="my-6" />
+      <ImportButton label="Import Rates" refetchQuery={QUERY} />
     </div>
   )
 }

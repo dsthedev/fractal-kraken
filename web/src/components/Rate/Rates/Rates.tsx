@@ -4,6 +4,7 @@ import { Pencil, Trash2 } from 'lucide-react'
 import type {
   DeleteRateMutation,
   DeleteRateMutationVariables,
+  DeleteAllRatesMutation,
   FindRates,
 } from 'types/graphql'
 
@@ -13,7 +14,27 @@ import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
 import { ExportButton } from 'src/components/ExportButton/ExportButton'
+import { ImportButton } from 'src/components/ImportButton/ImportButton'
 import { QUERY } from 'src/components/Rate/RatesCell'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from 'src/components/ui/alert-dialog'
+import { Button } from 'src/components/ui/button'
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerClose,
+} from 'src/components/ui/drawer'
 import {
   truncate,
   currencyDisplay,
@@ -33,6 +54,19 @@ const DELETE_RATE_MUTATION: TypedDocumentNode<
   }
 `
 
+const DELETE_ALL_RATES_MUTATION: TypedDocumentNode<
+  DeleteAllRatesMutation,
+  Record<string, never>
+> = gql`
+  mutation DeleteAllRatesMutation {
+    deleteAllRates {
+      success
+      message
+      count
+    }
+  }
+`
+
 // Define a custom type for sortable fields including nested paths
 type SortableField =
   | keyof FindRates['rates'][0]
@@ -44,6 +78,7 @@ const RatesList = ({ rates }: FindRates) => {
     key: SortableField
     direction: 'asc' | 'desc'
   }>({ key: 'id', direction: 'asc' })
+  const [openDrawerId, setOpenDrawerId] = useState<number | null>(null)
 
   const [deleteRate] = useMutation(DELETE_RATE_MUTATION, {
     onCompleted: () => {
@@ -55,6 +90,20 @@ const RatesList = ({ rates }: FindRates) => {
     // This refetches the query on the list page. Read more about other ways to
     // update the cache over here:
     // https://www.apollographql.com/docs/react/data/mutations/#making-all-other-cache-updates
+    refetchQueries: [{ query: QUERY }],
+    awaitRefetchQueries: true,
+  })
+
+  const [deleteAllRates] = useMutation(DELETE_ALL_RATES_MUTATION, {
+    onCompleted: (data) => {
+      toast.success(
+        data.deleteAllRates.message +
+          ` (${data.deleteAllRates.count} rates deleted)`
+      )
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    },
     refetchQueries: [{ query: QUERY }],
     awaitRefetchQueries: true,
   })
@@ -135,7 +184,7 @@ const RatesList = ({ rates }: FindRates) => {
             </th>
             <th
               onClick={() => handleSort('unit.fullName')}
-              className="cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="hidden sm:table-cell cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
             >
               Unit
               <SortIcon columnKey="unit.fullName" />
@@ -156,7 +205,7 @@ const RatesList = ({ rates }: FindRates) => {
             </th>
             {/* <th>Currency</th> */}
             {/* <th>Author id</th> */}
-            <th>{'eMpU'}</th>
+            <th className="hidden sm:table-cell">{'eMpU'}</th>
             {/* <th>Description</th> */}
             {/* <th>Created at</th> */}
             {/* <th>Updated at</th> */}
@@ -168,6 +217,26 @@ const RatesList = ({ rates }: FindRates) => {
             <tr key={rate.id}>
               {/* <td>{truncate(rate.id)}</td> */}
               <td>
+                <button
+                  type="button"
+                  title={
+                    'Show ' +
+                    fullServiceDisplay(
+                      formatEnum(rate.service?.action),
+                      rate.service?.material,
+                      rate.service?.context
+                    ) +
+                    ' details'
+                  }
+                  className="text-left text-sm font-medium text-blue-600 hover:underline sm:hidden"
+                  onClick={() => setOpenDrawerId(rate.id)}
+                >
+                  {fullServiceDisplay(
+                    formatEnum(rate.service?.action),
+                    rate.service?.material,
+                    rate.service?.context
+                  )}
+                </button>
                 <Link
                   to={routes.rate({ id: rate.id })}
                   title={
@@ -179,6 +248,7 @@ const RatesList = ({ rates }: FindRates) => {
                     ) +
                     ' details'
                   }
+                  className="hidden sm:inline"
                 >
                   {fullServiceDisplay(
                     formatEnum(rate.service?.action),
@@ -187,14 +257,18 @@ const RatesList = ({ rates }: FindRates) => {
                   )}
                 </Link>
               </td>
-              <td>{rate.unit?.shortName || 'N/A'}</td>
+              <td className="hidden sm:table-cell">
+                {rate.unit?.shortName || 'N/A'}
+              </td>
               {/* <td>{truncate(rate.serviceId)}</td>
               <td>{truncate(rate.unitId)}</td> */}
               <td>{currencyDisplay(rate.subAmount)}</td>
               <td>{currencyDisplay(rate.retailAmount)}</td>
               {/* <td>{truncate(rate.currency)}</td> */}
               {/* <td>{truncate(rate.authorId)}</td> */}
-              <td>{truncate(rate.estimatedMinutesPerUnit)}</td>
+              <td className="hidden sm:table-cell">
+                {truncate(rate.estimatedMinutesPerUnit)}
+              </td>
               {/* <td>{truncate(rate.description)}</td> */}
               {/* <td>{timeTag(rate.createdAt)}</td> */}
               {/* <td>{timeTag(rate.updatedAt)}</td> */}
@@ -222,12 +296,88 @@ const RatesList = ({ rates }: FindRates) => {
         </tbody>
       </table>
 
+      {/* Drawer for mobile details view */}
+      {sortedRates.map((rate) => (
+        <Drawer
+          key={`drawer-${rate.id}`}
+          open={openDrawerId === rate.id}
+          onOpenChange={(open) => setOpenDrawerId(open ? rate.id : null)}
+        >
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>
+                {fullServiceDisplay(
+                  formatEnum(rate.service?.action),
+                  rate.service?.material,
+                  rate.service?.context
+                )}
+              </DrawerTitle>
+            </DrawerHeader>
+            <div className="px-4 pb-6 space-y-4">
+              <div>
+                <p className="text-xs text-muted-foreground">Unit</p>
+                <p className="text-sm font-medium">
+                  {rate.unit?.fullName || 'N/A'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Sub $</p>
+                <p className="text-sm font-medium">
+                  {currencyDisplay(rate.subAmount)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Retail $</p>
+                <p className="text-sm font-medium">
+                  {currencyDisplay(rate.retailAmount)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">eMpU</p>
+                <p className="text-sm font-medium">
+                  {truncate(rate.estimatedMinutesPerUnit)}
+                </p>
+              </div>
+            </div>
+            <DrawerClose />
+          </DrawerContent>
+        </Drawer>
+      ))}
+
       <hr className="mb-6" />
-      <ExportButton
-        label="Export All Rates"
-        data={sortedRates}
-        filename={`${todayAsYYYYMMDD()}-rates.csv`}
-      />
+      <div className="flex gap-2">
+        <ExportButton
+          label="Export All Rates"
+          data={sortedRates}
+          filename={`${todayAsYYYYMMDD()}-rates.csv`}
+        />
+        <ImportButton label="Import Rates" refetchQuery={QUERY} />
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" size="sm" className="print:hidden">
+              Delete All Rates
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will delete all your rates. Make sure to export a copy
+                first. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deleteAllRates()}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete All
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   )
 }

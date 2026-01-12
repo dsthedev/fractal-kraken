@@ -60,10 +60,28 @@ export const schema = gql`
     description: String
   }
 
+  input ImportRateInput {
+    serviceId: Int!
+    unitId: Int!
+    subAmount: Decimal!
+    retailAmount: Decimal!
+    currency: String!
+    estimatedMinutesPerUnit: Int
+    description: String
+  }
+
+  type ImportResult {
+    success: Boolean!
+    message: String!
+    count: Int!
+  }
+
   type Mutation {
     createRate(input: CreateRateInput!): Rate! @requireAuth
     updateRate(id: Int!, input: UpdateRateInput!): Rate! @requireAuth
     deleteRate(id: Int!): Rate! @requireAuth
+    deleteAllRates: ImportResult! @requireAuth
+    importRates(data: [ImportRateInput!]!): ImportResult! @requireAuth
     parseRatesData: ParsedRatesData! @requireAuth
     convertRatesToDecimal: ConversionResult! @requireAuth
   }
