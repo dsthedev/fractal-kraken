@@ -5,14 +5,22 @@ import type {
 } from 'types/graphql'
 
 import { db } from 'src/lib/db'
+import { context } from '@cedarjs/graphql-server'
 
 export const estimates: QueryResolvers['estimates'] = () => {
-  return db.estimate.findMany()
+  return db.estimate.findMany({
+    where: {
+      authorId: context.currentUser?.id,
+    },
+  })
 }
 
 export const estimate: QueryResolvers['estimate'] = ({ id }) => {
-  return db.estimate.findUnique({
-    where: { id },
+  return db.estimate.findFirst({
+    where: {
+      id,
+      authorId: context.currentUser?.id,
+    },
   })
 }
 

@@ -5,16 +5,23 @@ import type {
 } from 'types/graphql'
 
 import { db } from 'src/lib/db'
+import { context } from '@cedarjs/graphql-server'
 
 export const billableItems: QueryResolvers['billableItems'] = () => {
   return db.billableItem.findMany({
+    where: {
+      authorId: context.currentUser?.id,
+    },
     orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
   })
 }
 
 export const billableItem: QueryResolvers['billableItem'] = ({ id }) => {
-  return db.billableItem.findUnique({
-    where: { id },
+  return db.billableItem.findFirst({
+    where: {
+      id,
+      authorId: context.currentUser?.id,
+    },
   })
 }
 

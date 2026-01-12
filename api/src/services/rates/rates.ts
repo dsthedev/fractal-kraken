@@ -5,16 +5,24 @@ import type {
 } from 'types/graphql'
 
 import { db } from 'src/lib/db'
+import { context } from '@cedarjs/graphql-server'
 
 import { parseRatesData as parseRatesDataService } from './parseRatesData'
 
 export const rates: QueryResolvers['rates'] = () => {
-  return db.rate.findMany()
+  return db.rate.findMany({
+    where: {
+      authorId: context.currentUser?.id,
+    },
+  })
 }
 
 export const rate: QueryResolvers['rate'] = ({ id }) => {
-  return db.rate.findUnique({
-    where: { id },
+  return db.rate.findFirst({
+    where: {
+      id,
+      authorId: context.currentUser?.id,
+    },
   })
 }
 
