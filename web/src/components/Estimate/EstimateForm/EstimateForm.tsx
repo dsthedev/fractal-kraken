@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
 import { gql } from '@apollo/client'
-import { ArrowDown, ArrowUp, Pencil, Trash2Icon } from 'lucide-react'
+import { Pencil, Plus, Trash2Icon } from 'lucide-react'
 import type {
   EditEstimateById,
   UpdateEstimateInput,
@@ -13,6 +13,7 @@ import type {
   UpdateBillableItemInput,
   UpdateBillableItemMutationVariables,
   DeleteBillableItemMutationVariables,
+  FindRates,
 } from 'types/graphql'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -27,7 +28,7 @@ import {
   Submit,
 } from '@cedarjs/forms'
 import type { TypedDocumentNode } from '@cedarjs/web'
-import { useMutation } from '@cedarjs/web'
+import { useMutation, useQuery } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
 import { useAuth } from 'src/auth'
@@ -53,6 +54,7 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from 'src/components/ui/popover'
+import { Toggle } from 'src/components/ui/toggle'
 import { cn, getWeekNumber } from 'src/lib/utils'
 
 import { EntitySelector } from './EntitySelector'
@@ -184,6 +186,31 @@ const DELETE_BILLABLE_ITEM_MUTATION: TypedDocumentNode<
   }
 `
 
+const GET_RATES_QUERY: TypedDocumentNode<FindRates> = gql`
+  query GetRatesForQuickAdd {
+    rates {
+      id
+      serviceId
+      unitId
+      subAmount
+      retailAmount
+      currency
+      estimatedMinutesPerUnit
+      service {
+        id
+        action
+        material
+        context
+      }
+      unit {
+        id
+        shortName
+        fullName
+      }
+    }
+  }
+`
+
 interface TitleSectionProps {
   titleValue: string
   onTitleChange: (value: string) => void
@@ -241,6 +268,8 @@ const TitleSection: React.FC<TitleSectionProps> = ({
 
 const EstimateForm = (props: EstimateFormProps) => {
   const { currentUser } = useAuth()
+  const { data: ratesData, loading: ratesLoading } =
+    useQuery<FindRates>(GET_RATES_QUERY)
   const [updateEntity] = useMutation(UPDATE_ENTITY_MUTATION, {
     onCompleted: () => {
       toast.success('Entity updated')
@@ -275,6 +304,7 @@ const EstimateForm = (props: EstimateFormProps) => {
   const [selectedStatus, setSelectedStatus] = useState<
     UpdateEstimateInput['status']
   >(props.estimate?.status || 'DRAFT')
+  const [pricingType, setPricingType] = useState<'sub' | 'retail'>('retail')
   const [selectedRetailerEntity, setSelectedRetailerEntity] = useState<
     Partial<Entity>
   >((props.estimate?.retailerEntity as Partial<Entity> | undefined) || {})
@@ -310,6 +340,11 @@ const EstimateForm = (props: EstimateFormProps) => {
   const [editingBillableItem, setEditingBillableItem] =
     useState<BillableItem | null>(null)
   const [billableItems, setBillableItems] = useState<BillableItem[]>([])
+  const [openQuickAddCombobox, setOpenQuickAddCombobox] = useState(false)
+  const [selectedQuickAddRate, setSelectedQuickAddRate] = useState<
+    FindRates['rates'][0] | null
+  >(null)
+  const [quickAddQuantity, setQuickAddQuantity] = useState(1)
 
   const weekNumber = getWeekNumber(new Date())
 
@@ -399,6 +434,53 @@ const EstimateForm = (props: EstimateFormProps) => {
     return `${base}${context}` || '—'
   }
 
+  const buildRateLabel = (rate: FindRates['rates'][0]) => {
+    const serviceDisplay = [rate.service?.action, rate.service?.material]
+      .filter(Boolean)
+      .join(' ')
+    const context = rate.service?.context ? ` (${rate.service.context})` : ''
+    const amount = pricingType === 'sub' ? rate.subAmount : rate.retailAmount
+    return `${serviceDisplay}${context} - ${rate.unit?.fullName} - $${Number(amount).toFixed(2)}`
+  }
+
+  const handleQuickAddFromRate = async (
+    rate: FindRates['rates'][0]
+  ): Promise<void> => {
+    if (!props.estimate?.id) {
+      toast.error('Save the estimate before adding items')
+      return
+    }
+
+    const nextSortOrder = billableItems.length
+    const amount = pricingType === 'sub' ? rate.subAmount : rate.retailAmount
+    const numericAmount = parseFloat(String(amount))
+    const subtotal = numericAmount * quickAddQuantity
+
+    const { data } = await createBillableItem({
+      variables: {
+        input: {
+          serviceId: rate.serviceId,
+          unitId: rate.unitId,
+          unitPrice: numericAmount,
+          pricingType: pricingType === 'sub' ? 'SUB' : 'RETAIL',
+          quantity: quickAddQuantity,
+          subtotal: subtotal,
+          estimatedMinutesPerUnit: rate.estimatedMinutesPerUnit || undefined,
+          estimateId: props.estimate.id,
+          sortOrder: nextSortOrder,
+          authorId: currentUser?.id || '',
+        },
+      },
+    })
+
+    if (data?.createBillableItem) {
+      setBillableItems((prev) => [...prev, data.createBillableItem])
+      setSelectedQuickAddRate(null)
+      setOpenQuickAddCombobox(false)
+      setQuickAddQuantity(1)
+    }
+  }
+
   const handleCreateBillableItem = async (
     input: CreateBillableItemInput
   ): Promise<void> => {
@@ -463,7 +545,7 @@ const EstimateForm = (props: EstimateFormProps) => {
     )
   }
 
-  const handleReorder = async (fromIndex: number, toIndex: number) => {
+  const _handleReorder = async (fromIndex: number, toIndex: number) => {
     if (toIndex < 0 || toIndex >= billableItems.length) return
 
     const next = billableItems.slice()
@@ -841,7 +923,24 @@ const EstimateForm = (props: EstimateFormProps) => {
 
         {/* Billable Items Section */}
         <fieldset className="mt-6 space-y-3">
-          <legend className="text-sm font-medium">Billable Items</legend>
+          <div className="flex items-center justify-between">
+            <legend className="text-sm font-medium">Billable Items</legend>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Pricing:</span>
+              <Toggle
+                pressed={pricingType === 'sub'}
+                onPressedChange={(pressed) =>
+                  setPricingType(pressed ? 'sub' : 'retail')
+                }
+                aria-label="Toggle pricing type"
+                className="h-8"
+              >
+                <span className="text-xs">
+                  {pricingType === 'sub' ? 'Wholesale' : 'Retail'}
+                </span>
+              </Toggle>
+            </div>
+          </div>
 
           {(createBillableItemError || updateBillableItemError) && (
             <div className="text-sm text-red-600">
@@ -856,7 +955,7 @@ const EstimateForm = (props: EstimateFormProps) => {
             </div>
           ) : (
             <div className="space-y-2">
-              {billableItems.map((item, idx) => (
+              {billableItems.map((item, _idx) => (
                 <div
                   key={item.id}
                   className="grid grid-cols-12 gap-2 items-center rounded-md border px-3 py-2"
@@ -942,40 +1041,136 @@ const EstimateForm = (props: EstimateFormProps) => {
             </div>
           )}
 
-          <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center justify-between gap-2 pt-2">
             <div className="text-sm text-muted-foreground">
               Items subtotal: ${formatMoney(itemsTotal)}
             </div>
-            <Dialog
-              open={openNewBillableItem}
-              onOpenChange={setOpenNewBillableItem}
-            >
-              <DialogTrigger asChild>
+            <div className="flex items-center gap-2">
+              {/* Quantity Input for Quick Add */}
+              <div className="flex flex-col gap-1">
+                <label
+                  htmlFor="quickAddQuantity"
+                  className="text-xs text-muted-foreground"
+                >
+                  Qty
+                </label>
+                <input
+                  id="quickAddQuantity"
+                  type="number"
+                  min="1"
+                  value={quickAddQuantity}
+                  onChange={(e) =>
+                    setQuickAddQuantity(
+                      Math.max(1, parseInt(e.target.value) || 1)
+                    )
+                  }
+                  className="rw-input w-16 h-9"
+                  disabled={!isPersistedEstimate}
+                />
+              </div>
+
+              {/* Quick Add from Rates Combobox */}
+              <Popover
+                open={openQuickAddCombobox}
+                onOpenChange={setOpenQuickAddCombobox}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openQuickAddCombobox}
+                    className={cn(
+                      'w-48 justify-between',
+                      !selectedQuickAddRate && 'text-muted-foreground'
+                    )}
+                    disabled={!isPersistedEstimate || ratesLoading}
+                  >
+                    {selectedQuickAddRate
+                      ? buildRateLabel(selectedQuickAddRate)
+                      : 'Quick Add from Rates...'}
+                    <svg
+                      className="ml-2 h-4 w-4 shrink-0 opacity-50"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M7 10l5 5 5-5H7z" />
+                    </svg>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 w-fit">
+                  <Command>
+                    <CommandInput placeholder="Search rates..." />
+                    <CommandEmpty>No rates found.</CommandEmpty>
+                    <CommandList>
+                      <CommandGroup>
+                        {ratesData?.rates?.map((rate) => (
+                          <CommandItem
+                            key={rate.id}
+                            value={`rate-${rate.id}`}
+                            onSelect={() => {
+                              setSelectedQuickAddRate(rate)
+                            }}
+                          >
+                            {buildRateLabel(rate)}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              {/* Add button with plus icon for quick add */}
+              {selectedQuickAddRate && (
                 <Button
                   type="button"
                   variant="outline"
+                  size="icon"
+                  title="Add selected rate as item"
+                  onClick={() => handleQuickAddFromRate(selectedQuickAddRate)}
                   disabled={!isPersistedEstimate}
                 >
-                  Add Item
+                  <Plus className="h-4 w-4" />
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-3xl">
-                <DialogHeader>
-                  <DialogTitle>Add Billable Item</DialogTitle>
-                </DialogHeader>
-                {isPersistedEstimate ? (
-                  <BillableItemFormWrapper
-                    onSave={handleCreateBillableItem}
-                    loading={createBillableItemLoading}
-                    error={createBillableItemError}
-                  />
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Save the estimate before adding items.
-                  </p>
-                )}
-              </DialogContent>
-            </Dialog>
+              )}
+
+              {/* Standard Add Item Dialog */}
+              <Dialog
+                open={openNewBillableItem}
+                onOpenChange={setOpenNewBillableItem}
+              >
+                <DialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!isPersistedEstimate}
+                  >
+                    Add Item
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-3xl">
+                  <DialogHeader>
+                    <DialogTitle>Add Billable Item</DialogTitle>
+                  </DialogHeader>
+                  {isPersistedEstimate ? (
+                    <BillableItemFormWrapper
+                      onSave={handleCreateBillableItem}
+                      loading={createBillableItemLoading}
+                      error={createBillableItemError}
+                    />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Save the estimate before adding items.
+                    </p>
+                  )}
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         </fieldset>
 
