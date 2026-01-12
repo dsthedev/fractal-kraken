@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { Pencil, Trash2, Filter } from 'lucide-react'
+import { Pencil, Trash2, Filter, ChevronRight, Mail, Phone, User } from 'lucide-react'
 import type {
   DeleteEntityMutation,
   DeleteEntityMutationVariables,
@@ -25,6 +25,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from 'src/components/ui/dropdown-menu'
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerClose,
+} from 'src/components/ui/drawer'
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from 'src/components/ui/hover-card'
 import { truncate } from 'src/lib/formatters.js'
 import { todayAsYYYYMMDD } from 'src/lib/utils'
 
@@ -42,10 +54,56 @@ const DELETE_ENTITY_MUTATION: TypedDocumentNode<
 // Get all entity types from your Prisma enum
 const ENTITY_TYPES: EntityType[] = ['CONTRACTOR', 'CLIENT', 'RETAILER', 'OTHER'] // Adjust based on your actual enum values
 
+// Reusable details content component for both Drawer and HoverCard
+const EntityDetailsContent = ({ entity }: { entity: FindEntities[0] }) => (
+  <div className="space-y-4">
+    <div className="flex items-center gap-3">
+      <User className="h-4 w-4 text-muted-foreground" />
+      <div>
+        <p className="text-xs text-muted-foreground">Contact</p>
+        <p className="text-sm font-medium">{truncate(entity.contactName)}</p>
+      </div>
+    </div>
+    <div className="flex items-center gap-3">
+      <Mail className="h-4 w-4 text-muted-foreground" />
+      <div>
+        <p className="text-xs text-muted-foreground">Email</p>
+        <a
+          href={`mailto:${entity.email}`}
+          className="text-sm font-medium text-blue-600 hover:underline"
+        >
+          {truncate(entity.email)}
+        </a>
+      </div>
+    </div>
+    <div className="flex items-center gap-3">
+      <Phone className="h-4 w-4 text-muted-foreground" />
+      <div>
+        <p className="text-xs text-muted-foreground">Phone</p>
+        <a
+          href={`tel:${entity.phone}`}
+          className="text-sm font-medium text-blue-600 hover:underline"
+        >
+          {truncate(entity.phone)}
+        </a>
+      </div>
+    </div>
+    <div className="pt-2 border-t">
+      <Link
+        to={routes.entity({ id: entity.id })}
+        className="text-sm font-medium text-blue-600 hover:underline"
+      >
+        More Details →
+      </Link>
+    </div>
+  </div>
+)
+
 const EntitiesList = ({ entities }: FindEntities) => {
   const [selectedTypes, setSelectedTypes] = useState<Set<EntityType>>(
     new Set(ENTITY_TYPES)
   )
+  const [openDrawerId, setOpenDrawerId] = useState<string | null>(null)
 
   const [deleteEntity] = useMutation(DELETE_ENTITY_MUTATION, {
     onCompleted: () => {
@@ -130,9 +188,9 @@ const EntitiesList = ({ entities }: FindEntities) => {
         <thead>
           <tr>
             <th>Name</th>
-            <th>Contact</th>
-            <th>Email</th>
-            <th>Phone</th>
+            <th className="hidden sm:table-cell">Contact</th>
+            <th className="hidden sm:table-cell">Email</th>
+            <th className="hidden sm:table-cell">Phone</th>
             <th>&nbsp;</th>
           </tr>
         </thead>
@@ -140,18 +198,46 @@ const EntitiesList = ({ entities }: FindEntities) => {
           {filteredEntities.map((entity) => (
             <tr key={entity.id}>
               <td>
-                <Link
-                  to={routes.entity({ id: entity.id })}
-                  title={'Show ' + entity.name + ' details'}
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <button className="text-sm font-medium text-blue-600 hover:underline hidden sm:inline">
+                      {truncate(entity.name)}
+                    </button>
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-64">
+                    <EntityDetailsContent entity={entity} />
+                  </HoverCardContent>
+                </HoverCard>
+                <button
+                  type="button"
+                  title={'Details for ' + entity.name}
+                  className="text-sm font-medium text-blue-600 hover:underline sm:hidden"
+                  onClick={() => setOpenDrawerId(entity.id)}
                 >
                   {truncate(entity.name)}
-                </Link>
+                </button>
               </td>
-              <td>{truncate(entity.contactName)}</td>
-              <td>{truncate(entity.email)}</td>
-              <td>{truncate(entity.phone)}</td>
+              <td className="hidden sm:table-cell">
+                <span className="text-sm">{truncate(entity.contactName)}</span>
+              </td>
+              <td className="hidden sm:table-cell">
+                <a
+                  href={`mailto:${entity.email}`}
+                  className="text-sm font-medium text-blue-600 hover:underline"
+                >
+                  {truncate(entity.email)}
+                </a>
+              </td>
+              <td className="hidden sm:table-cell">
+                <a
+                  href={`tel:${entity.phone}`}
+                  className="text-sm font-medium text-blue-600 hover:underline"
+                >
+                  {truncate(entity.phone)}
+                </a>
+              </td>
               <td>
-                <nav className="rw-table-actions">
+                <nav className="rw-table-actions flex flex-wrap gap-1 sm:flex-nowrap">
                   <Link
                     to={routes.editEntity({ id: entity.id })}
                     title={'Edit ' + entity.name}
@@ -173,6 +259,25 @@ const EntitiesList = ({ entities }: FindEntities) => {
           ))}
         </tbody>
       </table>
+
+      {/* Drawer for mobile details view */}
+      {filteredEntities.map((entity) => (
+        <Drawer
+          key={`drawer-${entity.id}`}
+          open={openDrawerId === entity.id}
+          onOpenChange={(open) => setOpenDrawerId(open ? entity.id : null)}
+        >
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>{entity.name}</DrawerTitle>
+            </DrawerHeader>
+            <div className="px-4 pb-6">
+              <EntityDetailsContent entity={entity} />
+            </div>
+            <DrawerClose />
+          </DrawerContent>
+        </Drawer>
+      ))}
 
       <hr className="mb-6" />
       <ExportButton

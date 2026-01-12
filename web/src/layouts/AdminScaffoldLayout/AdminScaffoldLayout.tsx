@@ -4,12 +4,6 @@ import { Toaster } from '@cedarjs/web/toast'
 import { Input } from 'src/components/ui/input'
 import { SearchProvider, useSearch } from 'src/contexts/SearchContext'
 
-// ============================================================================
-// SEARCH INPUT COMPONENT
-// ============================================================================
-// Extracted into its own component for clarity
-// Uses the useSearch hook to access search context
-
 const SearchInput = () => {
   const { searchQuery, setSearchQuery } = useSearch()
 
@@ -24,10 +18,6 @@ const SearchInput = () => {
   )
 }
 
-// ============================================================================
-// ADMIN SCAFFOLD LAYOUT PROPS
-// ============================================================================
-
 type LayoutProps = {
   title: string
   titleTo: keyof typeof routes
@@ -36,13 +26,6 @@ type LayoutProps = {
   children: React.ReactNode
   showSearch?: boolean // Optional prop to enable search functionality
 }
-
-// ============================================================================
-// ADMIN SCAFFOLD LAYOUT CONTENT
-// ============================================================================
-// Inner component that uses the search context
-// Separated from the main component to allow SearchProvider to wrap both
-// the search input and children, so they share the same context
 
 const AdminScaffoldLayoutContent = ({
   title,
@@ -63,7 +46,10 @@ const AdminScaffoldLayoutContent = ({
         </h1>
         {/* Search input only renders if showSearch prop is true */}
         {showSearch && <SearchInput />}
-        <Link to={routes[buttonTo]()} className="rw-button rw-button-green">
+        <Link
+          to={routes[buttonTo]()}
+          className="rw-button rw-button-green rw-button-small"
+        >
           <div className="rw-button-icon">+</div> {buttonLabel}
         </Link>
       </header>
