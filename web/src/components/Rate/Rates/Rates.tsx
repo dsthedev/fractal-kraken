@@ -1,11 +1,12 @@
 import { useState } from 'react'
 
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2, Filter } from 'lucide-react'
 import type {
   DeleteRateMutation,
   DeleteRateMutationVariables,
   DeleteAllRatesMutation,
   FindRates,
+  ServiceAction,
 } from 'types/graphql'
 
 import { Link, routes } from '@cedarjs/router'
@@ -28,6 +29,15 @@ import {
   AlertDialogTrigger,
 } from 'src/components/ui/alert-dialog'
 import { Button } from 'src/components/ui/button'
+import { Checkbox } from 'src/components/ui/checkbox'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from 'src/components/ui/dropdown-menu'
 import {
   Drawer,
   DrawerContent,
@@ -73,12 +83,31 @@ type SortableField =
   | 'service.action'
   | 'unit.fullName'
 
+// All service action types from the enum
+const SERVICE_ACTIONS: ServiceAction[] = [
+  'INSTALL',
+  'REMOVE',
+  'REPLACE',
+  'RESET',
+  'REPAIR',
+  'FINISH',
+  'PREPARE',
+  'CLEAN',
+  'MOVE',
+  'INSPECT',
+  'PERFORM',
+  'CUSTOM',
+]
+
 const RatesList = ({ rates }: FindRates) => {
   const [sortConfig, setSortConfig] = useState<{
     key: SortableField
     direction: 'asc' | 'desc'
   }>({ key: 'id', direction: 'asc' })
   const [openDrawerId, setOpenDrawerId] = useState<number | null>(null)
+  const [selectedActions, setSelectedActions] = useState<Set<ServiceAction>>(
+    new Set(SERVICE_ACTIONS)
+  )
 
   const [deleteRate] = useMutation(DELETE_RATE_MUTATION, {
     onCompleted: () => {
@@ -123,6 +152,19 @@ const RatesList = ({ rates }: FindRates) => {
     }
   }
 
+  const toggleAction = (action: ServiceAction) => {
+    const newSelected = new Set(selectedActions)
+    if (newSelected.has(action)) {
+      newSelected.delete(action)
+    } else {
+      newSelected.add(action)
+    }
+    setSelectedActions(newSelected)
+  }
+
+  const selectAll = () => setSelectedActions(new Set(SERVICE_ACTIONS))
+  const deselectAll = () => setSelectedActions(new Set())
+
   // Helper function to get nested property value
   const getNestedValue = (obj: FindRates['rates'][0], path: SortableField) => {
     if (path === 'service.action') {
@@ -134,7 +176,11 @@ const RatesList = ({ rates }: FindRates) => {
     return obj[path as keyof FindRates['rates'][0]]
   }
 
-  const sortedRates = [...rates].sort((a, b) => {
+  const filteredRates = rates.filter((rate) =>
+    selectedActions.has(rate.service?.action)
+  )
+
+  const sortedRates = [...filteredRates].sort((a, b) => {
     const aValue = getNestedValue(a, sortConfig.key)
     const bValue = getNestedValue(b, sortConfig.key)
 
@@ -171,6 +217,49 @@ const RatesList = ({ rates }: FindRates) => {
 
   return (
     <div className="rw-segment rw-table-wrapper-responsive">
+      <div className="mb-4 flex justify-between items-center">
+        <div className="text-sm text-muted-foreground">
+          Showing {filteredRates.length} of {rates.length} rates
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Filter className="h-4 w-4 mr-2" />
+              Filter by Action
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuGroup>
+              <DropdownMenuItem onSelect={selectAll}>
+                Select All
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={deselectAll}>
+                Deselect All
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              {SERVICE_ACTIONS.map((action) => (
+                <DropdownMenuItem
+                  key={action}
+                  onSelect={(e) => {
+                    e.preventDefault()
+                    toggleAction(action)
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Checkbox
+                    checked={selectedActions.has(action)}
+                    onCheckedChange={() => toggleAction(action)}
+                  />
+                  <span>{formatEnum(action)}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       <table className="rw-table">
         <thead>
           <tr>
@@ -339,7 +428,6 @@ const RatesList = ({ rates }: FindRates) => {
                 </p>
               </div>
             </div>
-            <DrawerClose />
           </DrawerContent>
         </Drawer>
       ))}

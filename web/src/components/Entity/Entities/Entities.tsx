@@ -274,7 +274,6 @@ const EntitiesList = ({ entities }: FindEntities) => {
             <div className="px-4 pb-6">
               <EntityDetailsContent entity={entity} />
             </div>
-            <DrawerClose />
           </DrawerContent>
         </Drawer>
       ))}

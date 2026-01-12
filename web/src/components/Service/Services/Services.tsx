@@ -1,9 +1,11 @@
 import { useState } from 'react'
 
+import { Filter } from 'lucide-react'
 import type {
   DeleteServiceMutation,
   DeleteServiceMutationVariables,
   FindServices,
+  ServiceAction,
 } from 'types/graphql'
 
 import { Link, routes } from '@cedarjs/router'
@@ -13,6 +15,16 @@ import { toast } from '@cedarjs/web/toast'
 
 import { ExportButton } from 'src/components/ExportButton/ExportButton'
 import { QUERY } from 'src/components/Service/ServicesCell'
+import { Button } from 'src/components/ui/button'
+import { Checkbox } from 'src/components/ui/checkbox'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from 'src/components/ui/dropdown-menu'
 import { formatEnum, truncate } from 'src/lib/formatters.js'
 import { todayAsYYYYMMDD } from 'src/lib/utils'
 
@@ -27,11 +39,30 @@ const DELETE_SERVICE_MUTATION: TypedDocumentNode<
   }
 `
 
+// All service action types from the enum
+const SERVICE_ACTIONS: ServiceAction[] = [
+  'INSTALL',
+  'REMOVE',
+  'REPLACE',
+  'RESET',
+  'REPAIR',
+  'FINISH',
+  'PREPARE',
+  'CLEAN',
+  'MOVE',
+  'INSPECT',
+  'PERFORM',
+  'CUSTOM',
+]
+
 const ServicesList = ({ services }: FindServices) => {
   const [sortConfig, setSortConfig] = useState<{
     key: keyof FindServices['services'][0]
     direction: 'asc' | 'desc'
   }>({ key: 'id', direction: 'asc' })
+  const [selectedActions, setSelectedActions] = useState<Set<ServiceAction>>(
+    new Set(SERVICE_ACTIONS)
+  )
 
   const [deleteService] = useMutation(DELETE_SERVICE_MUTATION, {
     onCompleted: () => {
@@ -62,7 +93,24 @@ const ServicesList = ({ services }: FindServices) => {
     }
   }
 
-  const sortedServices = [...services].sort((a, b) => {
+  const toggleAction = (action: ServiceAction) => {
+    const newSelected = new Set(selectedActions)
+    if (newSelected.has(action)) {
+      newSelected.delete(action)
+    } else {
+      newSelected.add(action)
+    }
+    setSelectedActions(newSelected)
+  }
+
+  const selectAll = () => setSelectedActions(new Set(SERVICE_ACTIONS))
+  const deselectAll = () => setSelectedActions(new Set())
+
+  const filteredServices = services.filter((service) =>
+    selectedActions.has(service.action)
+  )
+
+  const sortedServices = [...filteredServices].sort((a, b) => {
     const aValue = a[sortConfig.key]
     const bValue = b[sortConfig.key]
 
@@ -91,6 +139,49 @@ const ServicesList = ({ services }: FindServices) => {
 
   return (
     <div className="rw-segment rw-table-wrapper-responsive">
+      <div className="mb-4 flex justify-between items-center">
+        <div className="text-sm text-muted-foreground">
+          Showing {filteredServices.length} of {services.length} services
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Filter className="h-4 w-4 mr-2" />
+              Filter by Action
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuGroup>
+              <DropdownMenuItem onSelect={selectAll}>
+                Select All
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={deselectAll}>
+                Deselect All
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              {SERVICE_ACTIONS.map((action) => (
+                <DropdownMenuItem
+                  key={action}
+                  onSelect={(e) => {
+                    e.preventDefault()
+                    toggleAction(action)
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Checkbox
+                    checked={selectedActions.has(action)}
+                    onCheckedChange={() => toggleAction(action)}
+                  />
+                  <span>{formatEnum(action)}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       <table className="rw-table">
         <thead>
           <tr>
@@ -166,7 +257,7 @@ const ServicesList = ({ services }: FindServices) => {
       <hr className="mb-6" />
       <ExportButton
         label="Export All Services"
-        data={services}
+        data={filteredServices}
         filename={`${todayAsYYYYMMDD()}-services.csv`}
       />
     </div>
