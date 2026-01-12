@@ -1,16 +1,16 @@
 [build]
   command = "corepack enable && yarn cedar build"
   publish = "web/dist"
-  # environment = { NODE_VERSION = "22" }
 
 [functions]
   directory = "api/dist/functions"
   node_bundler = "esbuild"
 
 [[redirects]]
-  from = "/api/*"
+  from = "/.redwood/functions/*"
   to = "/.netlify/functions/:splat"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/*"
