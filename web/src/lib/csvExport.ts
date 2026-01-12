@@ -22,6 +22,21 @@ export const generateCSV = (data: any[], filename: string) => {
     return flattened
   }
 
+  // Escape CSV field values properly (escape quotes by doubling them)
+  const escapeCSVField = (value: any): string => {
+    if (value === null || value === undefined) return ''
+    const strValue = String(value)
+    // If field contains comma, quote, or newline, wrap in quotes and escape internal quotes
+    if (
+      strValue.includes(',') ||
+      strValue.includes('"') ||
+      strValue.includes('\n')
+    ) {
+      return `"${strValue.replace(/"/g, '""')}"`
+    }
+    return strValue
+  }
+
   // Flatten all rows
   const flatData = data.map((row) => flattenObject(row))
 
@@ -34,9 +49,9 @@ export const generateCSV = (data: any[], filename: string) => {
 
   // Build CSV
   const csv = [
-    headers.join(','),
+    headers.map(escapeCSVField).join(','),
     ...flatData.map((row) =>
-      headers.map((h) => JSON.stringify(row[h] ?? '')).join(',')
+      headers.map((h) => escapeCSVField(row[h] ?? '')).join(',')
     ),
   ].join('\n')
 
