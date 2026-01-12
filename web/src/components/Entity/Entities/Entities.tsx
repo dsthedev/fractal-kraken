@@ -1,8 +1,11 @@
-import { Pencil, Trash2 } from 'lucide-react'
+import { useState } from 'react'
+
+import { Pencil, Trash2, Filter } from 'lucide-react'
 import type {
   DeleteEntityMutation,
   DeleteEntityMutationVariables,
   FindEntities,
+  EntityType,
 } from 'types/graphql'
 
 import { Link, routes } from '@cedarjs/router'
@@ -12,6 +15,16 @@ import { toast } from '@cedarjs/web/toast'
 
 import { QUERY } from 'src/components/Entity/EntitiesCell'
 import { ExportButton } from 'src/components/ExportButton/ExportButton'
+import { Button } from 'src/components/ui/button'
+import { Checkbox } from 'src/components/ui/checkbox'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from 'src/components/ui/dropdown-menu'
 import { truncate } from 'src/lib/formatters.js'
 import { todayAsYYYYMMDD } from 'src/lib/utils'
 
@@ -26,7 +39,14 @@ const DELETE_ENTITY_MUTATION: TypedDocumentNode<
   }
 `
 
+// Get all entity types from your Prisma enum
+const ENTITY_TYPES: EntityType[] = ['CONTRACTOR', 'CLIENT', 'RETAILER', 'OTHER'] // Adjust based on your actual enum values
+
 const EntitiesList = ({ entities }: FindEntities) => {
+  const [selectedTypes, setSelectedTypes] = useState<Set<EntityType>>(
+    new Set(ENTITY_TYPES)
+  )
+
   const [deleteEntity] = useMutation(DELETE_ENTITY_MUTATION, {
     onCompleted: () => {
       toast.success('Entity deleted')
@@ -34,9 +54,6 @@ const EntitiesList = ({ entities }: FindEntities) => {
     onError: (error) => {
       toast.error(error.message)
     },
-    // This refetches the query on the list page. Read more about other ways to
-    // update the cache over here:
-    // https://www.apollographql.com/docs/react/data/mutations/#making-all-other-cache-updates
     refetchQueries: [{ query: QUERY }],
     awaitRefetchQueries: true,
   })
@@ -47,34 +64,81 @@ const EntitiesList = ({ entities }: FindEntities) => {
     }
   }
 
+  const toggleType = (type: EntityType) => {
+    const newSelected = new Set(selectedTypes)
+    if (newSelected.has(type)) {
+      newSelected.delete(type)
+    } else {
+      newSelected.add(type)
+    }
+    setSelectedTypes(newSelected)
+  }
+
+  const selectAll = () => setSelectedTypes(new Set(ENTITY_TYPES))
+  const deselectAll = () => setSelectedTypes(new Set())
+
+  const filteredEntities = entities.filter((entity) =>
+    selectedTypes.has(entity.type)
+  )
+
   return (
     <div className="rw-segment rw-table-wrapper-responsive">
+      <div className="mb-4 flex justify-between items-center">
+        <div className="text-sm text-muted-foreground">
+          Showing {filteredEntities.length} of {entities.length} entities
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Filter className="h-4 w-4 mr-2" />
+              Filter by Type
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuGroup>
+              <DropdownMenuItem onSelect={selectAll}>
+                Select All
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={deselectAll}>
+                Deselect All
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              {ENTITY_TYPES.map((type) => (
+                <DropdownMenuItem
+                  key={type}
+                  onSelect={(e) => {
+                    e.preventDefault()
+                    toggleType(type)
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Checkbox
+                    checked={selectedTypes.has(type)}
+                    onCheckedChange={() => toggleType(type)}
+                  />
+                  <span>{type}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       <table className="rw-table">
         <thead>
           <tr>
-            {/* <th>Id</th> */}
-            {/* <th>Type</th> */}
             <th>Name</th>
             <th>Contact</th>
             <th>Email</th>
             <th>Phone</th>
-            {/* <th>Address line1</th>
-            <th>Address line2</th>
-            <th>City</th>
-            <th>State</th>
-            <th>Postal code</th>
-            <th>Country</th>
-            <th>Notes</th>
-            <th>Created at</th>
-            <th>Updated at</th> */}
             <th>&nbsp;</th>
           </tr>
         </thead>
         <tbody>
-          {entities.map((entity) => (
+          {filteredEntities.map((entity) => (
             <tr key={entity.id}>
-              {/* <td>{truncate(entity.id)}</td> */}
-              {/* <td>{formatEnum(entity.type)}</td> */}
               <td>
                 <Link
                   to={routes.entity({ id: entity.id })}
@@ -86,15 +150,6 @@ const EntitiesList = ({ entities }: FindEntities) => {
               <td>{truncate(entity.contactName)}</td>
               <td>{truncate(entity.email)}</td>
               <td>{truncate(entity.phone)}</td>
-              {/* <td>{truncate(entity.addressLine1)}</td>
-              <td>{truncate(entity.addressLine2)}</td>
-              <td>{truncate(entity.city)}</td>
-              <td>{truncate(entity.state)}</td>
-              <td>{truncate(entity.postalCode)}</td>
-              <td>{truncate(entity.country)}</td>
-              <td>{truncate(entity.notes)}</td>
-              <td>{timeTag(entity.createdAt)}</td>
-              <td>{timeTag(entity.updatedAt)}</td> */}
               <td>
                 <nav className="rw-table-actions">
                   <Link
@@ -122,7 +177,7 @@ const EntitiesList = ({ entities }: FindEntities) => {
       <hr className="mb-6" />
       <ExportButton
         label="Export All Entities"
-        data={entities}
+        data={filteredEntities}
         filename={`${todayAsYYYYMMDD()}-entities.csv`}
       />
     </div>

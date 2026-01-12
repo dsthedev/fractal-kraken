@@ -163,12 +163,8 @@ model BillableItem {
 
 enum EntityType {
   CONTRACTOR
-  INSTALLER
   CLIENT
   RETAILER
-  SUPPLIER
-  COMPANY
-  INDIVIDUAL
   OTHER
 }
 
