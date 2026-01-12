@@ -293,12 +293,83 @@ const EstimateForm = (props: EstimateFormProps) => {
       )
   )
 
+  // Job address state
+  const [jobAddressLine1, setJobAddressLine1] = useState(
+    props.estimate?.jobAddressLine1 || ''
+  )
+  const [jobAddressLine2, setJobAddressLine2] = useState(
+    props.estimate?.jobAddressLine2 || ''
+  )
+  const [jobCity, setJobCity] = useState(props.estimate?.jobCity || '')
+  const [jobState, setJobState] = useState(props.estimate?.jobState || '')
+  const [jobPostalCode, setJobPostalCode] = useState(
+    props.estimate?.jobPostalCode || ''
+  )
+
   const [openNewBillableItem, setOpenNewBillableItem] = useState(false)
   const [editingBillableItem, setEditingBillableItem] =
     useState<BillableItem | null>(null)
   const [billableItems, setBillableItems] = useState<BillableItem[]>([])
 
   const weekNumber = getWeekNumber(new Date())
+
+  // Set default entities from current user if fields are empty
+  useEffect(() => {
+    if (!props.estimate?.installerEntityId && currentUser?.defaultEntityId) {
+      const defaultEntity = props.entities?.find(
+        (e) => e.id === currentUser.defaultEntityId
+      )
+      if (defaultEntity) {
+        setSelectedInstallerEntity(defaultEntity)
+      }
+    }
+
+    if (
+      !props.estimate?.retailerEntityId &&
+      currentUser?.defaultRetailerEntityId
+    ) {
+      const defaultRetailer = props.entities?.find(
+        (e) => e.id === currentUser.defaultRetailerEntityId
+      )
+      if (defaultRetailer) {
+        setSelectedRetailerEntity(defaultRetailer)
+      }
+    }
+  }, [
+    props.estimate?.installerEntityId,
+    props.estimate?.retailerEntityId,
+    currentUser?.defaultEntityId,
+    currentUser?.defaultRetailerEntityId,
+    props.entities,
+  ])
+
+  // Auto-populate job address from client if fields are empty
+  useEffect(() => {
+    if (selectedClientEntity) {
+      if (!jobAddressLine1 && selectedClientEntity.addressLine1) {
+        setJobAddressLine1(selectedClientEntity.addressLine1)
+      }
+      if (!jobAddressLine2 && selectedClientEntity.addressLine2) {
+        setJobAddressLine2(selectedClientEntity.addressLine2)
+      }
+      if (!jobCity && selectedClientEntity.city) {
+        setJobCity(selectedClientEntity.city)
+      }
+      if (!jobState && selectedClientEntity.state) {
+        setJobState(selectedClientEntity.state)
+      }
+      if (!jobPostalCode && selectedClientEntity.postalCode) {
+        setJobPostalCode(selectedClientEntity.postalCode)
+      }
+    }
+  }, [
+    selectedClientEntity,
+    jobAddressLine1,
+    jobAddressLine2,
+    jobCity,
+    jobState,
+    jobPostalCode,
+  ])
 
   useEffect(() => {
     if (props.estimate?.billableItems) {
@@ -415,6 +486,11 @@ const EstimateForm = (props: EstimateFormProps) => {
     const submitData = {
       ...data,
       title: titleValue,
+      jobAddressLine1,
+      jobAddressLine2,
+      jobCity,
+      jobState,
+      jobPostalCode,
       uuid: data.uuid || uuidv4(),
       status: selectedStatus,
       installerEntityId: selectedInstallerEntity?.id,
@@ -815,14 +891,14 @@ const EstimateForm = (props: EstimateFormProps) => {
                     </div>
                     <div>${formatMoney(item.unitPrice as number)}</div>
                   </div>
-                  <div className="col-span-1 text-right font-semibold">
+                  <div className="col-span-1 text-right font-semibold pr-4">
                     <div className="text-xs text-muted-foreground">
                       Subtotal
                     </div>
                     <div>${formatMoney(item.subtotal as number)}</div>
                   </div>
                   <div className="col-span-1 flex justify-end gap-1">
-                    <Button
+                    {/* <Button
                       type="button"
                       variant="outline"
                       size="icon"
@@ -841,7 +917,7 @@ const EstimateForm = (props: EstimateFormProps) => {
                       onClick={() => handleReorder(idx, idx + 1)}
                     >
                       <ArrowDown className="h-4 w-4" />
-                    </Button>
+                    </Button> */}
                     <Button
                       type="button"
                       variant="outline"
