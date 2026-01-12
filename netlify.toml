@@ -1,7 +1,7 @@
 [build]
   command = "corepack enable && yarn cedar build"
   publish = "web/dist"
-  environment = { NODE_VERSION = "22" }
+  # environment = { NODE_VERSION = "22" }
 
 [functions]
   directory = "api/dist/functions"
