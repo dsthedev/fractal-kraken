@@ -1,4 +1,5 @@
 import type { EditBillableItemById, UpdateBillableItemInput } from 'types/graphql'
+import type { CreateBillableItemInput } from 'types/graphql'
 
 import type { RWGqlError } from '@cedarjs/forms'
 
@@ -8,10 +9,11 @@ import SelectMeasurementUnitCell from 'src/components/MeasurementUnit/SelectMeas
 import SelectServiceCell from 'src/components/Service/SelectServiceCell'
 
 type FormBillableItem = NonNullable<EditBillableItemById['billableItem']>
+type BillableItemInput = UpdateBillableItemInput | CreateBillableItemInput
 
 interface BillableItemFormWrapperProps {
   billableItem?: EditBillableItemById['billableItem']
-  onSave: (data: UpdateBillableItemInput, id?: FormBillableItem['id']) => void
+  onSave: (data: BillableItemInput, id?: FormBillableItem['id']) => void
   error: RWGqlError
   loading: boolean
 }

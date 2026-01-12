@@ -7,7 +7,9 @@ import type {
 import { db } from 'src/lib/db'
 
 export const billableItems: QueryResolvers['billableItems'] = () => {
-  return db.billableItem.findMany()
+  return db.billableItem.findMany({
+    orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+  })
 }
 
 export const billableItem: QueryResolvers['billableItem'] = ({ id }) => {
@@ -51,5 +53,8 @@ export const BillableItem: BillableItemRelationResolvers = {
   },
   author: (_obj, { root }) => {
     return db.billableItem.findUnique({ where: { id: root?.id } }).author()
+  },
+  estimate: (_obj, { root }) => {
+    return db.billableItem.findUnique({ where: { id: root?.id } }).estimate()
   },
 }

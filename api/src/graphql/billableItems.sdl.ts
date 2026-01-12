@@ -11,6 +11,9 @@ export const schema = gql`
     subtotal: Float!
     estimatedMinutesPerUnit: Int
     notes: String
+    sortOrder: Int!
+    estimateId: Int
+    estimate: Estimate
     authorId: String!
     author: User!
     createdAt: DateTime!
@@ -36,6 +39,8 @@ export const schema = gql`
     subtotal: Float!
     estimatedMinutesPerUnit: Int
     notes: String
+    sortOrder: Int
+    estimateId: Int
     authorId: String!
   }
 
@@ -48,6 +53,8 @@ export const schema = gql`
     subtotal: Float
     estimatedMinutesPerUnit: Int
     notes: String
+    sortOrder: Int
+    estimateId: Int
     authorId: String
   }
 

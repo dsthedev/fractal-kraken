@@ -146,6 +146,9 @@ model BillableItem {
 
   notes String?
 
+  // Ordering within an estimate; lower numbers appear first
+  sortOrder Int @default(0)
+
   authorId String
   author   User   @relation(fields: [authorId], references: [id])
 
@@ -154,6 +157,8 @@ model BillableItem {
 
   estimate   Estimate? @relation(fields: [estimateId], references: [id])
   estimateId Int?
+
+  @@index([estimateId, sortOrder])
 }
 
 enum EntityType {

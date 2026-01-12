@@ -54,7 +54,9 @@ export const Estimate: EstimateRelationResolvers = {
     return db.estimate.findUnique({ where: { id: root?.id } }).author()
   },
   billableItems: (_obj, { root }) => {
-    return db.estimate.findUnique({ where: { id: root?.id } }).billableItems()
+    return db.estimate
+      .findUnique({ where: { id: root?.id } })
+      .billableItems({ orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] })
   },
   entity: (_obj, { root }) => {
     return db.estimate.findUnique({ where: { id: root?.id } }).entity()

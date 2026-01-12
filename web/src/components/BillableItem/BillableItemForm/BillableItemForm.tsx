@@ -3,6 +3,7 @@ import React from 'react'
 import { Pencil } from 'lucide-react'
 import type {
   EditBillableItemById,
+  CreateBillableItemInput,
   UpdateBillableItemInput,
 } from 'types/graphql'
 
@@ -28,10 +29,11 @@ import {
 } from 'src/lib/calculations.js'
 
 type FormBillableItem = NonNullable<EditBillableItemById['billableItem']>
+type BillableItemInput = UpdateBillableItemInput | CreateBillableItemInput
 
 interface BillableItemFormProps {
   billableItem?: EditBillableItemById['billableItem']
-  onSave: (data: UpdateBillableItemInput, id?: FormBillableItem['id']) => void
+  onSave: (data: BillableItemInput, id?: FormBillableItem['id']) => void
   error: RWGqlError
   loading: boolean
   authorId?: string

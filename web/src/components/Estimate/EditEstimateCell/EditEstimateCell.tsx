@@ -3,6 +3,7 @@ import type {
   UpdateEstimateInput,
   UpdateEstimateMutationVariables,
   FindEntities,
+  Entity,
 } from 'types/graphql'
 
 import { navigate, routes } from '@cedarjs/router'
@@ -97,6 +98,31 @@ export const QUERY: TypedDocumentNode<EditEstimateById> = gql`
       createdAt
       updatedAt
       entityId
+      billableItems {
+        id
+        serviceId
+        unitId
+        unitPrice
+        pricingType
+        quantity
+        subtotal
+        estimatedMinutesPerUnit
+        notes
+        sortOrder
+        estimateId
+        service {
+          id
+          action
+          material
+          context
+          description
+        }
+        unit {
+          id
+          shortName
+          fullName
+        }
+      }
     }
   }
 `
@@ -146,7 +172,6 @@ export const Success = ({ estimate }: CellSuccessProps<EditEstimateById>) => {
     {
       onCompleted: () => {
         toast.success('Estimate updated')
-        navigate(routes.estimates())
       },
       onError: (error) => {
         toast.error(error.message)
@@ -174,7 +199,7 @@ export const Success = ({ estimate }: CellSuccessProps<EditEstimateById>) => {
           onSave={onSave}
           error={error}
           loading={loading}
-          entities={entitiesData?.entities}
+          entities={entitiesData?.entities as Entity[]}
         />
       </div>
     </div>
