@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { gql } from '@apollo/client'
 import { BookAlert, Pencil, Plus, Trash2Icon } from 'lucide-react'
@@ -253,6 +253,7 @@ const TitleSection: React.FC<TitleSectionProps> = ({
           name="title"
           type="text"
           value={titleValue}
+          placeholder="Week # - Retailer - Customer"
           onChange={(e) => onTitleChange(e.target.value)}
           className="rw-input flex-1 w-full"
         />
@@ -331,7 +332,7 @@ const EstimateForm = (props: EstimateFormProps) => {
         getWeekNumber(new Date()),
         props.estimate?.retailerEntity?.name,
         props.estimate?.clientEntity?.name
-      )
+      ) + ' - New Estimate'
   )
 
   // Job address state
@@ -1224,6 +1225,7 @@ const EstimateForm = (props: EstimateFormProps) => {
                     }
                     className="rw-input w-20"
                     disabled={!isPersistedEstimate}
+                    onFocus={(e) => e.target.select()}
                   />
                 </div>
 
@@ -1513,6 +1515,7 @@ const EstimateForm = (props: EstimateFormProps) => {
                 authorId: currentUser?.id || props.estimate?.authorId,
                 jobCountry: 'United States',
                 subtotal: itemsTotal,
+                taxTotal: itemsTotal,
                 total: itemsTotal,
               }
               props.onSaveAndExit?.(submitData as any, props?.estimate?.id)
