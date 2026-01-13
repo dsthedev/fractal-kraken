@@ -105,11 +105,13 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
               role="combobox"
               aria-expanded={openCombobox}
               className={cn(
-                'flex-1 justify-between',
+                'flex-1 justify-between truncate',
                 !selectedEntity && 'text-muted-foreground'
               )}
             >
-              {selectedEntity?.name || placeholder}
+              <span className="truncate">
+                {selectedEntity?.name || placeholder}
+              </span>
               <svg
                 className="ml-2 h-4 w-4 shrink-0 opacity-50"
                 xmlns="http://www.w3.org/2000/svg"

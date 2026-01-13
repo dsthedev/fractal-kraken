@@ -51,6 +51,14 @@ import {
   DialogTitle,
 } from 'src/components/ui/dialog'
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from 'src/components/ui/drawer'
+import {
   Popover,
   PopoverTrigger,
   PopoverContent,
@@ -229,7 +237,7 @@ const TitleSection: React.FC<TitleSectionProps> = ({
   selectedClientEntity,
 }) => {
   return (
-    <div className="flex-1">
+    <div className="flex-1 space-y-2">
       <Label
         name="title"
         className="rw-label"
@@ -238,18 +246,19 @@ const TitleSection: React.FC<TitleSectionProps> = ({
         Title
       </Label>
 
-      <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row gap-2">
         <input
           name="title"
           type="text"
           value={titleValue}
           onChange={(e) => onTitleChange(e.target.value)}
-          className="rw-input flex-1"
+          className="rw-input flex-1 w-full"
         />
         <Button
           type="button"
-          variant="outline"
+          variant="link"
           size="sm"
+          className="w-full sm:w-auto justify-start sm:justify-center p-0 sm:px-3 sm:py-2"
           onClick={() => {
             const newTitle = buildTitle(
               weekNumber,
@@ -345,8 +354,22 @@ const EstimateForm = (props: EstimateFormProps) => {
     FindRates['rates'][0] | null
   >(null)
   const [quickAddQuantity, setQuickAddQuantity] = useState(1)
+  const [isDesktop, setIsDesktop] = useState(false)
 
   const weekNumber = getWeekNumber(new Date())
+
+  const hasEntityDefaults = Boolean(
+    currentUser?.defaultEntityId || currentUser?.defaultRetailerEntityId
+  )
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mediaQuery = window.matchMedia('(min-width: 768px)')
+    const handler = (event: MediaQueryListEvent) => setIsDesktop(event.matches)
+    setIsDesktop(mediaQuery.matches)
+    mediaQuery.addEventListener('change', handler)
+    return () => mediaQuery.removeEventListener('change', handler)
+  }, [])
 
   // Set default entities from current user if fields are empty
   useEffect(() => {
@@ -421,6 +444,26 @@ const EstimateForm = (props: EstimateFormProps) => {
     () => billableItems.reduce((sum, it) => sum + Number(it.subtotal || 0), 0),
     [billableItems]
   )
+
+  const applyDefaultEntities = () => {
+    if (currentUser?.defaultEntityId) {
+      const defaultInstaller = props.entities?.find(
+        (entity) => entity.id === currentUser.defaultEntityId
+      )
+      if (defaultInstaller) {
+        setSelectedInstallerEntity(defaultInstaller)
+      }
+    }
+
+    if (currentUser?.defaultRetailerEntityId) {
+      const defaultRetailer = props.entities?.find(
+        (entity) => entity.id === currentUser.defaultRetailerEntityId
+      )
+      if (defaultRetailer) {
+        setSelectedRetailerEntity(defaultRetailer)
+      }
+    }
+  }
 
   const isPersistedEstimate = Boolean(props.estimate?.id)
 
@@ -626,7 +669,7 @@ const EstimateForm = (props: EstimateFormProps) => {
         />
 
         {/* Title + Status in one row */}
-        <div className="flex items-end gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-4 pb-4 border-b border-border">
           <TitleSection
             titleValue={titleValue}
             onTitleChange={setTitleValue}
@@ -635,7 +678,7 @@ const EstimateForm = (props: EstimateFormProps) => {
             selectedClientEntity={selectedClientEntity}
           />
 
-          <div className="w-48 ml-auto">
+          <div className="w-full sm:w-48 sm:ml-auto">
             <Label
               name="status"
               className="rw-label"
@@ -709,250 +752,274 @@ const EstimateForm = (props: EstimateFormProps) => {
           </div>
         </div>
 
-        {/* Installer Entity - Using EntitySelector */}
-        <EntitySelector
-          label="Installer"
-          placeholder="Select installer..."
-          fieldName="installerEntityId"
-          entityType="INSTALLER"
-          entities={props.entities}
-          selectedEntity={selectedInstallerEntity}
-          onEntitySelect={setSelectedInstallerEntity}
-          onEntityUpdate={async (entity) => {
-            const fields: (keyof Entity)[] = [
-              'name',
-              'addressLine1',
-              'addressLine2',
-              'city',
-              'state',
-              'postalCode',
-            ]
-            const updateInput = fields.reduce((acc, field) => {
-              if (entity[field] !== undefined) {
-                acc[field] = entity[field]
-              }
-              return acc
-            }, {} as any)
-            await updateEntity({
-              variables: {
-                id: entity.id,
-                input: updateInput,
-              },
-            })
-            setSelectedInstallerEntity(entity)
-          }}
-          hiddenInputValue={
-            selectedInstallerEntity?.id ||
-            props.estimate?.installerEntityId ||
-            ''
-          }
-        />
+        <div className="mt-4 flex flex-col md:flex-row gap-4">
+          <fieldset
+            key={selectedClientEntity?.id || 'no-client'}
+            className="space-y-2 md:w-1/2"
+          >
+            <legend className="text-sm font-medium flex items-center justify-between">
+              <span>Job Location</span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="ml-4"
+                onClick={() => {
+                  setJobAddressLine1(selectedClientEntity?.addressLine1 || '')
+                  setJobAddressLine2(selectedClientEntity?.addressLine2 || '')
+                  setJobCity(selectedClientEntity?.city || '')
+                  setJobState(selectedClientEntity?.state || '')
+                  setJobPostalCode(selectedClientEntity?.postalCode || '')
+                }}
+                disabled={!selectedClientEntity?.id}
+                title="Copy address from client"
+              >
+                Copy from Client
+              </Button>
+            </legend>
 
-        {/* Client Entity - Using EntitySelector */}
-        <EntitySelector
-          label="Client"
-          placeholder="Select client..."
-          fieldName="clientEntityId"
-          entityType="CLIENT"
-          entities={props.entities}
-          selectedEntity={selectedClientEntity}
-          onEntitySelect={setSelectedClientEntity}
-          onEntityUpdate={async (entity) => {
-            const fields: (keyof Entity)[] = [
-              'name',
-              'addressLine1',
-              'addressLine2',
-              'city',
-              'state',
-              'postalCode',
-            ]
-            const updateInput = fields.reduce((acc, field) => {
-              if (entity[field] !== undefined) {
-                acc[field] = entity[field]
-              }
-              return acc
-            }, {} as any)
-            await updateEntity({
-              variables: {
-                id: entity.id,
-                input: updateInput,
-              },
-            })
-            setSelectedClientEntity(entity)
-          }}
-          hiddenInputValue={
-            selectedClientEntity?.id || props.estimate?.clientEntityId || ''
-          }
-        />
-
-        {/* Retailer Entity - Using EntitySelector */}
-        <EntitySelector
-          label="Retailer"
-          placeholder="Select retailer..."
-          fieldName="retailerEntityId"
-          entityType="RETAILER"
-          entities={props.entities}
-          selectedEntity={selectedRetailerEntity}
-          onEntitySelect={setSelectedRetailerEntity}
-          onEntityUpdate={async (entity) => {
-            const fields: (keyof Entity)[] = [
-              'name',
-              'addressLine1',
-              'addressLine2',
-              'city',
-              'state',
-              'postalCode',
-            ]
-            const updateInput = fields.reduce((acc, field) => {
-              if (entity[field] !== undefined) {
-                acc[field] = entity[field]
-              }
-              return acc
-            }, {} as any)
-            await updateEntity({
-              variables: {
-                id: entity.id,
-                input: updateInput,
-              },
-            })
-            setSelectedRetailerEntity(entity)
-          }}
-          hiddenInputValue={
-            selectedRetailerEntity?.id || props.estimate?.retailerEntityId || ''
-          }
-        />
-
-        {/* Job Location - grouped address layout, auto-filled from client */}
-        <fieldset
-          key={selectedClientEntity?.id || 'no-client'}
-          className="mt-4 space-y-2"
-        >
-          <legend className="text-sm font-medium flex items-center justify-between">
-            <span>Job Location</span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="ml-4"
-              onClick={() => {
-                setJobAddressLine1(selectedClientEntity?.addressLine1 || '')
-                setJobAddressLine2(selectedClientEntity?.addressLine2 || '')
-                setJobCity(selectedClientEntity?.city || '')
-                setJobState(selectedClientEntity?.state || '')
-                setJobPostalCode(selectedClientEntity?.postalCode || '')
-              }}
-              disabled={!selectedClientEntity?.id}
-              title="Copy address from client"
-            >
-              Copy from Client
-            </Button>
-          </legend>
-
-          <div>
-            <Label
-              name="jobAddressLine1"
-              className="rw-label"
-              errorClassName="rw-label rw-label-error"
-            >
-              Address Line 1
-            </Label>
-
-            <TextField
-              name="jobAddressLine1"
-              value={jobAddressLine1}
-              onChange={(e) => setJobAddressLine1(e.target.value)}
-              className="rw-input"
-              errorClassName="rw-input rw-input-error"
-            />
-
-            <FieldError name="jobAddressLine1" className="rw-field-error" />
-          </div>
-
-          <div>
-            <Label
-              name="jobAddressLine2"
-              className="rw-label"
-              errorClassName="rw-label rw-label-error"
-            >
-              Address Line 2
-            </Label>
-
-            <TextField
-              name="jobAddressLine2"
-              value={jobAddressLine2}
-              onChange={(e) => setJobAddressLine2(e.target.value)}
-              className="rw-input"
-              errorClassName="rw-input rw-input-error"
-            />
-
-            <FieldError name="jobAddressLine2" className="rw-field-error" />
-          </div>
-
-          <div className="grid grid-cols-6 gap-2">
-            <div className="col-span-3">
+            <div>
               <Label
-                name="jobCity"
+                name="jobAddressLine1"
                 className="rw-label"
                 errorClassName="rw-label rw-label-error"
               >
-                City
+                Address Line 1
               </Label>
 
               <TextField
-                name="jobCity"
-                value={jobCity}
-                onChange={(e) => setJobCity(e.target.value)}
+                name="jobAddressLine1"
+                value={jobAddressLine1}
+                onChange={(e) => setJobAddressLine1(e.target.value)}
                 className="rw-input"
                 errorClassName="rw-input rw-input-error"
               />
 
-              <FieldError name="jobCity" className="rw-field-error" />
+              <FieldError name="jobAddressLine1" className="rw-field-error" />
             </div>
 
-            <div className="col-span-1">
+            <div>
               <Label
-                name="jobState"
+                name="jobAddressLine2"
                 className="rw-label"
                 errorClassName="rw-label rw-label-error"
               >
-                State
+                Address Line 2
               </Label>
 
               <TextField
-                name="jobState"
-                value={jobState}
-                onChange={(e) => setJobState(e.target.value)}
+                name="jobAddressLine2"
+                value={jobAddressLine2}
+                onChange={(e) => setJobAddressLine2(e.target.value)}
                 className="rw-input"
                 errorClassName="rw-input rw-input-error"
               />
 
-              <FieldError name="jobState" className="rw-field-error" />
+              <FieldError name="jobAddressLine2" className="rw-field-error" />
             </div>
 
-            <div className="col-span-2">
-              <Label
-                name="jobPostalCode"
-                className="rw-label"
-                errorClassName="rw-label rw-label-error"
+            <div className="grid grid-cols-1 sm:grid-cols-6 gap-2">
+              <div className="col-span-1 sm:col-span-3">
+                <Label
+                  name="jobCity"
+                  className="rw-label"
+                  errorClassName="rw-label rw-label-error"
+                >
+                  City
+                </Label>
+
+                <TextField
+                  name="jobCity"
+                  value={jobCity}
+                  onChange={(e) => setJobCity(e.target.value)}
+                  className="rw-input"
+                  errorClassName="rw-input rw-input-error"
+                />
+
+                <FieldError name="jobCity" className="rw-field-error" />
+              </div>
+
+              <div className="col-span-1">
+                <Label
+                  name="jobState"
+                  className="rw-label"
+                  errorClassName="rw-label rw-label-error"
+                >
+                  State
+                </Label>
+
+                <TextField
+                  name="jobState"
+                  value={jobState}
+                  onChange={(e) => setJobState(e.target.value)}
+                  className="rw-input"
+                  errorClassName="rw-input rw-input-error"
+                />
+
+                <FieldError name="jobState" className="rw-field-error" />
+              </div>
+
+              <div className="col-span-1 sm:col-span-2">
+                <Label
+                  name="jobPostalCode"
+                  className="rw-label"
+                  errorClassName="rw-label rw-label-error"
+                >
+                  Postal Code
+                </Label>
+
+                <TextField
+                  name="jobPostalCode"
+                  value={jobPostalCode}
+                  onChange={(e) => setJobPostalCode(e.target.value)}
+                  className="rw-input"
+                  errorClassName="rw-input rw-input-error"
+                />
+
+                <FieldError name="jobPostalCode" className="rw-field-error" />
+              </div>
+            </div>
+
+            {/* Hidden country defaults to United States */}
+            <input type="hidden" name="jobCountry" value="United States" />
+          </fieldset>
+
+          <fieldset className="space-y-3 md:w-1/2">
+            <legend>
+              <span className="text-sm font-medium">Entities</span>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="ml-4"
+                onClick={applyDefaultEntities}
+                disabled={!hasEntityDefaults}
               >
-                Postal Code
-              </Label>
+                Use Defaults
+              </Button>
+            </legend>
 
-              <TextField
-                name="jobPostalCode"
-                value={jobPostalCode}
-                onChange={(e) => setJobPostalCode(e.target.value)}
-                className="rw-input"
-                errorClassName="rw-input rw-input-error"
+            <div className="w-full">
+              <EntitySelector
+                label="Installer"
+                placeholder="Select installer..."
+                fieldName="installerEntityId"
+                entityType="INSTALLER"
+                entities={props.entities}
+                selectedEntity={selectedInstallerEntity}
+                onEntitySelect={setSelectedInstallerEntity}
+                onEntityUpdate={async (entity) => {
+                  const fields: (keyof Entity)[] = [
+                    'name',
+                    'addressLine1',
+                    'addressLine2',
+                    'city',
+                    'state',
+                    'postalCode',
+                  ]
+                  const updateInput = fields.reduce((acc, field) => {
+                    if (entity[field] !== undefined) {
+                      acc[field] = entity[field]
+                    }
+                    return acc
+                  }, {} as any)
+                  await updateEntity({
+                    variables: {
+                      id: entity.id,
+                      input: updateInput,
+                    },
+                  })
+                  setSelectedInstallerEntity(entity)
+                }}
+                hiddenInputValue={
+                  selectedInstallerEntity?.id ||
+                  props.estimate?.installerEntityId ||
+                  ''
+                }
               />
-
-              <FieldError name="jobPostalCode" className="rw-field-error" />
             </div>
-          </div>
 
-          {/* Hidden country defaults to United States */}
-          <input type="hidden" name="jobCountry" value="United States" />
-        </fieldset>
+            <div className="w-full">
+              <EntitySelector
+                label="Client"
+                placeholder="Select client..."
+                fieldName="clientEntityId"
+                entityType="CLIENT"
+                entities={props.entities}
+                selectedEntity={selectedClientEntity}
+                onEntitySelect={setSelectedClientEntity}
+                onEntityUpdate={async (entity) => {
+                  const fields: (keyof Entity)[] = [
+                    'name',
+                    'addressLine1',
+                    'addressLine2',
+                    'city',
+                    'state',
+                    'postalCode',
+                  ]
+                  const updateInput = fields.reduce((acc, field) => {
+                    if (entity[field] !== undefined) {
+                      acc[field] = entity[field]
+                    }
+                    return acc
+                  }, {} as any)
+                  await updateEntity({
+                    variables: {
+                      id: entity.id,
+                      input: updateInput,
+                    },
+                  })
+                  setSelectedClientEntity(entity)
+                }}
+                hiddenInputValue={
+                  selectedClientEntity?.id ||
+                  props.estimate?.clientEntityId ||
+                  ''
+                }
+              />
+            </div>
+
+            <div className="w-full">
+              <EntitySelector
+                label="Retailer"
+                placeholder="Select retailer..."
+                fieldName="retailerEntityId"
+                entityType="RETAILER"
+                entities={props.entities}
+                selectedEntity={selectedRetailerEntity}
+                onEntitySelect={setSelectedRetailerEntity}
+                onEntityUpdate={async (entity) => {
+                  const fields: (keyof Entity)[] = [
+                    'name',
+                    'addressLine1',
+                    'addressLine2',
+                    'city',
+                    'state',
+                    'postalCode',
+                  ]
+                  const updateInput = fields.reduce((acc, field) => {
+                    if (entity[field] !== undefined) {
+                      acc[field] = entity[field]
+                    }
+                    return acc
+                  }, {} as any)
+                  await updateEntity({
+                    variables: {
+                      id: entity.id,
+                      input: updateInput,
+                    },
+                  })
+                  setSelectedRetailerEntity(entity)
+                }}
+                hiddenInputValue={
+                  selectedRetailerEntity?.id ||
+                  props.estimate?.retailerEntityId ||
+                  ''
+                }
+              />
+            </div>
+          </fieldset>
+        </div>
 
         {/* Billable Items Section */}
         <fieldset className="mt-6 space-y-3">
@@ -961,6 +1028,7 @@ const EstimateForm = (props: EstimateFormProps) => {
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Pricing:</span>
               <Toggle
+                variant="outline"
                 pressed={pricingType === 'sub'}
                 onPressedChange={(pressed) =>
                   setPricingType(pressed ? 'sub' : 'retail')
@@ -969,7 +1037,7 @@ const EstimateForm = (props: EstimateFormProps) => {
                 className="h-8"
               >
                 <span className="text-xs">
-                  {pricingType === 'sub' ? 'Wholesale' : 'Retail'}
+                  {pricingType === 'sub' ? 'Subcontractor' : 'Retailer'}
                 </span>
               </Toggle>
             </div>
@@ -988,257 +1056,394 @@ const EstimateForm = (props: EstimateFormProps) => {
             </div>
           ) : (
             <div className="space-y-2">
-              {billableItems.map((item, _idx) => (
-                <div
-                  key={item.id}
-                  className="grid grid-cols-12 gap-2 items-center rounded-md border px-3 py-2"
-                >
-                  <div className="col-span-2">
-                    <div className="text-xs text-muted-foreground">
-                      Quantity
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-2">
+                {billableItems.map((item, _idx) => (
+                  <div
+                    key={item.id}
+                    className="rounded-md border p-3 space-y-2"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="font-medium">
+                          {item.quantity} ×{' '}
+                          {item.unit?.shortName ||
+                            item.unit?.fullName ||
+                            item.unitId}{' '}
+                          - {serviceLabel(item)}
+                        </div>
+                        {item.notes && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {item.notes}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="font-medium">{item.quantity}</div>
-                  </div>
-                  <div className="col-span-2">
-                    <div className="text-xs text-muted-foreground">Unit</div>
-                    <div>
-                      {item.unit?.shortName ||
-                        item.unit?.fullName ||
-                        item.unitId}
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <div>
+                        <div className="text-xs text-muted-foreground">
+                          Unit Price
+                        </div>
+                        <div>${formatMoney(item.unitPrice as number)}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-muted-foreground">
+                          Subtotal
+                        </div>
+                        <div className="font-semibold">
+                          ${formatMoney(item.subtotal as number)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        title="Edit"
+                        onClick={() => setEditingBillableItem(item)}
+                      >
+                        <Pencil className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        title="Remove"
+                        onClick={() => handleDeleteBillableItem(item.id)}
+                      >
+                        <Trash2Icon className="h-4 w-4 mr-1" />
+                        Delete
+                      </Button>
                     </div>
                   </div>
-                  <div className="col-span-3">
-                    <div className="text-xs text-muted-foreground">
-                      Service / Action
-                    </div>
-                    <div>{serviceLabel(item)}</div>
-                  </div>
-                  <div className="col-span-2">
-                    <div className="text-xs text-muted-foreground">Notes</div>
-                    <div className="truncate">{item.notes || '—'}</div>
-                  </div>
-                  <div className="col-span-1 text-right">
-                    <div className="text-xs text-muted-foreground">
-                      Unit Price
-                    </div>
-                    <div>${formatMoney(item.unitPrice as number)}</div>
-                  </div>
-                  <div className="col-span-1 text-right font-semibold pr-4">
-                    <div className="text-xs text-muted-foreground">
-                      Subtotal
-                    </div>
-                    <div>${formatMoney(item.subtotal as number)}</div>
-                  </div>
-                  <div className="col-span-1 flex justify-end gap-1">
-                    {/* <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      title="Move up"
-                      disabled={idx === 0}
-                      onClick={() => handleReorder(idx, idx - 1)}
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block">
+                <div className="space-y-2">
+                  {billableItems.map((item, _idx) => (
+                    <div
+                      key={item.id}
+                      className="grid grid-cols-12 gap-2 items-center rounded-md border px-3 py-2"
                     >
-                      <ArrowUp className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      title="Move down"
-                      disabled={idx === billableItems.length - 1}
-                      onClick={() => handleReorder(idx, idx + 1)}
-                    >
-                      <ArrowDown className="h-4 w-4" />
-                    </Button> */}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      title="Edit"
-                      onClick={() => setEditingBillableItem(item)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      title="Remove"
-                      onClick={() => handleDeleteBillableItem(item.id)}
-                    >
-                      <Trash2Icon className="h-4 w-4" />
-                    </Button>
-                  </div>
+                      <div className="col-span-2">
+                        <div className="text-xs text-muted-foreground">
+                          Quantity
+                        </div>
+                        <div className="font-medium">{item.quantity}</div>
+                      </div>
+                      <div className="col-span-2">
+                        <div className="text-xs text-muted-foreground">
+                          Unit
+                        </div>
+                        <div>
+                          {item.unit?.shortName ||
+                            item.unit?.fullName ||
+                            item.unitId}
+                        </div>
+                      </div>
+                      <div className="col-span-3">
+                        <div className="text-xs text-muted-foreground">
+                          Service / Action
+                        </div>
+                        <div>{serviceLabel(item)}</div>
+                      </div>
+                      <div className="col-span-2">
+                        <div className="text-xs text-muted-foreground">
+                          Notes
+                        </div>
+                        <div className="truncate">{item.notes || '—'}</div>
+                      </div>
+                      <div className="col-span-1 text-right">
+                        <div className="text-xs text-muted-foreground">
+                          Unit Price
+                        </div>
+                        <div>${formatMoney(item.unitPrice as number)}</div>
+                      </div>
+                      <div className="col-span-1 text-right font-semibold pr-4">
+                        <div className="text-xs text-muted-foreground">
+                          Subtotal
+                        </div>
+                        <div>${formatMoney(item.subtotal as number)}</div>
+                      </div>
+                      <div className="col-span-1 flex justify-end gap-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          title="Edit"
+                          onClick={() => setEditingBillableItem(item)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          title="Remove"
+                          onClick={() => handleDeleteBillableItem(item.id)}
+                        >
+                          <Trash2Icon className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-2 pt-2">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2">
             <div className="text-sm text-muted-foreground">
               Subtotal: ${formatMoney(itemsTotal)}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
               {/* Quantity Input for Quick Add */}
-              <div className="flex flex-row gap-1 items-center">
-                <label
-                  htmlFor="quickAddQuantity"
-                  className="text-xs text-muted-foreground"
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1">
+                <div className="flex items-center gap-1 flex-1">
+                  <label
+                    htmlFor="quickAddQuantity"
+                    className="text-xs text-muted-foreground whitespace-nowrap"
+                  >
+                    Qty
+                  </label>
+                  <input
+                    id="quickAddQuantity"
+                    type="number"
+                    min="1"
+                    value={quickAddQuantity}
+                    onChange={(e) =>
+                      setQuickAddQuantity(
+                        Math.max(1, parseInt(e.target.value) || 1)
+                      )
+                    }
+                    className="rw-input flex-1 sm:flex-none"
+                    disabled={!isPersistedEstimate}
+                  />
+                </div>
+
+                {/* Quick Add from Rates Combobox */}
+                <Popover
+                  open={openQuickAddCombobox}
+                  onOpenChange={setOpenQuickAddCombobox}
                 >
-                  Qty
-                </label>
-                <input
-                  id="quickAddQuantity"
-                  type="number"
-                  min="1"
-                  value={quickAddQuantity}
-                  onChange={(e) =>
-                    setQuickAddQuantity(
-                      Math.max(1, parseInt(e.target.value) || 1)
-                    )
-                  }
-                  className="rw-input"
-                  disabled={!isPersistedEstimate}
-                />
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openQuickAddCombobox}
+                      className={cn(
+                        'w-full sm:w-auto sm:justify-between',
+                        !selectedQuickAddRate && 'text-muted-foreground'
+                      )}
+                      disabled={!isPersistedEstimate || ratesLoading}
+                    >
+                      {selectedQuickAddRate
+                        ? buildRateLabel(selectedQuickAddRate)
+                        : 'Quick Add from Rates...'}
+                      <svg
+                        className="ml-2 h-4 w-4 shrink-0 opacity-50"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M7 10l5 5 5-5H7z" />
+                      </svg>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="p-0 w-fit">
+                    <Command>
+                      <CommandInput placeholder="Search rates..." />
+                      <CommandEmpty>No rates found.</CommandEmpty>
+                      <CommandList>
+                        <CommandGroup>
+                          {ratesData?.rates
+                            ?.slice()
+                            .sort((a, b) => {
+                              const aAction = a.service?.action || ''
+                              const bAction = b.service?.action || ''
+                              const actionCompare =
+                                aAction.localeCompare(bAction)
+                              if (actionCompare !== 0) return actionCompare
+                              const aMaterial = a.service?.material || ''
+                              const bMaterial = b.service?.material || ''
+                              return aMaterial.localeCompare(bMaterial)
+                            })
+                            .map((rate) => (
+                              <CommandItem
+                                key={rate.id}
+                                value={buildRateSearchValue(rate)}
+                                onSelect={() => {
+                                  setSelectedQuickAddRate(rate)
+                                }}
+                              >
+                                {buildRateLabel(rate)}
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+
+                {/* Add button with plus icon for quick add */}
+                {selectedQuickAddRate && (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full sm:w-auto"
+                      title="Add selected rate as item"
+                      onClick={() =>
+                        handleQuickAddFromRate(selectedQuickAddRate)
+                      }
+                      disabled={!isPersistedEstimate}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add
+                    </Button>
+                    <span className="hidden sm:inline">or</span>
+                  </>
+                )}
               </div>
 
-              {/* Quick Add from Rates Combobox */}
-              <Popover
-                open={openQuickAddCombobox}
-                onOpenChange={setOpenQuickAddCombobox}
-              >
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={openQuickAddCombobox}
-                    className={cn(
-                      'w-auto justify-between',
-                      !selectedQuickAddRate && 'text-muted-foreground'
-                    )}
-                    disabled={!isPersistedEstimate || ratesLoading}
-                  >
-                    {selectedQuickAddRate
-                      ? buildRateLabel(selectedQuickAddRate)
-                      : 'Quick Add from Rates...'}
-                    <svg
-                      className="ml-2 h-4 w-4 shrink-0 opacity-50"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+              {/* Standard Add Item trigger with responsive dialog/drawer */}
+              {isDesktop ? (
+                <Dialog
+                  open={openNewBillableItem}
+                  onOpenChange={setOpenNewBillableItem}
+                >
+                  <DialogTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full sm:w-auto"
+                      disabled={!isPersistedEstimate}
                     >
-                      <path d="M7 10l5 5 5-5H7z" />
-                    </svg>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="p-0 w-fit">
-                  <Command>
-                    <CommandInput placeholder="Search rates..." />
-                    <CommandEmpty>No rates found.</CommandEmpty>
-                    <CommandList>
-                      <CommandGroup>
-                        {ratesData?.rates
-                          ?.slice()
-                          .sort((a, b) => {
-                            const aAction = a.service?.action || ''
-                            const bAction = b.service?.action || ''
-                            const actionCompare = aAction.localeCompare(bAction)
-                            if (actionCompare !== 0) return actionCompare
-                            const aMaterial = a.service?.material || ''
-                            const bMaterial = b.service?.material || ''
-                            return aMaterial.localeCompare(bMaterial)
-                          })
-                          .map((rate) => (
-                            <CommandItem
-                              key={rate.id}
-                              value={buildRateSearchValue(rate)}
-                              onSelect={() => {
-                                setSelectedQuickAddRate(rate)
-                              }}
-                            >
-                              {buildRateLabel(rate)}
-                            </CommandItem>
-                          ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-
-              {/* Add button with plus icon for quick add */}
-              {selectedQuickAddRate && (
-                <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    title="Add selected rate as item"
-                    onClick={() => handleQuickAddFromRate(selectedQuickAddRate)}
-                    disabled={!isPersistedEstimate}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                  <span>or</span>
-                </>
+                      Add Item
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-full sm:max-w-3xl">
+                    <DialogHeader>
+                      <DialogTitle>Add Billable Item</DialogTitle>
+                    </DialogHeader>
+                    {isPersistedEstimate ? (
+                      <BillableItemFormWrapper
+                        onSave={handleCreateBillableItem}
+                        loading={createBillableItemLoading}
+                        error={createBillableItemError}
+                      />
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Save the estimate before adding items.
+                      </p>
+                    )}
+                  </DialogContent>
+                </Dialog>
+              ) : (
+                <Drawer
+                  open={openNewBillableItem}
+                  onOpenChange={setOpenNewBillableItem}
+                >
+                  <DrawerTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      disabled={!isPersistedEstimate}
+                    >
+                      Add Item
+                    </Button>
+                  </DrawerTrigger>
+                  <DrawerContent>
+                    <DrawerHeader>
+                      <DrawerTitle>Add Billable Item</DrawerTitle>
+                    </DrawerHeader>
+                    <div className="max-h-[calc(100vh-180px)] overflow-y-auto px-4 pb-6">
+                      {isPersistedEstimate ? (
+                        <BillableItemFormWrapper
+                          onSave={handleCreateBillableItem}
+                          loading={createBillableItemLoading}
+                          error={createBillableItemError}
+                        />
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Save the estimate before adding items.
+                        </p>
+                      )}
+                    </div>
+                    <div className="px-4 pb-4">
+                      <DrawerClose asChild>
+                        <Button variant="outline" className="w-full">
+                          Close
+                        </Button>
+                      </DrawerClose>
+                    </div>
+                  </DrawerContent>
+                </Drawer>
               )}
-
-              {/* Standard Add Item Dialog */}
-              <Dialog
-                open={openNewBillableItem}
-                onOpenChange={setOpenNewBillableItem}
-              >
-                <DialogTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={!isPersistedEstimate}
-                  >
-                    Add Item
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-3xl">
-                  <DialogHeader>
-                    <DialogTitle>Add Billable Item</DialogTitle>
-                  </DialogHeader>
-                  {isPersistedEstimate ? (
-                    <BillableItemFormWrapper
-                      onSave={handleCreateBillableItem}
-                      loading={createBillableItemLoading}
-                      error={createBillableItemError}
-                    />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Save the estimate before adding items.
-                    </p>
-                  )}
-                </DialogContent>
-              </Dialog>
             </div>
           </div>
         </fieldset>
 
-        <Dialog
-          open={Boolean(editingBillableItem)}
-          onOpenChange={(open) => !open && setEditingBillableItem(null)}
-        >
-          <DialogContent className="max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>Edit Billable Item</DialogTitle>
-            </DialogHeader>
-            {editingBillableItem && (
-              <BillableItemFormWrapper
-                billableItem={editingBillableItem as BillableItem}
-                onSave={(input, id) => handleUpdateBillableItem(input, id)}
-                loading={updateBillableItemLoading}
-                error={updateBillableItemError}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
+        {isDesktop ? (
+          <Dialog
+            open={Boolean(editingBillableItem)}
+            onOpenChange={(open) => !open && setEditingBillableItem(null)}
+          >
+            <DialogContent className="max-w-full sm:max-w-3xl">
+              <DialogHeader>
+                <DialogTitle>Edit Billable Item</DialogTitle>
+              </DialogHeader>
+              {editingBillableItem && (
+                <BillableItemFormWrapper
+                  billableItem={editingBillableItem as BillableItem}
+                  onSave={(input, id) => handleUpdateBillableItem(input, id)}
+                  loading={updateBillableItemLoading}
+                  error={updateBillableItemError}
+                />
+              )}
+            </DialogContent>
+          </Dialog>
+        ) : (
+          <Drawer
+            open={Boolean(editingBillableItem)}
+            onOpenChange={(open) => !open && setEditingBillableItem(null)}
+          >
+            <DrawerContent>
+              <DrawerHeader>
+                <DrawerTitle>Edit Billable Item</DrawerTitle>
+              </DrawerHeader>
+              <div className="max-h-[calc(100vh-180px)] overflow-y-auto px-4 pb-6">
+                {editingBillableItem && (
+                  <BillableItemFormWrapper
+                    billableItem={editingBillableItem as BillableItem}
+                    onSave={(input, id) => handleUpdateBillableItem(input, id)}
+                    loading={updateBillableItemLoading}
+                    error={updateBillableItemError}
+                  />
+                )}
+              </div>
+              <div className="px-4 pb-4">
+                <DrawerClose asChild>
+                  <Button variant="outline" className="w-full">
+                    Close
+                  </Button>
+                </DrawerClose>
+              </div>
+            </DrawerContent>
+          </Drawer>
+        )}
 
         {/* Author ID - Visually hidden, auto-populated from current user */}
         <input type="hidden" name="authorId" value={currentUser?.id || ''} />
@@ -1259,28 +1464,19 @@ const EstimateForm = (props: EstimateFormProps) => {
           validation={{ valueAsNumber: true, required: true }}
         />
 
-        <Label
-          name="total"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Total
-        </Label>
-
-        {/* Display formatted currency, keep actual value in hidden field */}
-        <input
-          type="text"
-          value={currencyDisplay(itemsTotal)}
-          className="rw-input"
-          readOnly
-        />
+        <div className="mt-6 rounded-md border bg-muted/30 px-4 py-3 flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">Total</span>
+          <span className="text-3xl font-semibold">
+            {currencyDisplay(itemsTotal)}
+          </span>
+        </div>
 
         {/* Hidden form field to persist numeric total */}
         <TextField
           name="total"
           value={itemsTotal}
-          className="hidden"
-          errorClassName="hidden"
+          className="sr-only"
+          errorClassName="sr-only"
           validation={{ valueAsNumber: true, required: true }}
         />
 
@@ -1293,23 +1489,22 @@ const EstimateForm = (props: EstimateFormProps) => {
           errorClassName="hidden"
         />
 
-        <Label
-          name="notes"
-          className="rw-label text-base font-semibold"
-          errorClassName="rw-label rw-label-error"
-        >
-          Notes
-        </Label>
+        <details className="mt-4 border rounded-md">
+          <summary className="cursor-pointer px-3 py-2 text-sm font-semibold">
+            Notes
+          </summary>
+          <div className="px-3 pb-3 pt-1 space-y-2">
+            <TextAreaField
+              name="notes"
+              defaultValue={props.estimate?.notes}
+              className="rw-input"
+              errorClassName="rw-input rw-input-error"
+              rows={8}
+            />
 
-        <TextAreaField
-          name="notes"
-          defaultValue={props.estimate?.notes}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          rows={8}
-        />
-
-        <FieldError name="notes" className="rw-field-error" />
+            <FieldError name="notes" className="rw-field-error" />
+          </div>
+        </details>
 
         <NumberField
           name="entityId"
@@ -1319,8 +1514,11 @@ const EstimateForm = (props: EstimateFormProps) => {
           emptyAs={'undefined'}
         />
 
-        <div className="rw-button-group">
-          <Submit disabled={props.loading} className="rw-button rw-button-blue">
+        <div className="rw-button-group flex gap-2">
+          <Submit
+            disabled={props.loading}
+            className="rw-button rw-button-blue flex-1 sm:flex-none"
+          >
             Save
           </Submit>
         </div>
