@@ -104,7 +104,6 @@ const TheCutList = ({ measurementsJson, onTotalChange }) => {
 
   return (
     <div className="p-4 text-center">
-      <h2 className="mb-4 text-xl font-bold">The Cut List</h2>
       <div className="grenze-gotisch mb-4 text-4xl">
         {Math.floor(totalMeasurementInches / 12)}'{totalMeasurementInches % 12}"
       </div>
