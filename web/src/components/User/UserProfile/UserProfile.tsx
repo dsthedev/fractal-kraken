@@ -16,26 +16,36 @@ const UserProfile = () => {
 
   return (
     <div className="space-y-8">
-      {/* User Info Block */}
       <div className="rounded-lg border bg-card p-6 shadow-sm">
         <h2 className="mb-4 text-2xl font-semibold">Profile Information</h2>
-        <div className="space-y-3">
-          <div className="grid grid-cols-[120px_1fr] gap-2">
-            <span className="font-medium text-muted-foreground">Name:</span>
+        <div className="space-y-4">
+          <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-3">
+            <span className="font-medium text-muted-foreground md:w-28 md:flex-shrink">
+              Name:
+            </span>
             <span>{currentUser.name || 'Not set'}</span>
           </div>
-          <div className="grid grid-cols-[120px_1fr] gap-2">
-            <span className="font-medium text-muted-foreground">Email:</span>
+
+          <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-3">
+            <span className="font-medium text-muted-foreground md:w-28 md:flex-shrink">
+              Email:
+            </span>
             <span>{currentUser.email}</span>
           </div>
-          <div className="grid grid-cols-[120px_1fr] gap-2">
-            <span className="font-medium text-muted-foreground">Role:</span>
+
+          <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-3">
+            <span className="font-medium text-muted-foreground md:w-28 md:flex-shrink">
+              Role:
+            </span>
             <span className="capitalize">{currentUser.roles}</span>
           </div>
-          <div className="grid grid-cols-[120px_1fr] gap-2">
-            <span className="font-medium text-muted-foreground">User ID:</span>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-sm">
+
+          <div className="flex flex-col gap-1 md:gap-3">
+            <span className="font-medium text-muted-foreground md:w-28 md:flex-shrink">
+              User ID:
+            </span>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="font-mono text-sm truncate">
                 {isIdVisible
                   ? currentUser.id
                   : currentUser.id.substring(0, 4) +
@@ -43,7 +53,7 @@ const UserProfile = () => {
               </span>
               <button
                 onClick={() => setIsIdVisible(!isIdVisible)}
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
                 aria-label={isIdVisible ? 'Hide ID' : 'Show ID'}
               >
                 {isIdVisible ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -53,7 +63,6 @@ const UserProfile = () => {
         </div>
       </div>
 
-      {/* Connected Entities Block */}
       <ConnectedEntities />
     </div>
   )

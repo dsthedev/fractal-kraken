@@ -81,12 +81,8 @@ const EntityForm = (props: EntityFormProps) => {
           validation={{ required: 'Type is required' }}
         >
           <option value="CONTRACTOR">Contractor</option>
-          <option value="INSTALLER">Installer</option>
           <option value="CLIENT">Client</option>
           <option value="RETAILER">Retailer</option>
-          <option value="SUPPLIER">Supplier</option>
-          <option value="COMPANY">Company</option>
-          <option value="INDIVIDUAL">Individual</option>
           <option value="OTHER">Other</option>
         </SelectField>
 
@@ -190,7 +186,7 @@ const EntityForm = (props: EntityFormProps) => {
 
           <TextField
             name="addressLine1"
-              defaultValue={initial.addressLine1}
+            defaultValue={initial.addressLine1}
             className="rw-input"
             errorClassName="rw-input rw-input-error"
             placeholder="Street address"
@@ -199,7 +195,7 @@ const EntityForm = (props: EntityFormProps) => {
           <FieldError name="addressLine1" className="rw-field-error" />
         </div>
 
-        <div>
+        <div className="hidden">
           <Label
             name="addressLine2"
             className="rw-label"
@@ -210,7 +206,7 @@ const EntityForm = (props: EntityFormProps) => {
 
           <TextField
             name="addressLine2"
-              defaultValue={initial.addressLine2}
+            defaultValue={initial.addressLine2}
             className="rw-input"
             errorClassName="rw-input rw-input-error"
             placeholder="Apartment, suite, etc."
@@ -292,7 +288,7 @@ const EntityForm = (props: EntityFormProps) => {
 
           <TextField
             name="country"
-              defaultValue={initial.country}
+            defaultValue={initial.country}
             className="rw-input"
             errorClassName="rw-input rw-input-error"
             placeholder="US"
@@ -313,10 +309,10 @@ const EntityForm = (props: EntityFormProps) => {
 
           <TextAreaField
             name="notes"
-              defaultValue={initial.notes}
+            defaultValue={initial.notes}
             className="rw-input"
             errorClassName="rw-input rw-input-error"
-            rows={6}
+            rows={3}
           />
 
           <FieldError name="notes" className="rw-field-error" />

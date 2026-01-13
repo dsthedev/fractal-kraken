@@ -218,8 +218,10 @@ const RatesList = ({ rates }: FindRates) => {
   return (
     <div className="rw-segment rw-table-wrapper-responsive">
       <div className="mb-4 flex justify-between items-center">
-        <div className="text-sm text-muted-foreground">
-          Showing {filteredRates.length} of {rates.length} rates
+        <div className="text-sm flex text-muted-foreground flex gap-1">
+          <span className="hidden sm:block">Showing:</span>
+          {filteredRates.length} of {rates.length}
+          <span className="hidden sm:block">rates</span>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -266,39 +268,39 @@ const RatesList = ({ rates }: FindRates) => {
             {/* <th>Id</th> */}
             <th
               onClick={() => handleSort('service.action')}
-              className="cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800 text-left"
             >
               Service
               <SortIcon columnKey="service.action" />
             </th>
             <th
               onClick={() => handleSort('unit.fullName')}
-              className="hidden sm:table-cell cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="hidden sm:table-cell cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800 text-left"
             >
               Unit
               <SortIcon columnKey="unit.fullName" />
             </th>
             <th
               onClick={() => handleSort('subAmount')}
-              className="cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800 text-center"
             >
-              Sub $
+              Rate
               <SortIcon columnKey="subAmount" />
             </th>
-            <th
+            {/* <th
               onClick={() => handleSort('retailAmount')}
-              className="cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800 text-left"
             >
-              Retail $
+              Retail
               <SortIcon columnKey="retailAmount" />
-            </th>
+            </th> */}
             {/* <th>Currency</th> */}
             {/* <th>Author id</th> */}
-            <th className="hidden sm:table-cell">{'eMpU'}</th>
+            {/* <th className="hidden sm:table-cell text-left">{'eMpU'}</th> */}
             {/* <th>Description</th> */}
             {/* <th>Created at</th> */}
             {/* <th>Updated at</th> */}
-            <th>&nbsp;</th>
+            <th className="hidden sm:table-cell">&nbsp;</th>
           </tr>
         </thead>
         <tbody>
@@ -326,49 +328,42 @@ const RatesList = ({ rates }: FindRates) => {
                     rate.service?.context
                   )}
                 </button>
-                <Link
-                  to={routes.rate({ id: rate.id })}
-                  title={
-                    'Show ' +
-                    fullServiceDisplay(
-                      formatEnum(rate.service?.action),
-                      rate.service?.material,
-                      rate.service?.context
-                    ) +
-                    ' details'
-                  }
-                  className="hidden sm:inline"
-                >
+                <span className="hidden sm:inline">
                   {fullServiceDisplay(
                     formatEnum(rate.service?.action),
                     rate.service?.material,
                     rate.service?.context
                   )}
-                </Link>
+                </span>
               </td>
               <td className="hidden sm:table-cell">
                 {rate.unit?.shortName || 'N/A'}
               </td>
               {/* <td>{truncate(rate.serviceId)}</td>
               <td>{truncate(rate.unitId)}</td> */}
-              <td>{currencyDisplay(rate.subAmount)}</td>
-              <td>{currencyDisplay(rate.retailAmount)}</td>
+              <td className="flex flex-col sm:flex-row sm:gap-4 text-right sm:justify-center">
+                <span className="text-muted-foreground">
+                  {currencyDisplay(rate.subAmount)}
+                </span>
+                <strong>{currencyDisplay(rate.retailAmount)}</strong>
+              </td>
               {/* <td>{truncate(rate.currency)}</td> */}
               {/* <td>{truncate(rate.authorId)}</td> */}
-              <td className="hidden sm:table-cell">
+              {/* <td className="hidden sm:table-cell text-left">
                 {truncate(rate.estimatedMinutesPerUnit)}
               </td>
               {/* <td>{truncate(rate.description)}</td> */}
               {/* <td>{timeTag(rate.createdAt)}</td> */}
               {/* <td>{timeTag(rate.updatedAt)}</td> */}
-              <td className="print:hidden">
-                <nav className="rw-table-actions">
+              <td className="print:hidden hidden sm:table-cell">
+                <nav className="rw-table-actions flex gap-2 justify-end">
                   <Link
                     to={routes.editRate({ id: rate.id })}
                     title={'Edit rate ' + rate.id}
                     className="rw-button rw-button-small rw-button-blue"
                   >
                     <Pencil className="h-4 w-4" />
+                    <span className="text-white pl-4">Edit</span>
                   </Link>
                   <button
                     type="button"
@@ -404,36 +399,60 @@ const RatesList = ({ rates }: FindRates) => {
             </DrawerHeader>
             <div className="px-4 pb-6 space-y-4">
               <div>
-                <p className="text-xs text-muted-foreground">Unit</p>
+                <p className="text-xs text-muted-foreground">
+                  Measurement Unit
+                </p>
                 <p className="text-sm font-medium">
                   {rate.unit?.fullName || 'N/A'}
                 </p>
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Sub $</p>
-                <p className="text-sm font-medium">
-                  {currencyDisplay(rate.subAmount)}
-                </p>
+              <div className="flex py-4">
+                <div className="flex-1">
+                  <p className="text-xs text-muted-foreground">Sub Rate</p>
+                  <p className="text-sm font-medium">
+                    {currencyDisplay(rate.subAmount)}
+                  </p>
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-muted-foreground">Retail Rate</p>
+                  <p className="text-sm font-medium">
+                    {currencyDisplay(rate.retailAmount)}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Retail $</p>
-                <p className="text-sm font-medium">
-                  {currencyDisplay(rate.retailAmount)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">eMpU</p>
-                <p className="text-sm font-medium">
-                  {truncate(rate.estimatedMinutesPerUnit)}
-                </p>
-              </div>
+              {rate.estimatedMinutesPerUnit && (
+                <div>
+                  <p className="text-xs text-muted-foreground">eMpU</p>
+                  <p className="text-sm font-medium">
+                    {truncate(rate.estimatedMinutesPerUnit)}
+                  </p>
+                </div>
+              )}
+              <nav className="flex flex-row gap-2 mt-4">
+                <Link
+                  to={routes.editRate({ id: rate.id })}
+                  title={'Edit rate ' + rate.id}
+                  className="rw-button rw-button-blue flex-1"
+                >
+                  <Pencil className="h-4 w-4" />{' '}
+                  <span className="px-4">Edit Rate</span>
+                </Link>
+                <button
+                  type="button"
+                  title={'Delete rate ' + rate.id}
+                  className="rw-button rw-button-red flex"
+                  onClick={() => onDeleteClick(rate.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </nav>
             </div>
           </DrawerContent>
         </Drawer>
       ))}
 
       <hr className="mb-6" />
-      <div className="flex gap-2">
+      <div className="flex flex-col md:flex-row gap-2">
         <ExportButton
           label="Export All Rates"
           data={sortedRates}

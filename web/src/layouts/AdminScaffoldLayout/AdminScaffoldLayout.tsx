@@ -38,14 +38,14 @@ const AdminScaffoldLayoutContent = ({
   return (
     <div className="rw-scaffold">
       <Toaster toastOptions={{ className: 'rw-toast', duration: 6000 }} />
-      <header className="rw-header flex print:hidden">
-        <h1 className="rw-heading rw-heading-primary">
+      <header className="rw-header flex print:hidden flex-col sm:flex-row gap-2 sm:gap-4">
+        <h1 className="rw-heading rw-heading-primary flex-1">
           <Link to={routes[titleTo]()} className="rw-link">
             {title}
           </Link>
         </h1>
         {/* Search input only renders if showSearch prop is true */}
-        {showSearch && <SearchInput />}
+        <div className="flex-auto w-full">{showSearch && <SearchInput />}</div>
         <Link
           to={routes[buttonTo]()}
           className="rw-button rw-button-green rw-button-small"

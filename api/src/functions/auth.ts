@@ -90,12 +90,12 @@ export const handler = async (
     },
 
     errors: {
-      usernameOrPasswordMissing: 'No Dice',
-      usernameNotFound: 'No Luck',
+      usernameOrPasswordMissing: 'Nope',
+      usernameNotFound: 'Nope',
       // For security reasons you may want to make this the same as the
       // usernameNotFound error so that a malicious user can't use the error
       // to narrow down if it's the username or password that's incorrect
-      incorrectPassword: 'No Pass',
+      incorrectPassword: 'Nope',
     },
 
     // How long a user will remain logged in, in seconds
@@ -175,7 +175,7 @@ export const handler = async (
     errors: {
       // `field` will be either "username" or "password"
       fieldMissing: '${field} is required',
-      usernameTaken: 'Username `${username}` already in use',
+      usernameTaken: 'Username already in use',
     },
   }
 

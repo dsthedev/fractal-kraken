@@ -31,7 +31,7 @@ export function ModeCycle() {
         >
           {/* Light icon */}
           <Sun
-            className={`absolute h-[1.2rem] w-[1.2rem] transition-all ${
+            className={`absolute transition-all ${
               resolvedTheme === 'light'
                 ? 'scale-100 rotate-0'
                 : 'scale-0 -rotate-90'
@@ -39,7 +39,7 @@ export function ModeCycle() {
           />
           {/* Dark icon */}
           <Moon
-            className={`absolute h-[1.2rem] w-[1.2rem] transition-all ${
+            className={`absolute transition-all ${
               resolvedTheme === 'dark'
                 ? 'scale-100 rotate-0'
                 : 'scale-0 rotate-90'

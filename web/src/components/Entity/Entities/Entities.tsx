@@ -1,6 +1,14 @@
 import { useState } from 'react'
 
-import { Pencil, Trash2, Filter, ChevronRight, Mail, Phone, User } from 'lucide-react'
+import {
+  Pencil,
+  Trash2,
+  Filter,
+  ChevronRight,
+  Mail,
+  Phone,
+  User,
+} from 'lucide-react'
 import type {
   DeleteEntityMutation,
   DeleteEntityMutationVariables,
@@ -18,6 +26,13 @@ import { ExportButton } from 'src/components/ExportButton/ExportButton'
 import { Button } from 'src/components/ui/button'
 import { Checkbox } from 'src/components/ui/checkbox'
 import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerClose,
+} from 'src/components/ui/drawer'
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -25,13 +40,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from 'src/components/ui/dropdown-menu'
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerClose,
-} from 'src/components/ui/drawer'
 import {
   HoverCard,
   HoverCardContent,
@@ -88,13 +96,12 @@ const EntityDetailsContent = ({ entity }: { entity: FindEntities[0] }) => (
         </a>
       </div>
     </div>
-    <div className="pt-2 border-t">
-      <Link
-        to={routes.entity({ id: entity.id })}
-        className="text-sm font-medium text-blue-600 hover:underline"
-      >
-        More Details →
-      </Link>
+    <div className="my-4">
+      <Button asChild variant="outline" size="sm">
+        <Link to={routes.entity({ id: entity.id })} className="">
+          More Details →
+        </Link>
+      </Button>
     </div>
   </div>
 )
@@ -142,8 +149,10 @@ const EntitiesList = ({ entities }: FindEntities) => {
   return (
     <div className="rw-segment rw-table-wrapper-responsive">
       <div className="mb-4 flex justify-between items-center">
-        <div className="text-sm text-muted-foreground">
-          Showing {filteredEntities.length} of {entities.length} entities
+        <div className="text-sm flex text-muted-foreground flex gap-1">
+          <span className="hidden sm:block">Showing:</span>
+          {filteredEntities.length} of {entities.length}
+          <span className="hidden sm:block">entities</span>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -186,12 +195,12 @@ const EntitiesList = ({ entities }: FindEntities) => {
 
       <table className="rw-table">
         <thead>
-          <tr>
+          <tr className="text-left">
             <th>Name</th>
             <th className="hidden sm:table-cell">Contact</th>
             <th className="hidden sm:table-cell">Email</th>
             <th className="hidden sm:table-cell">Phone</th>
-            <th>&nbsp;</th>
+            <th className="hidden sm:table-cell">&nbsp;</th>
           </tr>
         </thead>
         <tbody>
@@ -211,7 +220,7 @@ const EntitiesList = ({ entities }: FindEntities) => {
                 <button
                   type="button"
                   title={'Details for ' + entity.name}
-                  className="text-sm font-medium text-blue-600 hover:underline sm:hidden"
+                  className="text-sm font-medium text-blue-600 hover:underline sm:hidden text-left"
                   onClick={() => setOpenDrawerId(entity.id)}
                 >
                   {truncate(entity.name)}
@@ -236,19 +245,20 @@ const EntitiesList = ({ entities }: FindEntities) => {
                   {truncate(entity.phone)}
                 </a>
               </td>
-              <td>
+              <td className="hidden sm:table-cell">
                 <nav className="rw-table-actions flex flex-wrap gap-1 sm:flex-nowrap">
                   <Link
                     to={routes.editEntity({ id: entity.id })}
                     title={'Edit ' + entity.name}
-                    className="rw-button rw-button-small rw-button-blue"
+                    className="rw-button rw-button-small rw-button-blue flex-1"
                   >
                     <Pencil className="h-4 w-4" />
+                    <span className="text-white pl-4">Edit</span>
                   </Link>
                   <button
                     type="button"
                     title={'Delete ' + entity.name}
-                    className="rw-button rw-button-small rw-button-red"
+                    className="rw-button rw-button-small rw-button-red flex-1"
                     onClick={() => onDeleteClick(entity.id)}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -273,6 +283,25 @@ const EntitiesList = ({ entities }: FindEntities) => {
             </DrawerHeader>
             <div className="px-4 pb-6">
               <EntityDetailsContent entity={entity} />
+              <hr className="my-4" />
+              <nav className="flex flex-row gap-2 mt-4">
+                <Link
+                  to={routes.editEntity({ id: entity.id })}
+                  title={'Edit ' + entity.name}
+                  className="rw-button rw-button-small rw-button-blue flex-1"
+                >
+                  <Pencil className="h-4 w-4" />
+                  <span className="px-4">Edit Entity</span>
+                </Link>
+                <button
+                  type="button"
+                  title={'Delete ' + entity.name}
+                  className="rw-button rw-button-small rw-button-red"
+                  onClick={() => onDeleteClick(entity.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </nav>
             </div>
           </DrawerContent>
         </Drawer>

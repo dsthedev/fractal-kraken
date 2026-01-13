@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import { Edit } from 'lucide-react'
 
+import { Link, routes } from '@cedarjs/router'
 import { Metadata } from '@cedarjs/web'
 
 import { Button } from 'src/components/ui/button'
@@ -14,7 +15,8 @@ const DashboardPage = () => {
   return (
     <>
       <Metadata title="Dashboard" description="Dashboard page" />
-      <div className="container mx-auto px-4 py-8">
+
+      <div className="container mx-auto py-8">
         <div className="mb-8 flex items-center justify-between print:hidden">
           <h1 className="text-3xl font-bold">Dashboard</h1>
           {!isEditing && (
@@ -33,6 +35,20 @@ const DashboardPage = () => {
         ) : (
           <UserProfile />
         )}
+      </div>
+      <div className="w-fit mx-auto text-center">
+        <p className="text-sm leading-8">
+          After setting up your profile, add and edit your{' '}
+          <Button variant="outline" size="sm" asChild>
+            <Link to={routes.rates()}>Rates</Link>
+          </Button>
+          <hr className="my-6" />
+          If you already have rates set up, you can start managing{' '}
+          <Button variant="outline" size="sm" asChild>
+            <Link to={routes.estimates()}>Estimates</Link>
+          </Button>
+          .
+        </p>
       </div>
     </>
   )

@@ -4,10 +4,6 @@
 .rw-scaffold {
   /* @apply bg-white; */
 }
-.rw-scaffold h1,
-.rw-scaffold h2 {
-  @apply m-0;
-}
 .rw-scaffold a {
   @apply bg-transparent;
 }
@@ -61,7 +57,7 @@
   @apply text-blue-500;
 }
 .rw-heading {
-  @apply flex print:hidden w-full sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl;
+  @apply print:hidden w-full;
 }
 .rw-heading.rw-heading-primary {
   @apply text-2xl;
@@ -79,7 +75,7 @@
   @apply text-sm font-semibold;
 }
 .rw-form-wrapper {
-  @apply text-sm -mt-4;
+  @apply w-full;
 }
 .rw-cell-error,
 .rw-form-error-wrapper {
@@ -131,7 +127,7 @@
   @apply mt-8;
 }
 .rw-label {
-  @apply block mt-6 font-semibold text-left;
+  @apply font-semibold text-left;
 }
 .rw-label.rw-label-error {
   @apply text-red-600;
@@ -189,14 +185,14 @@
   /* @apply bg-gray-200; */
 }
 .rw-table th {
-  @apply font-semibold text-left;
+  @apply font-semibold;
 }
-.rw-table thead th {
+/* .rw-table thead th {
   @apply text-left;
 }
 .rw-table tbody th {
   @apply text-right;
-}
+} */
 @media (min-width: 768px) {
   .rw-table tbody th {
     @apply w-1/5;
@@ -233,10 +229,10 @@
   @apply text-center;
 }
 .rw-login-container {
-  @apply flex items-center justify-center flex-wrap mx-auto w-96 my-16;
+  @apply flex items-center justify-center flex-wrap mx-auto my-16;
 }
 .rw-login-container .rw-form-wrapper {
-  @apply w-full text-center;
+  @apply w-full;
 }
 .rw-login-link {
   @apply mt-4 text-sm text-center w-full;

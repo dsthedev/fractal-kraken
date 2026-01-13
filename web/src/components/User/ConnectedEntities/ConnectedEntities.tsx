@@ -21,23 +21,6 @@ const ConnectedEntities = () => {
     <div className="rounded-lg border bg-card p-6 shadow-sm">
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-2xl font-semibold">Connected Entities</h2>
-        <Dialog
-          open={isNewEntityDialogOpen}
-          onOpenChange={setIsNewEntityDialogOpen}
-        >
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add New Entity
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Create New Entity</DialogTitle>
-            </DialogHeader>
-            <NewEntityDialog onClose={() => setIsNewEntityDialogOpen(false)} />
-          </DialogContent>
-        </Dialog>
       </div>
 
       <div className="space-y-6">
@@ -55,6 +38,30 @@ const ConnectedEntities = () => {
           fieldName="defaultRetailerEntityId"
         />
       </div>
+      <hr className="my-4" />
+      <p className="text-sm mb-4 max-w-lg text-muted-foreground">
+        If the entity you are looking for is not listed, you can add a new one
+        here. After adding it, you can assign it from either of the selectors
+        above.
+      </p>
+      <Dialog
+        open={isNewEntityDialogOpen}
+        onOpenChange={setIsNewEntityDialogOpen}
+      >
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Entity
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create New Entity</DialogTitle>
+            <hr className="my-4" />
+          </DialogHeader>
+          <NewEntityDialog onClose={() => setIsNewEntityDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
