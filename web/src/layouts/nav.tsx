@@ -28,8 +28,9 @@ const Nav = () => {
     // { label: 'Services', route: routes.services },
     { label: 'Dashboard', route: routes.dashboard },
     { label: 'Estimates', route: routes.estimates },
-    { label: 'My Rates', route: routes.rates },
+    { label: 'Sevice Rates', route: routes.rates },
     { label: 'Entities', route: routes.entities },
+    { label: 'WebTools', route: routes.webTools },
   ]
 
   return (
@@ -44,6 +45,7 @@ const Nav = () => {
           <>
             {menuItems.map((item) => (
               <DropdownMenuItem
+                className="text-lg"
                 key={item.label}
                 onSelect={() => {
                   navigate(item.route())
@@ -53,6 +55,7 @@ const Nav = () => {
               </DropdownMenuItem>
             ))}
             <DropdownMenuItem
+              className="text-lg"
               onSelect={() => (window.location.href = '/login')}
             >
               Login
@@ -62,6 +65,7 @@ const Nav = () => {
           <>
             {adminMenuItems.map((item) => (
               <DropdownMenuItem
+                className="text-lg"
                 key={item.label}
                 onSelect={() => {
                   navigate(item.route())
@@ -70,7 +74,7 @@ const Nav = () => {
                 {item.label}
               </DropdownMenuItem>
             ))}
-            <DropdownMenuItem onSelect={logOut}>
+            <DropdownMenuItem className="text-lg" onSelect={logOut}>
               Logout ({currentUser?.email})
             </DropdownMenuItem>
           </>
