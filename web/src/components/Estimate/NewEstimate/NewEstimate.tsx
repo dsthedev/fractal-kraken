@@ -43,9 +43,10 @@ const NewEstimate = () => {
   const [createEstimate, { loading, error }] = useMutation(
     CREATE_ESTIMATE_MUTATION,
     {
-      onCompleted: () => {
+      onCompleted: (data) => {
         toast.success('Estimate created')
-        navigate(routes.estimates())
+        // Navigate to edit page so user can continue editing
+        navigate(routes.editEstimate({ id: data.createEstimate.id }))
       },
       onError: (error) => {
         toast.error(error.message)
@@ -57,6 +58,17 @@ const NewEstimate = () => {
     createEstimate({ variables: { input } })
   }
 
+  const onSaveAndExit = (input: CreateEstimateInput) => {
+    createEstimate({
+      variables: { input },
+      // Override onCompleted to go to estimates list instead
+      onCompleted: () => {
+        toast.success('Estimate created')
+        navigate(routes.estimates())
+      },
+    })
+  }
+
   return (
     <div className="rw-segment">
       <header className="rw-segment-header">
@@ -65,6 +77,7 @@ const NewEstimate = () => {
       <div className="rw-segment-main">
         <EstimateForm
           onSave={onSave}
+          onSaveAndExit={onSaveAndExit}
           loading={loading}
           error={error}
           entities={entitiesData?.entities}

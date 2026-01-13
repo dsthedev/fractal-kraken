@@ -210,9 +210,12 @@ const BillableItemForm = ({
       throw new Error('Author ID is required')
     }
 
+    // Exclude id from spread for create operations
+    const { id, ...inputData } = data
+
     onSave(
       {
-        ...data,
+        ...inputData,
         serviceId: finalServiceId,
         unitId: finalUnitId,
         authorId: finalAuthorId,
@@ -240,7 +243,7 @@ const BillableItemForm = ({
         />
 
         {/* Service + Unit Row (Dropdowns) */}
-        <div className="flex gap-4 mt-2">
+        <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 flex gap-2 items-end">
             <Button
               variant="outline"

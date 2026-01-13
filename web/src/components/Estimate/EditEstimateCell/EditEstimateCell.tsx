@@ -186,6 +186,12 @@ export const Success = ({ estimate }: CellSuccessProps<EditEstimateById>) => {
     updateEstimate({ variables: { id, input } })
   }
 
+  const onSaveAndExit = async (input, id) => {
+    await updateEstimate({ variables: { id, input } })
+    toast.success('Estimate updated')
+    navigate(routes.estimates())
+  }
+
   return (
     <div className="rw-segment">
       <header className="rw-segment-header">
@@ -197,6 +203,7 @@ export const Success = ({ estimate }: CellSuccessProps<EditEstimateById>) => {
         <EstimateForm
           estimate={estimate}
           onSave={onSave}
+          onSaveAndExit={onSaveAndExit}
           error={error}
           loading={loading}
           entities={entitiesData?.entities as Entity[]}

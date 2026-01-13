@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
 import { gql } from '@apollo/client'
-import { Pencil, Plus, Trash2Icon } from 'lucide-react'
+import { BookAlert, Pencil, Plus, Trash2Icon } from 'lucide-react'
 import type {
   EditEstimateById,
   UpdateEstimateInput,
@@ -34,6 +34,7 @@ import { toast } from '@cedarjs/web/toast'
 
 import { useAuth } from 'src/auth'
 import BillableItemFormWrapper from 'src/components/BillableItem/BillableItemFormWrapper'
+import { Alert, AlertTitle } from 'src/components/ui/alert'
 import { Button } from 'src/components/ui/button'
 import {
   Command,
@@ -74,6 +75,7 @@ type FormEstimate = NonNullable<EditEstimateById['estimate']>
 interface EstimateFormProps {
   estimate?: EditEstimateById['estimate']
   onSave: (data: UpdateEstimateInput, id?: FormEstimate['id']) => void
+  onSaveAndExit?: (data: UpdateEstimateInput, id?: FormEstimate['id']) => void
   error: RWGqlError
   loading: boolean
   entities?: Entity[]
@@ -1199,13 +1201,11 @@ const EstimateForm = (props: EstimateFormProps) => {
           )}
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2">
-            <div className="text-sm text-muted-foreground">
-              Subtotal: ${formatMoney(itemsTotal)}
-            </div>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
-              {/* Quantity Input for Quick Add */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1">
-                <div className="flex items-center gap-1 flex-1">
+            <div className="flex flex-col gap-3 w-full">
+              {/* Quick add controls */}
+              <div className="flex flex-col md:flex-row md:items-end gap-2">
+                {/* Quantity */}
+                <div className="flex items-center gap-2 md:flex-shrink-0">
                   <label
                     htmlFor="quickAddQuantity"
                     className="text-xs text-muted-foreground whitespace-nowrap"
@@ -1222,12 +1222,12 @@ const EstimateForm = (props: EstimateFormProps) => {
                         Math.max(1, parseInt(e.target.value) || 1)
                       )
                     }
-                    className="rw-input flex-1 sm:flex-none"
+                    className="rw-input w-20"
                     disabled={!isPersistedEstimate}
                   />
                 </div>
 
-                {/* Quick Add from Rates Combobox */}
+                {/* Rate combobox */}
                 <Popover
                   open={openQuickAddCombobox}
                   onOpenChange={setOpenQuickAddCombobox}
@@ -1238,26 +1238,14 @@ const EstimateForm = (props: EstimateFormProps) => {
                       role="combobox"
                       aria-expanded={openQuickAddCombobox}
                       className={cn(
-                        'w-full sm:w-auto sm:justify-between',
+                        'flex-1',
                         !selectedQuickAddRate && 'text-muted-foreground'
                       )}
                       disabled={!isPersistedEstimate || ratesLoading}
                     >
                       {selectedQuickAddRate
                         ? buildRateLabel(selectedQuickAddRate)
-                        : 'Quick Add from Rates...'}
-                      <svg
-                        className="ml-2 h-4 w-4 shrink-0 opacity-50"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M7 10l5 5 5-5H7z" />
-                      </svg>
+                        : 'Quick Add from Rates…'}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="p-0 w-fit">
@@ -1282,9 +1270,7 @@ const EstimateForm = (props: EstimateFormProps) => {
                               <CommandItem
                                 key={rate.id}
                                 value={buildRateSearchValue(rate)}
-                                onSelect={() => {
-                                  setSelectedQuickAddRate(rate)
-                                }}
+                                onSelect={() => setSelectedQuickAddRate(rate)}
                               >
                                 {buildRateLabel(rate)}
                               </CommandItem>
@@ -1295,103 +1281,101 @@ const EstimateForm = (props: EstimateFormProps) => {
                   </PopoverContent>
                 </Popover>
 
-                {/* Add button with plus icon for quick add */}
-                {selectedQuickAddRate && (
-                  <>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="w-full sm:w-auto"
-                      title="Add selected rate as item"
-                      onClick={() =>
-                        handleQuickAddFromRate(selectedQuickAddRate)
-                      }
-                      disabled={!isPersistedEstimate}
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add
-                    </Button>
-                    <span className="hidden sm:inline">or</span>
-                  </>
-                )}
+                {/* Add selected rate */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full md:w-auto md:flex-shrink-0"
+                  onClick={() => handleQuickAddFromRate(selectedQuickAddRate)}
+                  disabled={!isPersistedEstimate || !selectedQuickAddRate}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add
+                </Button>
               </div>
 
-              {/* Standard Add Item trigger with responsive dialog/drawer */}
-              {isDesktop ? (
-                <Dialog
-                  open={openNewBillableItem}
-                  onOpenChange={setOpenNewBillableItem}
-                >
-                  <DialogTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full sm:w-auto"
-                      disabled={!isPersistedEstimate}
-                    >
-                      Add Item
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-full sm:max-w-3xl">
-                    <DialogHeader>
-                      <DialogTitle>Add Billable Item</DialogTitle>
-                    </DialogHeader>
-                    {isPersistedEstimate ? (
-                      <BillableItemFormWrapper
-                        onSave={handleCreateBillableItem}
-                        loading={createBillableItemLoading}
-                        error={createBillableItemError}
-                      />
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        Save the estimate before adding items.
-                      </p>
-                    )}
-                  </DialogContent>
-                </Dialog>
-              ) : (
-                <Drawer
-                  open={openNewBillableItem}
-                  onOpenChange={setOpenNewBillableItem}
-                >
-                  <DrawerTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full"
-                      disabled={!isPersistedEstimate}
-                    >
-                      Add Item
-                    </Button>
-                  </DrawerTrigger>
-                  <DrawerContent>
-                    <DrawerHeader>
-                      <DrawerTitle>Add Billable Item</DrawerTitle>
-                    </DrawerHeader>
-                    <div className="max-h-[calc(100vh-180px)] overflow-y-auto px-4 pb-6">
-                      {isPersistedEstimate ? (
+              {/* Persisted estimate warning */}
+              {!isPersistedEstimate && (
+                <Alert>
+                  <BookAlert />
+                  <AlertTitle>
+                    <strong>Note:</strong> Estimates must be saved before adding
+                    billable items
+                  </AlertTitle>
+                </Alert>
+              )}
+
+              {/* Add a custom item */}
+              <div className="flex flex-col md:flex-row gap-2">
+                {isDesktop ? (
+                  <Dialog
+                    open={openNewBillableItem}
+                    onOpenChange={setOpenNewBillableItem}
+                  >
+                    <DialogTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="lg"
+                        className="w-full md:w-auto"
+                        disabled={!isPersistedEstimate}
+                      >
+                        Add Custom Item
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-full sm:max-w-3xl">
+                      <DialogHeader>
+                        <DialogTitle>Add Billable Item</DialogTitle>
+                      </DialogHeader>
+                      {isPersistedEstimate && (
                         <BillableItemFormWrapper
                           onSave={handleCreateBillableItem}
                           loading={createBillableItemLoading}
                           error={createBillableItemError}
                         />
-                      ) : (
-                        <p className="text-sm text-muted-foreground">
-                          Save the estimate before adding items.
-                        </p>
                       )}
-                    </div>
-                    <div className="px-4 pb-4">
-                      <DrawerClose asChild>
-                        <Button variant="outline" className="w-full">
-                          Close
-                        </Button>
-                      </DrawerClose>
-                    </div>
-                  </DrawerContent>
-                </Drawer>
-              )}
+                    </DialogContent>
+                  </Dialog>
+                ) : (
+                  <Drawer
+                    open={openNewBillableItem}
+                    onOpenChange={setOpenNewBillableItem}
+                  >
+                    <DrawerTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="lg"
+                        className="w-full"
+                        disabled={!isPersistedEstimate}
+                      >
+                        Add Custom Item
+                      </Button>
+                    </DrawerTrigger>
+                    <DrawerContent>
+                      <DrawerHeader>
+                        <DrawerTitle>Add Billable Item</DrawerTitle>
+                      </DrawerHeader>
+                      <div className="max-h-[calc(100vh-180px)] overflow-y-auto px-4 pb-6">
+                        {isPersistedEstimate && (
+                          <BillableItemFormWrapper
+                            onSave={handleCreateBillableItem}
+                            loading={createBillableItemLoading}
+                            error={createBillableItemError}
+                          />
+                        )}
+                      </div>
+                      <div className="px-4 pb-4">
+                        <DrawerClose asChild>
+                          <Button variant="outline" className="w-full">
+                            Close
+                          </Button>
+                        </DrawerClose>
+                      </div>
+                    </DrawerContent>
+                  </Drawer>
+                )}
+              </div>
             </div>
           </div>
         </fieldset>
@@ -1448,13 +1432,7 @@ const EstimateForm = (props: EstimateFormProps) => {
         {/* Author ID - Visually hidden, auto-populated from current user */}
         <input type="hidden" name="authorId" value={currentUser?.id || ''} />
 
-        <TextField
-          name="subtotal"
-          value={itemsTotal}
-          className="hidden"
-          errorClassName="hidden"
-          validation={{ valueAsNumber: true, required: true }}
-        />
+        <input type="hidden" name="subtotal" value={itemsTotal} />
 
         <TextField
           name="taxTotal"
@@ -1472,13 +1450,7 @@ const EstimateForm = (props: EstimateFormProps) => {
         </div>
 
         {/* Hidden form field to persist numeric total */}
-        <TextField
-          name="total"
-          value={itemsTotal}
-          className="sr-only"
-          errorClassName="sr-only"
-          validation={{ valueAsNumber: true, required: true }}
-        />
+        <input type="hidden" name="total" value={itemsTotal} />
 
         <FieldError name="total" className="rw-field-error" />
 
@@ -1517,10 +1489,37 @@ const EstimateForm = (props: EstimateFormProps) => {
         <div className="rw-button-group flex gap-2">
           <Submit
             disabled={props.loading}
-            className="rw-button rw-button-blue flex-1 sm:flex-none"
+            className="rw-button rw-button-green flex-1 sm:flex-none"
           >
             Save
           </Submit>
+          <button
+            type="button"
+            disabled={props.loading}
+            className="rw-button flex-1 sm:flex-none"
+            onClick={() => {
+              const submitData = {
+                title: titleValue,
+                jobAddressLine1,
+                jobAddressLine2,
+                jobCity,
+                jobState,
+                jobPostalCode,
+                uuid: props.estimate?.uuid || uuidv4(),
+                status: selectedStatus,
+                installerEntityId: selectedInstallerEntity?.id,
+                clientEntityId: selectedClientEntity?.id,
+                retailerEntityId: selectedRetailerEntity?.id,
+                authorId: currentUser?.id || props.estimate?.authorId,
+                jobCountry: 'United States',
+                subtotal: itemsTotal,
+                total: itemsTotal,
+              }
+              props.onSaveAndExit?.(submitData as any, props?.estimate?.id)
+            }}
+          >
+            Save & Exit
+          </button>
         </div>
       </Form>
     </div>

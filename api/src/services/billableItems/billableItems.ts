@@ -4,8 +4,9 @@ import type {
   BillableItemRelationResolvers,
 } from 'types/graphql'
 
-import { db } from 'src/lib/db'
 import { context } from '@cedarjs/graphql-server'
+
+import { db } from 'src/lib/db'
 
 export const billableItems: QueryResolvers['billableItems'] = () => {
   return db.billableItem.findMany({
