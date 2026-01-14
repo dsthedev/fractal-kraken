@@ -16,6 +16,13 @@ import {
   CardFooter,
 } from 'src/components/ui/card'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from 'src/components/ui/select'
+import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -36,35 +43,37 @@ const toolList = [
 ]
 
 const Webtoolsheet = ({ open = true, onOpenChange }) => {
-  const [selectedToolIdx, setSelectedToolIdx] = useState(0)
+  const [selectedToolIdx, setSelectedToolIdx] = useState('0')
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-[90vw] sm:max-w-2xl overflow-y-auto max-h-[100vh] ">
+      <SheetContent className="w-[90vw] sm:max-w-2xl overflow-y-auto max-h-[100vh] p-2">
         <SheetHeader>
           <SheetTitle>Web Tools</SheetTitle>
         </SheetHeader>
-        <div className="mb-4">
-          <select
-            id="tool-select"
-            className="w-full border rounded px-3 py-2"
-            value={selectedToolIdx}
-            onChange={(e) => setSelectedToolIdx(Number(e.target.value))}
-          >
-            {toolList.map((tool, idx) => (
-              <option key={tool.name} value={idx}>
-                {tool.name}
-              </option>
-            ))}
-          </select>
+        <div className="mb-1">
+          <Select value={selectedToolIdx} onValueChange={setSelectedToolIdx}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {toolList.map((tool, idx) => (
+                <SelectItem key={tool.name} value={String(idx)}>
+                  {tool.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div>
           {toolList.map((tool, idx) => (
             <Card
               key={tool.name}
-              className={idx === selectedToolIdx ? 'block mb-6' : 'hidden'}
+              className={
+                idx === Number(selectedToolIdx) ? 'block mb-6' : 'hidden'
+              }
             >
-              <CardHeader className="font-bold text-lg">{tool.name}</CardHeader>
+              {/* <CardHeader className="font-bold text-lg">{tool.name}</CardHeader> */}
               <CardContent>
                 <tool.component />
               </CardContent>

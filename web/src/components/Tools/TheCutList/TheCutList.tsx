@@ -1,178 +1,302 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
-const TheCutList = ({ measurementsJson, onTotalChange }) => {
-  // Parse the JSON string or use default measurements
-  const [measurements, setMeasurements] = useState(
-    measurementsJson ? JSON.parse(measurementsJson) : [{ feet: 0, inches: 0 }]
-  )
+import { ExportButton } from 'src/components/ExportButton/ExportButton'
+import { Button } from 'src/components/ui/button'
+import { Input } from 'src/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from 'src/components/ui/select'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from 'src/components/ui/tooltip'
+import { todayAsYYYYMMDD } from 'src/lib/utils'
 
-  // State variable to hold the sum of all measurements in inches
-  const [totalMeasurementInches, setTotalMeasurementInches] = useState(0)
+const STORAGE_KEY = 'cut-list'
 
-  // State variable to hold the total yardage
-  const [totalYardage, setTotalYardage] = useState(0)
+const defaultMeasurement = [{ feet: 0, inches: 0 }]
 
-  // Convert inches to feet and inches format
-  const inchesToFeetInches = (inches) => {
-    const feet = Math.floor(inches / 12)
-    const remainingInches = inches % 12
-    return { feet, inches: remainingInches }
-  }
-
-  // Convert feet and inches to total inches
-  const feetInchesToInches = ({ feet, inches }) => {
-    return feet * 12 + inches
-  }
-
-  // Convert total inches to total yardage
-  const inchesToYardage = (inches) => {
-    return ((inches / 12) * 4) / 3
-  }
-
-  // Calculate the sum of all measurements in inches
-  useEffect(() => {
-    const sumInches = measurements.reduce(
-      (acc, curr) => acc + feetInchesToInches(curr),
-      0
-    )
-    setTotalMeasurementInches(sumInches)
-    // Pass the total back to the parent component
-    if (onTotalChange) {
-      onTotalChange(sumInches)
-    }
-  }, [measurements, onTotalChange])
-
-  // Calculate the total yardage
-  useEffect(() => {
-    const yardage = inchesToYardage(totalMeasurementInches)
-    setTotalYardage(yardage)
-  }, [totalMeasurementInches])
-
-  // Handler for changing a measurement value
-  const handleMeasurementChange = (index, type, value) => {
-    // Parse the input value
-    const parsedValue = parseInt(value)
-
-    // Check if the parsed value is a valid number
-    if (!isNaN(parsedValue)) {
-      // If valid, update the measurement normally
-      const updatedMeasurements = [...measurements]
-      updatedMeasurements[index][type] = parsedValue
-      setMeasurements(updatedMeasurements)
-    } else {
-      // If not a valid number, set the measurement to 0
-      const updatedMeasurements = [...measurements]
-      updatedMeasurements[index][type] = 0
-      setMeasurements(updatedMeasurements)
-    }
-  }
-
-  // Handler for adding a new measurement
-  const handleAddMeasurement = () => {
-    setMeasurements([...measurements, { feet: 0, inches: 0 }])
-  }
-
-  // Handler for removing a measurement
-  const handleRemoveMeasurement = (index) => {
-    const updatedMeasurements = [...measurements]
-    if (updatedMeasurements.length === 1) {
-      // If it's the last measurement, set its values to 0 instead of removing it
-      updatedMeasurements[index] = { feet: 0, inches: 0 }
-    } else {
-      updatedMeasurements.splice(index, 1)
-    }
-    setMeasurements(updatedMeasurements)
-  }
-
-  // Handler for key up event to remove non-numeric characters and leading zeroes
-  const handleKeyUp = (e) => {
-    let value = e.target.value.trim() // Remove leading and trailing whitespaces
-    // Remove non-numeric characters
-    value = value.replace(/\D/g, '')
-    // Remove leading zeroes, except for the case when the value is '0'
-    // console.log(value)
-    if (value !== '0' || '') {
-      value = value.replace(/^0+/, '')
-    }
-    e.target.value = value !== '' ? value : '0' // Ensure at least '0' is displayed if the input becomes empty
-  }
-
-  // Function to clear all measurements and leave only one item with zeroes
-  const clearMeasurements = () => {
-    setMeasurements([{ feet: 0, inches: 0 }])
-  }
-
-  return (
-    <div className="p-4 text-center">
-      <div className="grenze-gotisch mb-4 text-4xl">
-        {Math.floor(totalMeasurementInches / 12)}'{totalMeasurementInches % 12}"
-      </div>
-      <div className="mb-4">~{totalYardage.toFixed(2)} yards</div>
-      <div className="my-4 flex flex-col justify-center space-x-4 md:flex-row">
-        <button
-          className="w-auto rounded bg-blue-500 p-2 text-white hover:bg-blue-600"
-          onClick={handleAddMeasurement}
-        >
+const CutActions = ({ onAdd, onClear }) => (
+  <div className="flex gap-6">
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button className="flex-1" onClick={onAdd} variant="lime">
           Add Cut
-        </button>
-        <button
-          onClick={clearMeasurements}
-          className="w-auto rounded bg-gray-300 p-2 text-gray-700 hover:bg-gray-400"
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>Add a new measurement to the list</TooltipContent>
+    </Tooltip>
+
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          className="flex-1"
+          variant="secondary"
+          size="sm"
+          onClick={onClear}
         >
           Clear All
-        </button>
-      </div>
-      <table className="table w-full">
-        <thead>
-          <tr>
-            <th className="px-4 py-2">Feet</th>
-            <th className="px-4 py-2">Inches</th>
-            <th className="px-4 py-2">Remove</th>
-          </tr>
-        </thead>
-        <tbody>
-          {measurements.map((measurement, index) => (
-            <tr key={index} className="flesx">
-              <td className="px-4 py-2">
-                <input
-                  type="number"
-                  className="w-20 rounded border p-1 text-3xl"
-                  value={measurement.feet}
-                  onChange={(e) =>
-                    handleMeasurementChange(index, 'feet', e.target.value)
-                  }
-                  onKeyUp={handleKeyUp}
-                />
-              </td>
-              <td className="px-4 py-2">
-                <select
-                  className="w-notfull w-20 rounded border p-2 text-2xl"
-                  value={measurement.inches}
-                  onChange={(e) =>
-                    handleMeasurementChange(index, 'inches', e.target.value)
-                  }
-                >
-                  {Array.from({ length: 12 }, (_, i) => i).map((value) => (
-                    <option key={value} value={value}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
-              </td>
-              <td className="px-4 py-2">
-                <button
-                  className="rounded bg-red-500 px-3 py-1 text-white hover:bg-red-600"
-                  onClick={() => handleRemoveMeasurement(index)}
-                >
-                  &times;
-                  <span className="hidden">Remove</span>
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>Remove all measurements and reset</TooltipContent>
+    </Tooltip>
+  </div>
+)
+
+const MeasurementsDisplay = ({ totalInches, totalYards }) => (
+  <TooltipProvider>
+    <div className="space-y-3 text-center my-6">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="text-3xl font-semibold cursor-help">
+            {Math.floor(totalInches / 12)}′{totalInches % 12}″
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>Total length in feet and inches</TooltipContent>
+      </Tooltip>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="text-sm text-muted-foreground cursor-help">
+            ~{totalYards.toFixed(2)} yards
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>Approximate total in yards</TooltipContent>
+      </Tooltip>
     </div>
+  </TooltipProvider>
+)
+
+const TheCutList = ({ measurementsJson, onTotalChange }) => {
+  const [measurements, setMeasurements] = useState(defaultMeasurement)
+  const [totalInches, setTotalInches] = useState(0)
+  const [totalYards, setTotalYards] = useState(0)
+
+  /* ---------------- persistence ---------------- */
+
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      setMeasurements(JSON.parse(stored))
+    } else if (measurementsJson) {
+      setMeasurements(JSON.parse(measurementsJson))
+    }
+  }, [measurementsJson])
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(measurements))
+  }, [measurements])
+
+  /* ---------------- math ---------------- */
+
+  const toInches = ({ feet, inches }) => feet * 12 + inches
+  const inchesToYards = (i) => ((i / 12) * 4) / 3
+
+  useEffect(() => {
+    const sum = measurements.reduce((a, m) => a + toInches(m), 0)
+    setTotalInches(sum)
+    setTotalYards(inchesToYards(sum))
+    onTotalChange?.(sum)
+  }, [measurements, onTotalChange])
+
+  /* ---------------- handlers ---------------- */
+
+  const updateMeasurement = useCallback((i, key, value) => {
+    setMeasurements((prev) =>
+      prev.map((m, idx) =>
+        idx === i ? { ...m, [key]: Number(value) || 0 } : m
+      )
+    )
+  }, [])
+
+  const addMeasurement = () =>
+    setMeasurements((m) => [...m, { feet: 0, inches: 0 }])
+
+  const removeMeasurement = (i) =>
+    setMeasurements((m) =>
+      m.length === 1 ? defaultMeasurement : m.filter((_, idx) => idx !== i)
+    )
+
+  const clearAll = () => {
+    localStorage.removeItem(STORAGE_KEY)
+    setMeasurements(defaultMeasurement)
+  }
+
+  const parseCSV = (csvText) => {
+    const lines = csvText.trim().split('\n')
+    const data = []
+
+    // Skip header row if present
+    const startIdx = lines[0].toLowerCase().includes('feet') ? 1 : 0
+
+    for (let i = startIdx; i < lines.length; i++) {
+      const [feetStr, inchesStr] = lines[i].split(',').map((s) => s.trim())
+      const feet = Number(feetStr)
+      const inches = Number(inchesStr)
+
+      if (!isNaN(feet) && !isNaN(inches)) {
+        data.push({ feet, inches })
+      }
+    }
+
+    return data.length > 0 ? data : null
+  }
+
+  const handleImport = (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const csvText = e.target?.result as string
+        const parsed = parseCSV(csvText)
+
+        if (parsed && parsed.length > 0) {
+          setMeasurements(parsed)
+          // Reset file input
+          event.target.value = ''
+        } else {
+          alert('Invalid CSV format. Expected columns: feet, inches')
+          event.target.value = ''
+        }
+      } catch (err) {
+        alert('Error parsing CSV file')
+        event.target.value = ''
+      }
+    }
+    reader.readAsText(file)
+  }
+
+  /* ---------------- ui ---------------- */
+
+  return (
+    <TooltipProvider>
+      <div className="space-y-3 text-center">
+        <MeasurementsDisplay
+          totalInches={totalInches}
+          totalYards={totalYards}
+        />
+
+        <CutActions onAdd={addMeasurement} onClear={clearAll} />
+
+        <div className="space-y-2">
+          {measurements.map((m, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    className="h-9"
+                    placeholder="0"
+                    value={m.feet}
+                    onChange={(e) =>
+                      updateMeasurement(i, 'feet', e.target.value)
+                    }
+                    onFocus={(e) => {
+                      requestAnimationFrame(() => {
+                        e.target.select()
+                      })
+                    }}
+                  />
+                </TooltipTrigger>
+                <TooltipContent>Enter feet</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Select
+                    value={String(m.inches)}
+                    onValueChange={(v) => updateMeasurement(i, 'inches', v)}
+                  >
+                    <SelectTrigger className="h-9 w-[80px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 12 }).map((_, n) => (
+                        <SelectItem key={n} value={String(n)}>
+                          {n}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TooltipTrigger>
+                <TooltipContent>Select inches (0-11)</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="destructive"
+                    onClick={() => removeMeasurement(i)}
+                  >
+                    ×
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Remove this measurement</TooltipContent>
+              </Tooltip>
+            </div>
+          ))}
+        </div>
+
+        <CutActions onAdd={addMeasurement} onClear={clearAll} />
+
+        <MeasurementsDisplay
+          totalInches={totalInches}
+          totalYards={totalYards}
+        />
+
+        <hr className="my-4" />
+
+        <div className="flex gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <label className="flex-1">
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleImport}
+                  className="hidden"
+                />
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="w-full"
+                  asChild
+                >
+                  <span>Import Cuts</span>
+                </Button>
+              </label>
+            </TooltipTrigger>
+            <TooltipContent>
+              Upload a CSV file to replace measurements
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex-1">
+                <ExportButton
+                  data={measurements}
+                  variant="default"
+                  filename={`${todayAsYYYYMMDD()}-cut-list.csv`}
+                  label="Export Cuts"
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>Download measurements as CSV file</TooltipContent>
+          </Tooltip>
+        </div>
+      </div>
+    </TooltipProvider>
   )
 }
 
