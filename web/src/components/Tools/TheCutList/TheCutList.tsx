@@ -1,8 +1,15 @@
 import { useEffect, useState, useCallback } from 'react'
 
+import { RectangleEllipsis, Eye, Pencil } from 'lucide-react'
+
 import { ExportButton } from 'src/components/ExportButton/ExportButton'
 import { Button } from 'src/components/ui/button'
 import { Input } from 'src/components/ui/input'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from 'src/components/ui/popover'
 import {
   Select,
   SelectContent,
@@ -19,6 +26,7 @@ import {
 import { todayAsYYYYMMDD } from 'src/lib/utils'
 
 const STORAGE_KEY = 'cut-list'
+const LABELS_STORAGE_KEY = 'cut-labels'
 
 const defaultMeasurement = [{ feet: 0, inches: 0 }]
 
@@ -73,10 +81,69 @@ const MeasurementsDisplay = ({ totalInches, totalYards }) => (
   </TooltipProvider>
 )
 
+interface CutRowLabelProps {
+  cutIndex: number
+  onLabelChange: (index: number, label: string) => void
+}
+
+const CutRowLabel = ({ cutIndex, onLabelChange }: CutRowLabelProps) => {
+  const [label, setLabel] = useState('')
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    const labels = JSON.parse(localStorage.getItem(LABELS_STORAGE_KEY) || '{}')
+    setLabel(labels[cutIndex] || '')
+  }, [cutIndex])
+
+  const toTitleCase = (str: string) => {
+    return str
+      .toLowerCase()
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+  }
+
+  const handleSave = () => {
+    const titleCasedLabel = toTitleCase(label)
+    const labels = JSON.parse(localStorage.getItem(LABELS_STORAGE_KEY) || '{}')
+    labels[cutIndex] = titleCasedLabel
+    localStorage.setItem(LABELS_STORAGE_KEY, JSON.stringify(labels))
+    setLabel(titleCasedLabel)
+    onLabelChange(cutIndex, titleCasedLabel)
+    setOpen(false)
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button size="icon" variant="ghost" className="h-9 w-9">
+          <RectangleEllipsis className="w-4 h-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-48">
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Label this cut</p>
+          <Input
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            placeholder="e.g., Master Bedroom"
+            autoFocus
+          />
+          <Button size="sm" onClick={handleSave} className="w-full">
+            Save
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 const TheCutList = ({ measurementsJson, onTotalChange }) => {
   const [measurements, setMeasurements] = useState(defaultMeasurement)
   const [totalInches, setTotalInches] = useState(0)
   const [totalYards, setTotalYards] = useState(0)
+  const [isEditMode, setIsEditMode] = useState(true)
+  const [labels, setLabels] = useState<Record<string, string>>({})
 
   /* ---------------- persistence ---------------- */
 
@@ -92,6 +159,13 @@ const TheCutList = ({ measurementsJson, onTotalChange }) => {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(measurements))
   }, [measurements])
+
+  useEffect(() => {
+    const stored = localStorage.getItem(LABELS_STORAGE_KEY)
+    if (stored) {
+      setLabels(JSON.parse(stored))
+    }
+  }, [])
 
   /* ---------------- math ---------------- */
 
@@ -109,9 +183,17 @@ const TheCutList = ({ measurementsJson, onTotalChange }) => {
 
   const updateMeasurement = useCallback((i, key, value) => {
     setMeasurements((prev) =>
-      prev.map((m, idx) =>
-        idx === i ? { ...m, [key]: Number(value) || 0 } : m
-      )
+      prev.map((m, idx) => {
+        if (idx === i) {
+          const numValue = Number(value) || 0
+          // Prevent negative feet values
+          if (key === 'feet' && numValue < 0) {
+            return m
+          }
+          return { ...m, [key]: numValue }
+        }
+        return m
+      })
     )
   }, [])
 
@@ -125,6 +207,7 @@ const TheCutList = ({ measurementsJson, onTotalChange }) => {
 
   const clearAll = () => {
     localStorage.removeItem(STORAGE_KEY)
+    localStorage.removeItem(LABELS_STORAGE_KEY)
     setMeasurements(defaultMeasurement)
   }
 
@@ -134,18 +217,36 @@ const TheCutList = ({ measurementsJson, onTotalChange }) => {
 
     // Skip header row if present
     const startIdx = lines[0].toLowerCase().includes('feet') ? 1 : 0
+    const headers = lines[0]
+      .toLowerCase()
+      .split(',')
+      .map((h) => h.trim())
+    const hasLabel = headers.includes('label')
+
+    const labels: Record<string, string> = {}
 
     for (let i = startIdx; i < lines.length; i++) {
-      const [feetStr, inchesStr] = lines[i].split(',').map((s) => s.trim())
-      const feet = Number(feetStr)
-      const inches = Number(inchesStr)
+      const columns = lines[i].split(',').map((s) => s.trim())
+      const feet = Number(columns[0])
+      const inches = Number(columns[1])
+      const label = hasLabel ? columns[2] : ''
 
-      if (!isNaN(feet) && !isNaN(inches)) {
+      if (!isNaN(feet) && !isNaN(inches) && feet >= 0) {
         data.push({ feet, inches })
+        if (label && hasLabel) {
+          labels[data.length - 1] = label
+        }
       }
     }
 
-    return data.length > 0 ? data : null
+    if (data.length > 0) {
+      // Store labels if any were found
+      if (Object.keys(labels).length > 0) {
+        localStorage.setItem(LABELS_STORAGE_KEY, JSON.stringify(labels))
+      }
+      return data
+    }
+    return null
   }
 
   const handleImport = (event) => {
@@ -160,6 +261,11 @@ const TheCutList = ({ measurementsJson, onTotalChange }) => {
 
         if (parsed && parsed.length > 0) {
           setMeasurements(parsed)
+          // Labels are already stored in localStorage by parseCSV
+          const stored = localStorage.getItem(LABELS_STORAGE_KEY)
+          if (stored) {
+            setLabels(JSON.parse(stored))
+          }
           // Reset file input
           event.target.value = ''
         } else {
@@ -174,11 +280,116 @@ const TheCutList = ({ measurementsJson, onTotalChange }) => {
     reader.readAsText(file)
   }
 
+  const handleExport = () => {
+    const csvData = measurements
+      .map((m, i) => {
+        const label = labels[i] || ''
+        return `${m.feet},${m.inches},${label}`
+      })
+      .join('\n')
+
+    const headerRow = 'Feet,Inches,Label\n'
+    const fullCSV = headerRow + csvData
+
+    const blob = new Blob([fullCSV], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+
+    link.setAttribute('href', url)
+    link.setAttribute('download', `${todayAsYYYYMMDD()}-cut-list.csv`)
+    link.style.visibility = 'hidden'
+
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   /* ---------------- ui ---------------- */
+
+  if (!isEditMode) {
+    return (
+      <TooltipProvider>
+        <div className="space-y-3">
+          <div className="flex justify-center">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setIsEditMode(true)}
+              className="text-xs"
+            >
+              <Pencil className="w-4 h-4 mr-1" />
+              Edit
+            </Button>
+          </div>
+
+          <div className="space-y-3">
+            <div className="text-center space-y-1">
+              <div className="text-sm text-muted-foreground font-medium">
+                Total Length
+              </div>
+              <div className="text-2xl font-semibold">
+                {Math.floor(totalInches / 12)}′{totalInches % 12}″
+              </div>
+              <div className="text-xs text-muted-foreground">
+                ~{totalYards.toFixed(2)} yards
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2 px-2 text-xs text-muted-foreground font-medium">
+                      Area
+                    </th>
+                    <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium">
+                      Length
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {measurements.map((m, i) => (
+                    <tr key={i} className="border-b last:border-b-0">
+                      <td className="py-2 px-2 text-left">
+                        {labels[i] || '—'}
+                      </td>
+                      <td className="py-2 px-2 text-right font-mono">
+                        {m.feet}′{m.inches}″
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </TooltipProvider>
+    )
+  }
+
+  const feetInchesLabel = () => (
+    <>
+      <div className="text-xs text-muted-foreground font-medium">Feet</div>
+      <div>|</div>
+      <div className="text-xs text-muted-foreground font-medium">Inches</div>
+    </>
+  )
 
   return (
     <TooltipProvider>
       <div className="space-y-3 text-center">
+        <div className="flex justify-center">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setIsEditMode(false)}
+            className="text-xs"
+          >
+            <Eye className="w-4 h-4 mr-1" />
+            View
+          </Button>
+        </div>
+
         <MeasurementsDisplay
           totalInches={totalInches}
           totalYards={totalYards}
@@ -187,28 +398,36 @@ const TheCutList = ({ measurementsJson, onTotalChange }) => {
         <CutActions onAdd={addMeasurement} onClear={clearAll} />
 
         <div className="space-y-2">
+          <div className="flex text-xs text-gray-500 items-center justify-center gap-2 px-1">
+            {feetInchesLabel()}
+          </div>
+
           {measurements.map((m, i) => (
             <div key={i} className="flex items-center gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Input
-                    type="number"
-                    inputMode="numeric"
-                    className="h-9"
-                    placeholder="0"
-                    value={m.feet}
-                    onChange={(e) =>
-                      updateMeasurement(i, 'feet', e.target.value)
-                    }
-                    onFocus={(e) => {
-                      requestAnimationFrame(() => {
-                        e.target.select()
-                      })
-                    }}
-                  />
-                </TooltipTrigger>
-                <TooltipContent>Enter feet</TooltipContent>
-              </Tooltip>
+              <CutRowLabel
+                cutIndex={i}
+                onLabelChange={() => {
+                  const stored = localStorage.getItem(LABELS_STORAGE_KEY)
+                  if (stored) {
+                    setLabels(JSON.parse(stored))
+                  }
+                }}
+              />
+
+              <Input
+                type="number"
+                inputMode="numeric"
+                className="h-9"
+                placeholder="0"
+                value={m.feet}
+                onChange={(e) => updateMeasurement(i, 'feet', e.target.value)}
+                onFocus={(e) => {
+                  requestAnimationFrame(() => {
+                    e.target.select()
+                  })
+                }}
+                min="0"
+              />
 
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -216,7 +435,7 @@ const TheCutList = ({ measurementsJson, onTotalChange }) => {
                     value={String(m.inches)}
                     onValueChange={(v) => updateMeasurement(i, 'inches', v)}
                   >
-                    <SelectTrigger className="h-9 w-[80px]">
+                    <SelectTrigger className="h-9 w-20">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -245,6 +464,10 @@ const TheCutList = ({ measurementsJson, onTotalChange }) => {
               </Tooltip>
             </div>
           ))}
+
+          <div className="flex text-xs text-gray-500 items-center justify-center gap-2 px-1">
+            {feetInchesLabel()}
+          </div>
         </div>
 
         <CutActions onAdd={addMeasurement} onClear={clearAll} />
@@ -284,12 +507,14 @@ const TheCutList = ({ measurementsJson, onTotalChange }) => {
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex-1">
-                <ExportButton
-                  data={measurements}
+                <Button
                   variant="default"
-                  filename={`${todayAsYYYYMMDD()}-cut-list.csv`}
-                  label="Export Cuts"
-                />
+                  size="sm"
+                  className="w-full"
+                  onClick={handleExport}
+                >
+                  Export Cuts
+                </Button>
               </div>
             </TooltipTrigger>
             <TooltipContent>Download measurements as CSV file</TooltipContent>
