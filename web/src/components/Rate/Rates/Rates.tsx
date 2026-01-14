@@ -380,76 +380,88 @@ const RatesList = ({ rates }: FindRates) => {
         </tbody>
       </table>
 
-      {/* Drawer for mobile details view */}
-      {sortedRates.map((rate) => (
+      {/* Drawer for mobile details view - single instance */}
+      {openDrawerId && sortedRates.find((rate) => rate.id === openDrawerId) && (
         <Drawer
-          key={`drawer-${rate.id}`}
-          open={openDrawerId === rate.id}
-          onOpenChange={(open) => setOpenDrawerId(open ? rate.id : null)}
+          open={!!openDrawerId}
+          onOpenChange={(open) => setOpenDrawerId(open ? openDrawerId : null)}
         >
           <DrawerContent>
-            <DrawerHeader>
-              <DrawerTitle>
-                {fullServiceDisplay(
-                  formatEnum(rate.service?.action),
-                  rate.service?.material,
-                  rate.service?.context
-                )}
-              </DrawerTitle>
-            </DrawerHeader>
-            <div className="px-4 pb-6 space-y-4">
-              <div>
-                <p className="text-xs text-muted-foreground">
-                  Measurement Unit
-                </p>
-                <p className="text-sm font-medium">
-                  {rate.unit?.fullName || 'N/A'}
-                </p>
-              </div>
-              <div className="flex py-4">
-                <div className="flex-1">
-                  <p className="text-xs text-muted-foreground">Sub Rate</p>
-                  <p className="text-sm font-medium">
-                    {currencyDisplay(rate.subAmount)}
-                  </p>
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs text-muted-foreground">Retail Rate</p>
-                  <p className="text-sm font-medium">
-                    {currencyDisplay(rate.retailAmount)}
-                  </p>
-                </div>
-              </div>
-              {rate.estimatedMinutesPerUnit && (
-                <div>
-                  <p className="text-xs text-muted-foreground">eMpU</p>
-                  <p className="text-sm font-medium">
-                    {truncate(rate.estimatedMinutesPerUnit)}
-                  </p>
-                </div>
-              )}
-              <nav className="flex flex-row gap-2 mt-4">
-                <Link
-                  to={routes.editRate({ id: rate.id })}
-                  title={'Edit rate ' + rate.id}
-                  className="rw-button rw-button-blue flex-1"
-                >
-                  <Pencil className="h-4 w-4" />{' '}
-                  <span className="px-4">Edit Rate</span>
-                </Link>
-                <button
-                  type="button"
-                  title={'Delete rate ' + rate.id}
-                  className="rw-button rw-button-red flex"
-                  onClick={() => onDeleteClick(rate.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </nav>
-            </div>
+            {(() => {
+              const rate = sortedRates.find((r) => r.id === openDrawerId)
+              if (!rate) return null
+
+              return (
+                <>
+                  <DrawerHeader>
+                    <DrawerTitle>
+                      {fullServiceDisplay(
+                        formatEnum(rate.service?.action),
+                        rate.service?.material,
+                        rate.service?.context
+                      )}
+                    </DrawerTitle>
+                  </DrawerHeader>
+                  <div className="px-4 pb-6 space-y-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        Measurement Unit
+                      </p>
+                      <p className="text-sm font-medium">
+                        {rate.unit?.fullName || 'N/A'}
+                      </p>
+                    </div>
+                    <div className="flex py-4">
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground">
+                          Sub Rate
+                        </p>
+                        <p className="text-sm font-medium">
+                          {currencyDisplay(rate.subAmount)}
+                        </p>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground">
+                          Retail Rate
+                        </p>
+                        <p className="text-sm font-medium">
+                          {currencyDisplay(rate.retailAmount)}
+                        </p>
+                      </div>
+                    </div>
+                    {rate.estimatedMinutesPerUnit && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">eMpU</p>
+                        <p className="text-sm font-medium">
+                          {truncate(rate.estimatedMinutesPerUnit)}
+                        </p>
+                      </div>
+                    )}
+                    <nav className="flex flex-row gap-2 mt-4">
+                      <Link
+                        to={routes.editRate({ id: rate.id })}
+                        title={'Edit rate ' + rate.id}
+                        className="rw-button rw-button-blue flex-1"
+                      >
+                        <Pencil className="h-4 w-4" />{' '}
+                        <span className="px-4">Edit Rate</span>
+                      </Link>
+                      <button
+                        type="button"
+                        title={'Delete rate ' + rate.id}
+                        className="rw-button rw-button-red flex"
+                        onClick={() => onDeleteClick(rate.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </nav>
+                  </div>
+                </>
+              )
+            })()}
           </DrawerContent>
         </Drawer>
-      ))}
+      )}
 
       <hr className="mb-6" />
       <div className="flex flex-col md:flex-row gap-2">
