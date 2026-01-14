@@ -273,9 +273,20 @@ const RateForm = ({
       throw new Error('Author ID is required')
     }
 
+    // Exclude id and timestamps from the submission data
+    const {
+      id: _id,
+      createdAt: _createdAt,
+      updatedAt: _updatedAt,
+      service: _service,
+      unit: _unit,
+      author: _author,
+      ...restData
+    } = data
+
     onSave(
       {
-        ...data,
+        ...restData,
         serviceId: finalServiceId,
         unitId: finalUnitId,
         authorId: finalAuthorId,

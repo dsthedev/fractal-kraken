@@ -230,6 +230,29 @@ const seedBillableItems = async () => {
   return records.length
 }
 
+const resetSequences = async () => {
+  // Reset auto-increment sequences to the max ID + 1 for each table
+  // This is necessary after seeding with explicit IDs
+  await db.$executeRawUnsafe(`
+    SELECT setval(pg_get_serial_sequence('"MeasurementUnit"', 'id'), COALESCE((SELECT MAX(id) FROM "MeasurementUnit"), 0) + 1, false);
+  `)
+  await db.$executeRawUnsafe(`
+    SELECT setval(pg_get_serial_sequence('"Service"', 'id'), COALESCE((SELECT MAX(id) FROM "Service"), 0) + 1, false);
+  `)
+  await db.$executeRawUnsafe(`
+    SELECT setval(pg_get_serial_sequence('"Rate"', 'id'), COALESCE((SELECT MAX(id) FROM "Rate"), 0) + 1, false);
+  `)
+  await db.$executeRawUnsafe(`
+    SELECT setval(pg_get_serial_sequence('"Entity"', 'id'), COALESCE((SELECT MAX(id) FROM "Entity"), 0) + 1, false);
+  `)
+  await db.$executeRawUnsafe(`
+    SELECT setval(pg_get_serial_sequence('"Estimate"', 'id'), COALESCE((SELECT MAX(id) FROM "Estimate"), 0) + 1, false);
+  `)
+  await db.$executeRawUnsafe(`
+    SELECT setval(pg_get_serial_sequence('"BillableItem"', 'id'), COALESCE((SELECT MAX(id) FROM "BillableItem"), 0) + 1, false);
+  `)
+}
+
 export default async () => {
   try {
     console.info('\n🌱 Starting database seed...\n')
@@ -265,6 +288,10 @@ export default async () => {
     console.info('  Seeding billable items...')
     const billableItemCount = await seedBillableItems()
     console.info(`  ✓ Seeded ${billableItemCount} billable items`)
+
+    console.info('  Resetting auto-increment sequences...')
+    await resetSequences()
+    console.info('  ✓ Sequences reset')
 
     console.info('\n✓ Database seed complete!\n')
   } catch (error) {

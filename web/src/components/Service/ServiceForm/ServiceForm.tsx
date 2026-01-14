@@ -38,7 +38,14 @@ interface ServiceFormProps {
 
 const ServiceForm = (props: ServiceFormProps) => {
   const onSubmit = (data: FormService) => {
-    props.onSave(data, props?.service?.id)
+    // Exclude id and timestamps from the submission data
+    const {
+      id: _id,
+      createdAt: _createdAt,
+      updatedAt: _updatedAt,
+      ...inputData
+    } = data
+    props.onSave(inputData, props?.service?.id)
   }
 
   return (

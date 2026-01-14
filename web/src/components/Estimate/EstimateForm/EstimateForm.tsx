@@ -630,9 +630,23 @@ const EstimateForm = (props: EstimateFormProps) => {
   }
 
   const onSubmit = (data: FormEstimate) => {
+    // Exclude id, timestamps, and relations from the submission data
+    const {
+      id: _id,
+      createdAt: _createdAt,
+      updatedAt: _updatedAt,
+      author: _author,
+      billableItems: _billableItems,
+      installerEntity: _installerEntity,
+      clientEntity: _clientEntity,
+      retailerEntity: _retailerEntity,
+      entity: _entity,
+      ...restData
+    } = data
+
     // Ensure required fields are set properly
     const submitData = {
-      ...data,
+      ...restData,
       title: titleValue,
       jobAddressLine1,
       jobAddressLine2,
@@ -758,7 +772,7 @@ const EstimateForm = (props: EstimateFormProps) => {
         <div className="mt-4 flex flex-col md:flex-row gap-4">
           <fieldset
             key={selectedClientEntity?.id || 'no-client'}
-            className="space-y-2 md:w-1/2"
+            className="space-y-2 md:w-1/2 order-2"
           >
             <legend className="text-sm font-medium flex items-center justify-between">
               <span>Job Location</span>
@@ -887,7 +901,7 @@ const EstimateForm = (props: EstimateFormProps) => {
             <input type="hidden" name="jobCountry" value="United States" />
           </fieldset>
 
-          <fieldset className="space-y-3 md:w-1/2">
+          <fieldset className="space-y-3 md:w-1/2 order-1">
             <legend>
               <span className="text-sm font-medium">Entities</span>
               <Button

@@ -53,7 +53,7 @@ const Routes = () => {
         </Set>
       </PrivateSet>
 
-      <PrivateSet wrap={WrapperLayout as any} unauthenticated="login" roles={['admin']}>
+      <PrivateSet wrap={WrapperLayout as any} unauthenticated="login" roles={['guest', 'admin']}>
         <Set wrap={AdminScaffoldLayout as any} title="Measurement Units" titleTo="measurementUnits" buttonLabel="New" buttonTo="newMeasurementUnit">
           <Route path="/measurement-units/new" page={MeasurementUnitNewMeasurementUnitPage} name="newMeasurementUnit" />
           <Route path="/measurement-units/{id:Int}/edit" page={MeasurementUnitEditMeasurementUnitPage} name="editMeasurementUnit" />

@@ -210,8 +210,17 @@ const BillableItemForm = ({
       throw new Error('Author ID is required')
     }
 
-    // Exclude id from spread for create operations
-    const { id, ...inputData } = data
+    // Exclude id, timestamps, and relations from spread for create operations
+    const {
+      id: _id,
+      createdAt: _createdAt,
+      updatedAt: _updatedAt,
+      service: _service,
+      unit: _unit,
+      author: _author,
+      estimate: _estimate,
+      ...inputData
+    } = data
 
     onSave(
       {

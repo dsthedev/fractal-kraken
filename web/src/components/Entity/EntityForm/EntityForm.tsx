@@ -44,7 +44,14 @@ const EntityForm = (props: EntityFormProps) => {
   const initial = { ...props.entity, ...props.initialValues }
 
   const onSubmit = (data: FormEntity) => {
-    props.onSave(data, props?.entity?.id)
+    // Exclude id and timestamps from the submission data
+    const {
+      id: _id,
+      createdAt: _createdAt,
+      updatedAt: _updatedAt,
+      ...inputData
+    } = data
+    props.onSave(inputData, props?.entity?.id)
   }
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {

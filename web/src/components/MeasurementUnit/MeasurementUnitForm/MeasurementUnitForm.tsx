@@ -48,7 +48,14 @@ interface MeasurementUnitFormProps {
 
 const MeasurementUnitForm = (props: MeasurementUnitFormProps) => {
   const onSubmit = (data: FormMeasurementUnit) => {
-    props.onSave(data, props?.measurementUnit?.id)
+    // Exclude id and timestamps from the submission data
+    const {
+      id: _id,
+      createdAt: _createdAt,
+      updatedAt: _updatedAt,
+      ...inputData
+    } = data
+    props.onSave(inputData, props?.measurementUnit?.id)
   }
 
   return (
