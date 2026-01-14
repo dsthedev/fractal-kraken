@@ -1,20 +1,14 @@
 import { useState } from 'react'
 
+import PythagoreanTripleScale from 'src/components/PythagoreanTripleScale/PythagoreanTripleScale'
 import CarpetRollLengthFromYardage from 'src/components/Tools/CarpetRollLengthFromYardage/CarpetRollLengthFromYardage'
-import CharacterCount from 'src/components/Tools/CharacterCount/CharacterCount'
 import ImperialCalculator from 'src/components/Tools/ImperialCalculator/ImperialCalculator'
 import IsItADrop from 'src/components/Tools/IsItADrop/IsItADrop'
 import PaintCalculator from 'src/components/Tools/PaintCalculator/PaintCalculator'
 import PlankIncrementor from 'src/components/Tools/PlankIncrementor/PlankIncrementor'
 import StepRollCalc from 'src/components/Tools/StepRollCalc/StepRollCalc'
 import TheCutList from 'src/components/Tools/TheCutList/TheCutList'
-import { Button } from 'src/components/ui/button'
-import {
-  Card,
-  CardHeader,
-  CardContent,
-  CardFooter,
-} from 'src/components/ui/card'
+import { Card, CardContent, CardFooter } from 'src/components/ui/card'
 import {
   Select,
   SelectContent,
@@ -39,6 +33,7 @@ const toolList = [
   { name: 'Imperial Calculator', component: ImperialCalculator },
   { name: 'Is It A Drop?', component: IsItADrop },
   { name: 'Paint Calculator', component: PaintCalculator },
+  { name: 'Pythagorean Triple Scale', component: PythagoreanTripleScale },
   // { name: 'Character Count', component: CharacterCount },
 ]
 
@@ -75,7 +70,10 @@ const Webtoolsheet = ({ open = true, onOpenChange }) => {
             >
               {/* <CardHeader className="font-bold text-lg">{tool.name}</CardHeader> */}
               <CardContent>
-                <tool.component />
+                <tool.component
+                  measurementsJson={undefined}
+                  onTotalChange={undefined}
+                />
               </CardContent>
               <CardFooter />
             </Card>
