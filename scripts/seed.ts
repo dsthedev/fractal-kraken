@@ -17,7 +17,7 @@ const readCsv = (filename: string) => {
   return parse(content, { columns: true, skip_empty_lines: true })
 }
 
-const cleanDatabase = async () => {
+const _cleanDatabase = async () => {
   // Delete in reverse order of dependencies to avoid FK constraint violations
   await db.billableItem.deleteMany({})
   await db.estimate.deleteMany({})
@@ -58,7 +58,7 @@ const seedMeasurementUnits = async () => {
       where: { id: parseInt(row.id) },
       update: {},
       create: {
-        id: parseInt(row.id),
+        // id will be auto-generated if record doesn't exist
         fullName: row.fullName,
         pluralName: row.pluralName,
         shortName: row.shortName || null,
@@ -83,7 +83,7 @@ const seedServices = async () => {
       where: { id: parseInt(row.id) },
       update: {},
       create: {
-        id: parseInt(row.id),
+        // id will be auto-generated if record doesn't exist
         action: row.action as any,
         material: row.material || '',
         context: row.context || null,
@@ -107,7 +107,7 @@ const seedRates = async () => {
       },
       update: {},
       create: {
-        id: parseInt(row.id),
+        // id will be auto-generated if record doesn't exist
         authorId: row.authorId,
         serviceId: parseInt(row.serviceId),
         unitId: parseInt(row.unitId),
@@ -131,7 +131,7 @@ const seedEntities = async () => {
       where: { id: parseInt(row.id) },
       update: {},
       create: {
-        id: parseInt(row.id),
+        // id will be auto-generated if record doesn't exist
         type: row.type as any,
         name: row.name,
         contactName: row.contactName || null,
@@ -154,10 +154,10 @@ const seedEstimates = async () => {
   const records = readCsv('20260111-estimates.csv')
   for (const row of records) {
     await db.estimate.upsert({
-      where: { id: parseInt(row.id) },
+      where: { uuid: row.uuid },
       update: {},
       create: {
-        id: parseInt(row.id),
+        // id will be auto-generated if record doesn't exist
         uuid: row.uuid,
         authorId: row.authorId,
         clientEntityId: row.clientEntityId
@@ -211,7 +211,7 @@ const seedBillableItems = async () => {
       where: { id: parseInt(row.id) },
       update: {},
       create: {
-        id: parseInt(row.id),
+        // id will be auto-generated if record doesn't exist
         estimateId: row.estimateId ? parseInt(row.estimateId) : null,
         authorId: row.authorId,
         serviceId: parseInt(row.serviceId),
@@ -257,8 +257,8 @@ export default async () => {
   try {
     console.info('\n🌱 Starting database seed...\n')
 
-    console.info('  Cleaning database...')
-    await cleanDatabase()
+    // console.info('  Cleaning database...')
+    // await cleanDatabase()
     console.info('  ✓ Database cleaned')
 
     console.info('  Seeding users...')
