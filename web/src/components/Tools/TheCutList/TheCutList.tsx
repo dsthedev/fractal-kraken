@@ -4,22 +4,17 @@ import { Pencil, PlusCircleIcon } from 'lucide-react'
 
 import { Button } from 'src/components/ui/button'
 import { Input } from 'src/components/ui/input'
+import { Label } from 'src/components/ui/label'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from 'src/components/ui/popover'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from 'src/components/ui/select'
 import { todayAsYYYYMMDD } from 'src/lib/utils'
 
 const STORAGE_KEY = 'cut-list'
 const LABELS_STORAGE_KEY = 'cut-labels'
+const JOB_NAME_KEY = 'cut-list-jobName'
 
 const defaultMeasurement = [{ feet: 0, inches: 0 }]
 
@@ -179,6 +174,7 @@ const TheCutList = ({ measurementsJson, onTotalChange }) => {
   const [totalInches, setTotalInches] = useState(0)
   const [totalYards, setTotalYards] = useState(0)
   const [labels, setLabels] = useState<Record<string, string>>({})
+  const [jobName, setJobName] = useState('')
   const [openPopoverIndex, setOpenPopoverIndex] = useState<number | null>(null)
 
   /* ---------------- persistence ---------------- */
@@ -202,6 +198,17 @@ const TheCutList = ({ measurementsJson, onTotalChange }) => {
       setLabels(JSON.parse(stored))
     }
   }, [])
+
+  useEffect(() => {
+    const stored = localStorage.getItem(JOB_NAME_KEY)
+    if (stored) {
+      setJobName(stored)
+    }
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem(JOB_NAME_KEY, jobName)
+  }, [jobName])
 
   /* ---------------- math ---------------- */
 
@@ -232,8 +239,10 @@ const TheCutList = ({ measurementsJson, onTotalChange }) => {
   const clearAll = () => {
     localStorage.removeItem(STORAGE_KEY)
     localStorage.removeItem(LABELS_STORAGE_KEY)
+    localStorage.removeItem(JOB_NAME_KEY)
     setMeasurements(defaultMeasurement)
     setLabels({})
+    setJobName('')
     setOpenPopoverIndex(null)
   }
 
@@ -360,7 +369,10 @@ const TheCutList = ({ measurementsJson, onTotalChange }) => {
     const url = URL.createObjectURL(blob)
 
     link.setAttribute('href', url)
-    link.setAttribute('download', `${todayAsYYYYMMDD()}-cut-list.csv`)
+    const filename = jobName
+      ? `${todayAsYYYYMMDD()}-${jobName}-cut-list.csv`
+      : `${todayAsYYYYMMDD()}-cut-list.csv`
+    link.setAttribute('download', filename)
     link.style.visibility = 'hidden'
 
     document.body.appendChild(link)
@@ -430,25 +442,39 @@ const TheCutList = ({ measurementsJson, onTotalChange }) => {
 
       <hr className="my-4" />
 
-      <div className="flex flex-col md:flex-row justify-center gap-4 py-4">
-        <input
-          id="csv-import"
-          type="file"
-          accept=".csv"
-          onChange={handleImport}
-          className="hidden"
-        />
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => document.getElementById('csv-import')?.click()}
-        >
-          Import Cuts
-        </Button>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="jobName">Job Name (optional)</Label>
+          <Input
+            id="jobName"
+            type="text"
+            value={jobName}
+            onChange={(e) => setJobName(e.target.value)}
+            placeholder="e.g., Smith Residence"
+            className="text-sm"
+          />
+        </div>
 
-        <Button variant="default" size="sm" onClick={handleExport}>
-          Export Cuts
-        </Button>
+        <div className="flex flex-col md:flex-row justify-center gap-4">
+          <input
+            id="csv-import"
+            type="file"
+            accept=".csv"
+            onChange={handleImport}
+            className="hidden"
+          />
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => document.getElementById('csv-import')?.click()}
+          >
+            Import Cuts
+          </Button>
+
+          <Button variant="default" size="sm" onClick={handleExport}>
+            Export Cuts
+          </Button>
+        </div>
       </div>
     </div>
   )

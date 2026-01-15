@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 import CarpetRollLengthFromYardage from 'src/components/Tools/CarpetRollLengthFromYardage/CarpetRollLengthFromYardage'
 import ImperialCalculator from 'src/components/Tools/ImperialCalculator/ImperialCalculator'
@@ -37,8 +37,41 @@ const toolList = [
   // { name: 'Character Count', component: CharacterCount },
 ]
 
+const STORAGE_KEYS = ['last_used_webtool_idx', 'webtoolsheet_selectedToolIdx']
+
 const Webtoolsheet = ({ open = true, onOpenChange }) => {
-  const [selectedToolIdx, setSelectedToolIdx] = useState('0')
+  const [selectedToolIdx, setSelectedToolIdx] = useState(() => {
+    try {
+      let stored: string | null = null
+      for (const k of STORAGE_KEYS) {
+        const v = localStorage.getItem(k)
+        if (v !== null) {
+          stored = v
+          break
+        }
+      }
+      if (stored !== null) {
+        const n = Number(stored)
+        if (!Number.isNaN(n) && n >= 0 && n < toolList.length) {
+          return String(n)
+        }
+      }
+    } catch {
+      /* ignore (e.g., SSR) */
+    }
+    return '0'
+  })
+
+  useEffect(() => {
+    try {
+      // persist to all known keys for compatibility
+      for (const k of STORAGE_KEYS) {
+        localStorage.setItem(k, String(selectedToolIdx))
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [selectedToolIdx])
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

@@ -1,172 +1,390 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
-import StepRollCalcVisualizer from '../StepRollCalcVisualizer/StepRollCalcVisualizer'
+import { Download, Upload, RotateCcw } from 'lucide-react'
 
+import StepRollCalcVisualizer from 'src/components/Tools/StepRollCalcVisualizer/StepRollCalcVisualizer'
+import { Button } from 'src/components/ui/button'
+import { Checkbox } from 'src/components/ui/checkbox'
+import { Input } from 'src/components/ui/input'
+import { Label } from 'src/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from 'src/components/ui/select'
+import { todayAsYYYYMMDD } from 'src/lib/utils'
+
+// Constants
+const STORAGE_KEY = 'stepRollCalc'
+const JOB_NAME_KEY = 'stepRollCalc_jobName'
+const DEFAULT_VALUES = {
+  profile: 20,
+  stepWidth: 42,
+  steps: 13,
+  rollWidth: 12,
+  showFtIn: false,
+}
+
+const ROLL_WIDTH_OPTIONS = [
+  { value: 12, label: "12'" },
+  { value: 15, label: "15'" },
+]
+
+// Types
+interface StoredValues {
+  profile: number
+  stepWidth: number
+  steps: number
+  rollWidth: number
+  showFtIn: boolean
+}
+
+interface CalculationResult {
+  totalCarpetLength: number
+  possibleColumns: number
+  stepsPerColumn: number
+}
+
+// Storage utilities
+const loadFromStorage = (): StoredValues => {
+  const stored = localStorage.getItem(STORAGE_KEY)
+  return stored ? JSON.parse(stored) : DEFAULT_VALUES
+}
+
+const saveToStorage = (values: StoredValues): void => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(values))
+}
+
+const loadJobName = (): string => {
+  return localStorage.getItem(JOB_NAME_KEY) || ''
+}
+
+const saveJobName = (name: string): void => {
+  localStorage.setItem(JOB_NAME_KEY, name)
+}
+
+const exportToCSV = (
+  values: StoredValues,
+  result: CalculationResult,
+  jobName: string
+): void => {
+  const csv = [
+    ['Parameter', 'Value', 'Unit'],
+    ['Steps', values.steps, 'count'],
+    ['Step Width', values.stepWidth, 'inches'],
+    ['Profile', values.profile, 'inches'],
+    ['Roll Width', values.rollWidth, 'feet'],
+    ['', '', ''],
+    ['Result', 'Value', 'Unit'],
+    ['Total Carpet Length', result.totalCarpetLength.toFixed(2), 'feet'],
+    ['Possible Columns', result.possibleColumns, 'count'],
+    ['Steps Per Column', result.stepsPerColumn, 'count'],
+  ]
+    .map((row) => row.join(','))
+    .join('\n')
+
+  const blob = new Blob([csv], { type: 'text/csv' })
+  const url = window.URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  const filename = jobName
+    ? `${todayAsYYYYMMDD()}-${jobName}-step-calc.csv`
+    : `${todayAsYYYYMMDD()}-step-calc.csv`
+  a.download = filename
+  a.click()
+  window.URL.revokeObjectURL(url)
+}
+
+// Calculation
+const calculateCarpetLength = (
+  profile: number,
+  stepWidth: number,
+  steps: number,
+  rollWidth: number
+): CalculationResult => {
+  const rollWidthInches = rollWidth * 12
+  const possibleColumns = Math.floor(rollWidthInches / stepWidth)
+  const stepsPerColumn = Math.ceil(steps / possibleColumns)
+  const totalCarpetLength = (stepsPerColumn * profile) / 12
+
+  return { totalCarpetLength, possibleColumns, stepsPerColumn }
+}
+
+// Component
 const StepRollCalc: React.FC = () => {
-  const [profile, setProfile] = useState<number>(20)
-  const [stepWidth, setStepWidth] = useState<number>(42)
-  const [steps, setSteps] = useState<number>(13)
-  const [rollWidth, setRollWidth] = useState<number>(12) // in feet
-  const [showFtIn, setShowFtIn] = useState<boolean>(false) // toggle for ft/in display
+  const [values, setValues] = useState<StoredValues>(DEFAULT_VALUES)
+  const [jobName, setJobName] = useState('')
+  const [mounted, setMounted] = useState(false)
 
-  const handleInputChange = (
-    setter: React.Dispatch<React.SetStateAction<number>>,
-    value: string
-  ) => {
-    const intValue = parseInt(value, 10)
-    if (intValue >= 0 && intValue <= 9999) {
-      setter(intValue)
+  // Initialize from localStorage
+  useEffect(() => {
+    setValues(loadFromStorage())
+    setJobName(loadJobName())
+    setMounted(true)
+  }, [])
+
+  // Persist to localStorage
+  useEffect(() => {
+    if (mounted) {
+      saveToStorage(values)
+    }
+  }, [values, mounted])
+
+  useEffect(() => {
+    saveJobName(jobName)
+  }, [jobName])
+
+  const calculation = calculateCarpetLength(
+    values.profile,
+    values.stepWidth,
+    values.steps,
+    values.rollWidth
+  )
+
+  const displayFeet = Math.floor(calculation.totalCarpetLength)
+  const displayInches = Math.ceil(
+    (calculation.totalCarpetLength - displayFeet) * 12
+  )
+
+  // Handlers
+  const handleInputChange = (field: keyof StoredValues, inputValue: string) => {
+    const numValue = parseInt(inputValue, 10)
+    if (!isNaN(numValue) && numValue >= 0 && numValue <= 9999) {
+      setValues((prev) => ({ ...prev, [field]: numValue }))
     }
   }
 
-  const calculateCarpetLength = () => {
-    const rollWidthInches = rollWidth * 12
-    const possibleColumns = Math.floor(rollWidthInches / stepWidth)
-    const stepsPerColumn = Math.ceil(steps / possibleColumns)
-    const totalCarpetLength = (stepsPerColumn * profile) / 12
-    return { totalCarpetLength, possibleColumns, stepsPerColumn }
+  const handleToggleProfile = (amount: number) => {
+    setValues((prev) => ({
+      ...prev,
+      profile: Math.max(0, prev.profile + amount),
+    }))
   }
 
-  const { totalCarpetLength, possibleColumns, stepsPerColumn } =
-    calculateCarpetLength()
-
-  const displayFeet = Math.floor(totalCarpetLength)
-  const displayInches = Math.ceil((totalCarpetLength - displayFeet) * 12)
-
-  const toggleProfile = (amount: number) => {
-    setProfile(profile + amount)
+  const handleToggleFtIn = () => {
+    setValues((prev) => ({ ...prev, showFtIn: !prev.showFtIn }))
   }
+
+  const handleReset = () => {
+    setValues(DEFAULT_VALUES)
+  }
+
+  const handleExport = () => {
+    exportToCSV(values, calculation, jobName)
+  }
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const text = event.target?.result as string
+      const lines = text.split('\n')
+      const imported: Partial<StoredValues> = {}
+      lines.forEach((line) => {
+        const [key, value] = line.split(',')
+        if (key === 'Steps') imported.steps = parseInt(value, 10)
+        if (key === 'Step Width') imported.stepWidth = parseInt(value, 10)
+        if (key === 'Profile') imported.profile = parseInt(value, 10)
+        if (key === 'Roll Width') imported.rollWidth = parseInt(value, 10)
+      })
+      if (Object.keys(imported).length > 0) {
+        setValues((prev) => ({ ...prev, ...imported }))
+      }
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
+
+  if (!mounted) return null
 
   return (
-    <div>
-      <h1 className="text-2xl">Step Roll Calc</h1>
-      <p className="my-3 text-lg">
-        Calculate how much carpet is needed to cover a set of steps.
-      </p>
-      <div className="flex flex-row space-x-4">
-        <div id="stepCount" className="my-1">
-          <label className="flex flex-col justify-center">
-            <span className="py-2 font-bold">Steps:</span>
-            <input
-              type="number"
-              onFocus={(e) => e.target.select()}
-              className="max-w-28 text-right font-mono text-4xl"
-              value={steps}
-              onChange={(e) => handleInputChange(setSteps, e.target.value)}
-            />
-            <span className="text-xs">(inches)</span>
-          </label>
-        </div>
-        <div id="stepWidth" className="my-1">
-          <label className="flex flex-col justify-center">
-            <span className="py-2 font-bold">Width:</span>
-            <input
-              type="number"
-              onFocus={(e) => e.target.select()}
-              className="max-w-28 text-right font-mono text-4xl"
-              value={stepWidth}
-              onChange={(e) => handleInputChange(setStepWidth, e.target.value)}
-            />
-            <span className="text-xs">(inches)</span>
-          </label>
-        </div>
+    <div className="space-y-6 p-4 max-w-2xl">
+      {/* Header */}
+      <div className="space-y-1">
+        <h1 className="text-3xl font-bold">Step Roll Calculator</h1>
+        <p className="text-sm text-gray-600">
+          Calculate carpet needed to cover a set of steps.
+        </p>
       </div>
-      <div className="flex flex-row space-x-4">
-        <div id="stepProfile" className="my-1">
-          <label className="flex flex-col justify-center">
-            <span className="py-2 font-bold">Profile:</span>
-            <input
+
+      {/* Inputs Grid */}
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="steps">Steps</Label>
+            <Input
+              id="steps"
               type="number"
+              value={values.steps}
+              onChange={(e) => handleInputChange('steps', e.target.value)}
               onFocus={(e) => e.target.select()}
-              className="max-w-28 text-right font-mono text-4xl"
-              value={profile}
-              onChange={(e) => handleInputChange(setProfile, e.target.value)}
+              className="text-right text-2xl font-mono"
             />
-            <span className="text-xs">(inches)</span>
-          </label>
-          <div className="flex space-x-2 py-2">
-            <button
-              onClick={() => toggleProfile(-2)}
-              className="border px-2 py-1"
+            <span className="text-xs text-gray-500">count</span>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="stepWidth">Step Width</Label>
+            <Input
+              id="stepWidth"
+              type="number"
+              value={values.stepWidth}
+              onChange={(e) => handleInputChange('stepWidth', e.target.value)}
+              onFocus={(e) => e.target.select()}
+              className="text-right text-2xl font-mono"
+            />
+            <span className="text-xs text-gray-500">inches</span>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="profile">Profile</Label>
+            <Input
+              id="profile"
+              type="number"
+              value={values.profile}
+              onChange={(e) => handleInputChange('profile', e.target.value)}
+              onFocus={(e) => e.target.select()}
+              className="text-right text-2xl font-mono"
+            />
+            <span className="text-xs text-gray-500">inches</span>
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleToggleProfile(-2)}
+              >
+                −2"
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleToggleProfile(2)}
+              >
+                +2"
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="rollWidth">Roll Width</Label>
+            <Select
+              value={String(values.rollWidth)}
+              onValueChange={(v) =>
+                setValues((prev) => ({ ...prev, rollWidth: parseInt(v, 10) }))
+              }
             >
-              -2"
-            </button>
-            <button
-              onClick={() => toggleProfile(2)}
-              className="border px-2 py-1"
-            >
-              +2"
-            </button>
+              <SelectTrigger id="rollWidth">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ROLL_WIDTH_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={String(opt.value)}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
-        <div id="rollWidth" className="my-1">
-          <label className="flex flex-col justify-center">
-            <span className="py-2 font-bold">Roll Width:</span>
-            <select
-              value={rollWidth}
-              onChange={(e) => setRollWidth(Number(e.target.value))}
-              className="max-w-28 font-mono text-4xl"
-            >
-              <option value={12}>12'</option>
-              <option value={15}>15' ft'</option>
-            </select>
-          </label>
+      </div>
+
+      {/* Result Display */}
+      <div className="space-y-2 border-l-4 border-blue-500 bg-blue-50 p-4">
+        <div className="text-4xl font-mono font-bold">
+          {displayFeet}
+          {values.showFtIn ? ' ft' : "'"}, {displayInches}
+          {values.showFtIn ? ' in' : '"'}
+        </div>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="showFtIn"
+            checked={values.showFtIn}
+            onCheckedChange={handleToggleFtIn}
+          />
+          <Label htmlFor="showFtIn" className="text-sm cursor-pointer">
+            Display as ft / in
+          </Label>
         </div>
       </div>
 
-      <h3 className="my-4 p-3 text-5xl">
-        <code className="font-serif">
-          {displayFeet}
-          {showFtIn ? ' ft' : "'"}, {displayInches}
-          {showFtIn ? ' in' : '"'}
-        </code>
-      </h3>
+      {/* Summary */}
+      <div className="text-sm space-y-1 text-gray-700">
+        <p>
+          To get {values.steps} steps, a{' '}
+          <strong>{calculation.totalCarpetLength.toFixed(2)}'</strong> long roll
+          of carpet is necessary.
+        </p>
+        <p>
+          This allows {calculation.stepsPerColumn} steps per column with{' '}
+          <strong>{calculation.possibleColumns}</strong> possible columns at{' '}
+          {values.stepWidth}".
+        </p>
+      </div>
 
-      <label className="flex items-center space-x-2">
-        <input
-          type="checkbox"
-          checked={showFtIn}
-          onChange={() => setShowFtIn(!showFtIn)}
-          className="hidden"
+      {/* Visualizer */}
+      <div className="border-y">
+        <StepRollCalcVisualizer
+          profile={values.profile}
+          stepWidth={values.stepWidth}
+          steps={values.steps}
+          rollWidth={values.rollWidth}
         />
-        Display as{' '}
-        <span className="mx-auto my-2 flex border-2 border-gray-600 border-opacity-50 p-2">
-          {showFtIn ? 'Prime Symbols' : 'ft / in'}
-        </span>
-      </label>
+      </div>
 
-      <p className="py-4">
-        To get {steps} steps, a {totalCarpetLength.toFixed(2)}' foot' long roll
-        of carpet is necessary. This will allow {stepsPerColumn} steps per
-        column; since only {possibleColumns} columns are possible at {stepWidth}
-        ".
-      </p>
+      {/* Job Name Input */}
+      <div className="space-y-2">
+        <Label htmlFor="jobName">Job Name (optional)</Label>
+        <Input
+          id="jobName"
+          type="text"
+          value={jobName}
+          onChange={(e) => setJobName(e.target.value)}
+          placeholder="e.g., Smith Residence"
+          className="text-sm"
+        />
+      </div>
 
-      <hr />
-      <StepRollCalcVisualizer
-        profile={profile}
-        stepWidth={stepWidth}
-        steps={steps}
-        rollWidth={rollWidth}
-      />
-      <hr />
+      {/* Actions */}
+      <div className="flex gap-2 flex-wrap">
+        <Button variant="outline" size="sm" onClick={handleExport}>
+          <Download className="w-4 h-4 mr-2" />
+          Export CSV
+        </Button>
+        <label>
+          <input
+            type="file"
+            accept=".csv"
+            onChange={handleImport}
+            className="hidden"
+          />
+          <Button variant="outline" size="sm" asChild>
+            <span>
+              <Upload className="w-4 h-4 mr-2" />
+              Import CSV
+            </span>
+          </Button>
+        </label>
+        <Button variant="outline" size="sm" onClick={handleReset}>
+          <RotateCcw className="w-4 h-4 mr-2" />
+          Reset
+        </Button>
+      </div>
 
-      <small className="flex max-w-sm flex-col space-y-2 p-3">
-        <span>
-          <strong>Notice: </strong> Typical steps have an ~18" profile. For
-          installation purposes, add 2" to this measurement to allow for
-          reasonable profile variance. This calculator is a reference tool only.
-        </span>
-
-        <span>
-          <strong> Always: </strong> double check your numbers for using for
-          estimates and invoices!
-        </span>
-      </small>
-
-      <small className="mx-auto my-2 flex border-2 border-gray-600 border-opacity-50 p-2">
-        Are these numbers incorrect? Please let the developer know!
-      </small>
+      {/* Warnings */}
+      <div className="space-y-2 text-xs text-gray-600">
+        <p>
+          <strong>Notice:</strong> Typical steps have an ~18" profile. Add 2"
+          for installation variance. This is a reference tool only.
+        </p>
+        <p>
+          <strong>Always:</strong> Double-check numbers before using for
+          estimates and invoices.
+        </p>
+      </div>
     </div>
   )
 }
