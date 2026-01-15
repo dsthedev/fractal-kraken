@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from 'src/components/ui/select'
+import { Table, TableBody, TableCell, TableRow } from 'src/components/ui/table'
 
 export default function PythagoreanTripleScale() {
   const canvasRef = useRef(null)
@@ -88,7 +89,12 @@ export default function PythagoreanTripleScale() {
           min="1"
           value={bInput}
           onChange={(e) => setBInput(Number(e.target.value) || 0)}
-          className="flex-1"
+          className="flex-1 text-2xl font-bold"
+          onFocus={(e) => {
+            requestAnimationFrame(() => {
+              e.target.select()
+            })
+          }}
         />
         <Select value={unit} onValueChange={setUnit}>
           <SelectTrigger className="w-[120px]">
@@ -100,25 +106,40 @@ export default function PythagoreanTripleScale() {
           </SelectContent>
         </Select>
       </div>
+      <hr className="my-4" />
+      <Table>
+        <TableBody>
+          <TableRow>
+            <TableCell className="font-semibold">a</TableCell>
+            <TableCell className="text-2xl font-bold">
+              {a.toFixed(2)} {unit}
+            </TableCell>
+            <TableCell className="text-muted-foreground">(short)</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-semibold">b</TableCell>
+            <TableCell className="text-2xl">
+              {b.toFixed(2)} {unit}
+            </TableCell>
+            <TableCell className="text-muted-foreground">(medium)</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-semibold">c</TableCell>
+            <TableCell className="text-2xl font-bold">
+              {c.toFixed(2)} {unit}
+            </TableCell>
+            <TableCell className="text-muted-foreground">(long)</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
 
+      <hr className="my-4" />
       <canvas
         ref={canvasRef}
         width={360}
         height={240}
         className="border border-border rounded mb-3 w-full bg-gray-100"
       />
-
-      <ul className="m-0 pl-4 space-y-1">
-        <li>
-          a (short) = {a.toFixed(2)} {unit}
-        </li>
-        <li>
-          b (medium) = {b.toFixed(2)} {unit}
-        </li>
-        <li>
-          c (long) = {c.toFixed(2)} {unit}
-        </li>
-      </ul>
     </div>
   )
 }

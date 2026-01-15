@@ -1,11 +1,11 @@
 import { useState } from 'react'
 
-import PythagoreanTripleScale from 'src/components/PythagoreanTripleScale/PythagoreanTripleScale'
 import CarpetRollLengthFromYardage from 'src/components/Tools/CarpetRollLengthFromYardage/CarpetRollLengthFromYardage'
 import ImperialCalculator from 'src/components/Tools/ImperialCalculator/ImperialCalculator'
 import IsItADrop from 'src/components/Tools/IsItADrop/IsItADrop'
 import PaintCalculator from 'src/components/Tools/PaintCalculator/PaintCalculator'
 import PlankIncrementor from 'src/components/Tools/PlankIncrementor/PlankIncrementor'
+import PythagoreanTripleScale from 'src/components/Tools/PythagoreanTripleScale/PythagoreanTripleScale'
 import StepRollCalc from 'src/components/Tools/StepRollCalc/StepRollCalc'
 import TheCutList from 'src/components/Tools/TheCutList/TheCutList'
 import { Card, CardContent, CardFooter } from 'src/components/ui/card'
@@ -29,11 +29,11 @@ const toolList = [
   { name: 'The Cut List', component: TheCutList },
   { name: 'Step Roll Calc', component: StepRollCalc },
   { name: 'Plank Incrementor', component: PlankIncrementor },
+  { name: 'Pythagorean Triple Scale', component: PythagoreanTripleScale },
   { name: 'Carpet Roll Length', component: CarpetRollLengthFromYardage },
   { name: 'Imperial Calculator', component: ImperialCalculator },
   { name: 'Is It A Drop?', component: IsItADrop },
   { name: 'Paint Calculator', component: PaintCalculator },
-  { name: 'Pythagorean Triple Scale', component: PythagoreanTripleScale },
   // { name: 'Character Count', component: CharacterCount },
 ]
 
