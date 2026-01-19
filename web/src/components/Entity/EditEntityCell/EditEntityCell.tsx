@@ -21,6 +21,7 @@ export const QUERY: TypedDocumentNode<EditEntityById> = gql`
       id
       type
       name
+      nickname
       contactName
       email
       phone
@@ -46,6 +47,7 @@ const UPDATE_ENTITY_MUTATION: TypedDocumentNode<
       id
       type
       name
+      nickname
       contactName
       email
       phone

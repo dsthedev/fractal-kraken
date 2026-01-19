@@ -15,6 +15,7 @@ export const QUERY: TypedDocumentNode<FindEntityById, FindEntityByIdVariables> =
         id
         type
         name
+        nickname
         contactName
         email
         phone

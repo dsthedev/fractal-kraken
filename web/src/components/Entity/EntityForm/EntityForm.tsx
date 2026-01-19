@@ -20,6 +20,7 @@ type FormEntity = NonNullable<EditEntityById['entity']>
 const entityValidationSchema = z.object({
   type: z.string(),
   name: z.string().min(1, 'Name is required'),
+  nickname: z.string().optional(),
   contactName: z.string().optional(),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
@@ -96,7 +97,7 @@ const EntityForm = (props: EntityFormProps) => {
         <FieldError name="type" className="rw-field-error" />
 
         {/* Name and Contact Name - 50/50 row */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           <div>
             <Label
               name="name"
@@ -112,6 +113,26 @@ const EntityForm = (props: EntityFormProps) => {
               className="rw-input"
               errorClassName="rw-input rw-input-error"
               validation={{ required: true }}
+            />
+
+            <FieldError name="name" className="rw-field-error" />
+          </div>
+
+          <div>
+            <Label
+              name="nickname"
+              className="rw-label"
+              errorClassName="rw-label rw-label-error"
+            >
+              Nickname
+            </Label>
+
+            <TextField
+              name="nickname"
+              defaultValue={initial.nickname}
+              className="rw-input"
+              errorClassName="rw-input rw-input-error"
+              validation={{ required: false }}
             />
 
             <FieldError name="name" className="rw-field-error" />

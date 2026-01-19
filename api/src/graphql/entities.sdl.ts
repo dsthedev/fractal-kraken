@@ -3,6 +3,7 @@ export const schema = gql`
     id: Int!
     type: EntityType!
     name: String!
+    nickname: String
     contactName: String
     email: String
     phone: String
@@ -38,6 +39,7 @@ export const schema = gql`
   input CreateEntityInput {
     type: EntityType!
     name: String!
+    nickname: String
     contactName: String
     email: String
     phone: String
@@ -53,6 +55,7 @@ export const schema = gql`
   input UpdateEntityInput {
     type: EntityType
     name: String
+    nickname: String
     contactName: String
     email: String
     phone: String

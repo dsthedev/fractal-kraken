@@ -210,7 +210,9 @@ const EntitiesList = ({ entities }: FindEntities) => {
                 <HoverCard>
                   <HoverCardTrigger asChild>
                     <button className="text-sm font-medium text-blue-600 hover:underline hidden sm:inline">
-                      {truncate(entity.name)}
+                      {entity.nickname
+                        ? truncate(entity.nickname)
+                        : truncate(entity.name)}
                     </button>
                   </HoverCardTrigger>
                   <HoverCardContent className="w-64">
@@ -223,7 +225,9 @@ const EntitiesList = ({ entities }: FindEntities) => {
                   className="text-sm font-medium text-blue-600 hover:underline sm:hidden text-left"
                   onClick={() => setOpenDrawerId(entity.id)}
                 >
-                  {truncate(entity.name)}
+                  {entity.nickname
+                    ? truncate(entity.nickname)
+                    : truncate(entity.name)}
                 </button>
               </td>
               <td className="hidden sm:table-cell">
