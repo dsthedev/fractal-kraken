@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 import type {
   DeleteEstimateMutation,
   DeleteEstimateMutationVariables,
@@ -9,7 +11,18 @@ import { useMutation } from '@cedarjs/web'
 import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
-import { formatEnum, timeTag } from 'src/lib/formatters.js'
+import { Badge } from 'src/components/ui/badge'
+import { Button } from 'src/components/ui/button'
+import { Input } from 'src/components/ui/input'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from 'src/components/ui/table'
+import { createEstimateRefNo } from 'src/lib/utils'
 
 const DELETE_ESTIMATE_MUTATION: TypedDocumentNode<
   DeleteEstimateMutation,
@@ -26,7 +39,47 @@ interface Props {
   estimate: NonNullable<FindEstimateById['estimate']>
 }
 
+const todayAsYYYYMMDD = () => {
+  const today = new Date()
+  return today.toISOString().split('T')[0]
+}
+
+const formatCurrency = (amount: number | null | undefined) => {
+  if (amount === null || amount === undefined) return '$0.00'
+  return `$${amount.toFixed(2)}`
+}
+
+const formatAddress = (entity: any) => {
+  if (!entity) return 'N/A'
+  const parts = [
+    entity.addressLine1,
+    entity.addressLine2,
+    [entity.city, entity.state].filter(Boolean).join(', '),
+    entity.postalCode,
+    entity.country,
+  ].filter(Boolean)
+  return parts.join(', ') || 'N/A'
+}
+
+const formatService = (service: any) => {
+  if (!service) return 'N/A'
+  const action = service.action
+    ? service.action.toLowerCase().replace('_', ' ')
+    : ''
+  const material = service.material || ''
+  const context = service.context ? ` (${service.context})` : ''
+  return `${action} ${material}${context}`.trim()
+}
+
 const Estimate = ({ estimate }: Props) => {
+  const [documentType, setDocumentType] = useState<'Estimate' | 'Invoice'>(
+    'Estimate'
+  )
+
+  const toggleDocumentType = () => {
+    setDocumentType((prev) => (prev === 'Estimate' ? 'Invoice' : 'Estimate'))
+  }
+
   const [deleteEstimate] = useMutation(DELETE_ESTIMATE_MUTATION, {
     onCompleted: () => {
       toast.success('Estimate deleted')
@@ -43,108 +96,197 @@ const Estimate = ({ estimate }: Props) => {
     }
   }
 
+  // Sort billable items by sortOrder
+  const sortedItems = [...(estimate.billableItems || [])].sort(
+    (a, b) => a.sortOrder - b.sortOrder
+  )
+
   return (
     <>
-      <div className="rw-segment">
-        <header className="rw-segment-header">
-          <h2 className="rw-heading rw-heading-secondary">
-            Estimate {estimate.id} Detail
-          </h2>
-        </header>
-        <table className="rw-table">
-          <tbody>
-            <tr>
-              <th>Id</th>
-              <td>{estimate.id}</td>
-            </tr>
-            <tr>
-              <th>Uuid</th>
-              <td>{estimate.uuid}</td>
-            </tr>
-            <tr>
-              <th>Title</th>
-              <td>{estimate.title}</td>
-            </tr>
-            <tr>
-              <th>Status</th>
-              <td>{formatEnum(estimate.status)}</td>
-            </tr>
-            <tr>
-              <th>Installer entity id</th>
-              <td>{estimate.installerEntityId}</td>
-            </tr>
-            <tr>
-              <th>Client entity id</th>
-              <td>{estimate.clientEntityId}</td>
-            </tr>
-            <tr>
-              <th>Retailer entity id</th>
-              <td>{estimate.retailerEntityId}</td>
-            </tr>
-            <tr>
-              <th>Job address line1</th>
-              <td>{estimate.jobAddressLine1}</td>
-            </tr>
-            <tr>
-              <th>Job address line2</th>
-              <td>{estimate.jobAddressLine2}</td>
-            </tr>
-            <tr>
-              <th>Job city</th>
-              <td>{estimate.jobCity}</td>
-            </tr>
-            <tr>
-              <th>Job state</th>
-              <td>{estimate.jobState}</td>
-            </tr>
-            <tr>
-              <th>Job postal code</th>
-              <td>{estimate.jobPostalCode}</td>
-            </tr>
-            <tr>
-              <th>Job country</th>
-              <td>{estimate.jobCountry}</td>
-            </tr>
-            <tr>
-              <th>Subtotal</th>
-              <td>{estimate.subtotal}</td>
-            </tr>
-            <tr>
-              <th>Tax total</th>
-              <td>{estimate.taxTotal}</td>
-            </tr>
-            <tr>
-              <th>Total</th>
-              <td>{estimate.total}</td>
-            </tr>
-            <tr>
-              <th>Estimated minutes total</th>
-              <td>{estimate.estimatedMinutesTotal}</td>
-            </tr>
-            <tr>
-              <th>Author id</th>
-              <td>{estimate.authorId}</td>
-            </tr>
-            <tr>
-              <th>Notes</th>
-              <td>{estimate.notes}</td>
-            </tr>
-            <tr>
-              <th>Created at</th>
-              <td>{timeTag(estimate.createdAt)}</td>
-            </tr>
-            <tr>
-              <th>Updated at</th>
-              <td>{timeTag(estimate.updatedAt)}</td>
-            </tr>
-            <tr>
-              <th>Entity id</th>
-              <td>{estimate.entityId}</td>
-            </tr>
-          </tbody>
-        </table>
+      <div className="mx-auto max-w-4xl space-y-8 p-8 print:p-4">
+        {/* Top Half */}
+        <div className="space-y-6">
+          {/* Title Row */}
+          <div className="border-b pb-4 flex space-x-4 justify-between items-center">
+            <h1 className="text-3xl font-bold">{documentType}</h1>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={toggleDocumentType}
+              className="print:hidden"
+            >
+              Printing as {documentType}
+            </Button>
+          </div>
+
+          {/* Date and Number Row */}
+          <div className="flex justify-between gap-4 text-sm">
+            <div>
+              <span className="font-semibold">Date:</span>{' '}
+              <Badge variant="outline">{todayAsYYYYMMDD()}</Badge>
+            </div>
+            <div className="text-right">
+              <span className="font-semibold">No.</span>{' '}
+              <Badge variant="outline">
+                {createEstimateRefNo(
+                  estimate.retailerEntity?.name,
+                  estimate.clientEntity?.name
+                )}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Entities Section */}
+          <div className="flex flex-col md:flex-row justify-between items- space-x-4 space-y-4 border-y py-2">
+            {/* Installer */}
+            <div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wide">
+                Installer
+              </div>
+              <div className="font-semibold flex md:flex-col">
+                <span className="whitespace-nowrap">
+                  {estimate.installerEntity?.name || 'N/A'}
+                </span>
+                {estimate.installerEntity?.phone && (
+                  <span className="font-normal whitespace-nowrap">
+                    <a href="tel:+{estimate.installerEntity.phone}">
+                      {estimate.installerEntity.phone}
+                    </a>
+                  </span>
+                )}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {formatAddress(estimate.installerEntity)}
+              </div>
+            </div>
+
+            {/* Retailer */}
+            <div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wide">
+                Retailer
+              </div>
+              <div className="font-semibold flex md:flex-col">
+                <span className="whitespace-nowrap">
+                  {estimate.retailerEntity?.name || 'N/A'}
+                </span>
+                {estimate.retailerEntity?.phone && (
+                  <span className="font-normal whitespace-nowrap">
+                    <a href="tel:+{estimate.retailerEntity.phone}">
+                      {estimate.retailerEntity.phone}
+                    </a>
+                  </span>
+                )}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {formatAddress(estimate.retailerEntity)}
+              </div>
+            </div>
+
+            {/* Client */}
+            <div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wide">
+                Client
+              </div>
+              <div className="font-semibold flex md:flex-col">
+                <span className="whitespace-nowrap">
+                  {estimate.clientEntity?.name || '...'}
+                </span>
+                {estimate.clientEntity?.phone && (
+                  <span className="font-normal whitespace-nowrap">
+                    <a href="tel:+{estimate.clientEntity.phone}">
+                      {estimate.clientEntity.phone}
+                    </a>
+                  </span>
+                )}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {formatAddress(estimate.clientEntity)}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Half */}
+        <div className="space-y-6">
+          {/* Billable Items Table */}
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-20">Qty</TableHead>
+                <TableHead className="w-16">U/M</TableHead>
+                <TableHead>Service / Action</TableHead>
+                <TableHead>Notes</TableHead>
+                <TableHead className="w-24 text-right">Unit Price</TableHead>
+                <TableHead className="w-24 text-right">Subtotal</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedItems.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className="text-center text-muted-foreground"
+                  >
+                    No billable items
+                  </TableCell>
+                </TableRow>
+              ) : (
+                sortedItems.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>{item.quantity}</TableCell>
+                    <TableCell>{item.unit?.symbol || 'N/A'}</TableCell>
+                    <TableCell>{formatService(item.service)}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {item.notes || '—'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.unitPrice)}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">
+                      {formatCurrency(item.subtotal)}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+
+          {/* Signature and Total Row */}
+          <div className="flex md:flex-row items-end pt-4 border-t">
+            {/* Total */}
+            <div className="md:order-2 text-right flex-grow">
+              <label className="text-xs text-muted-foreground uppercase tracking-wide block">
+                {documentType} Total
+              </label>
+              <div className="text-3xl font-bold text-muted-foreground">
+                {formatCurrency(estimate.total)}
+              </div>
+            </div>
+
+            {/* Installer Signature */}
+            <div className="md:order-1">
+              <label className="text-xs text-muted-foreground uppercase tracking-wide">
+                Installer Signature
+              </label>
+              <Input
+                type="text"
+                disabled
+                className="h-12 border-b border-t-0 border-x-0 rounded-none placeholder:text-gray-100"
+                placeholder="Sign here"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex">
+          <div className="text-muted-foreground text-sm">
+            Estimate ID: <small>{estimate.uuid}</small>
+          </div>
+        </div>
       </div>
-      <nav className="rw-button-group">
+
+      {/* Action Buttons - Hidden on Print */}
+      <nav className="flex justify-center space-x-4s print:hidden">
         <Link
           to={routes.editEstimate({ id: estimate.id })}
           className="rw-button rw-button-blue"

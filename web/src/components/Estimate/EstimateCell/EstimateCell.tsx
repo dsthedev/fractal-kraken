@@ -19,8 +19,63 @@ export const QUERY: TypedDocumentNode<
       title
       status
       installerEntityId
+      installerEntity {
+        id
+        name
+        contactName
+        phone
+        addressLine1
+        addressLine2
+        city
+        state
+        postalCode
+        country
+      }
       clientEntityId
+      clientEntity {
+        id
+        name
+        contactName
+        phone
+        addressLine1
+        addressLine2
+        city
+        state
+        postalCode
+        country
+      }
       retailerEntityId
+      retailerEntity {
+        id
+        name
+        contactName
+        phone
+        addressLine1
+        addressLine2
+        city
+        state
+        postalCode
+        country
+      }
+      billableItems {
+        id
+        quantity
+        unit {
+          id
+          symbol
+          fullName
+        }
+        service {
+          id
+          action
+          material
+          context
+        }
+        notes
+        unitPrice
+        subtotal
+        sortOrder
+      }
       jobAddressLine1
       jobAddressLine2
       jobCity

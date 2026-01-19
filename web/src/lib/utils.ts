@@ -25,3 +25,14 @@ export const getWeekNumber = (date: Date): string => {
   )
   return weekNum.toString()
 }
+
+// Create estimate reference number in format: [weekNo - Retailer - Client]
+export const createEstimateRefNo = (
+  retailerName: string | null | undefined,
+  clientName: string | null | undefined
+): string => {
+  const weekNo = getWeekNumber(new Date())
+  const retailer = retailerName?.split(' ')[0] || 'Unknown'
+  const client = clientName?.split(' ')[0] || 'Unknown'
+  return `${weekNo}-${retailer}-${client}`
+}
