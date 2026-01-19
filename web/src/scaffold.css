@@ -5,7 +5,7 @@
   /* @apply bg-white; */
 }
 .rw-scaffold a {
-  @apply bg-transparent;
+  /* @apply bg-transparent; */
 }
 .rw-scaffold ul {
   @apply m-0 p-0;
@@ -20,7 +20,7 @@
   /* @apply; */
 }
 .rw-header {
-  @apply justify-between sm:p-2 md:p-4;
+  @apply justify-between sm:py-2 md:py-4;
 }
 .rw-main {
   @apply mx-auto;

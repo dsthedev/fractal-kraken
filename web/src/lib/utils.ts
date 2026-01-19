@@ -36,3 +36,15 @@ export const createEstimateRefNo = (
   const client = clientName?.split(' ')[0] || 'Unknown'
   return `${weekNo}-${retailer}-${client}`
 }
+
+// Build estimate title in format: [weekNumber - RetailerName - ClientName]
+export const buildTitle = (
+  weekNumber: string,
+  retailerName?: string,
+  clientName?: string
+): string => {
+  const parts = [weekNumber]
+  if (retailerName) parts.push(retailerName)
+  if (clientName) parts.push(clientName)
+  return parts.join(' - ')
+}

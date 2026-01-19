@@ -28,6 +28,7 @@ import {
   NumberField,
   Submit,
 } from '@cedarjs/forms'
+import { Link, routes } from '@cedarjs/router'
 import type { TypedDocumentNode } from '@cedarjs/web'
 import { useMutation, useQuery } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
@@ -66,7 +67,7 @@ import {
 } from 'src/components/ui/popover'
 import { Toggle } from 'src/components/ui/toggle'
 import { currencyDisplay } from 'src/lib/formatters.js'
-import { cn, getWeekNumber } from 'src/lib/utils'
+import { cn, getWeekNumber, buildTitle } from 'src/lib/utils'
 
 import { EntitySelector } from './EntitySelector'
 
@@ -79,18 +80,6 @@ interface EstimateFormProps {
   error: RWGqlError
   loading: boolean
   entities?: Entity[]
-}
-
-// Helper function to build title from components
-const buildTitle = (
-  weekNumber: string,
-  retailerName?: string,
-  clientName?: string
-): string => {
-  const parts = [weekNumber]
-  if (retailerName) parts.push(retailerName)
-  if (clientName) parts.push(clientName)
-  return parts.join(' - ')
 }
 
 const UPDATE_ENTITY_MUTATION: TypedDocumentNode<
@@ -263,10 +252,15 @@ const TitleSection: React.FC<TitleSectionProps> = ({
           size="sm"
           className="w-full sm:w-auto justify-start sm:justify-center p-0 sm:px-3 sm:py-2"
           onClick={() => {
+            const retailerDisplay =
+              selectedRetailerEntity?.nickname || selectedRetailerEntity?.name
+            const clientDisplay =
+              selectedClientEntity?.nickname || selectedClientEntity?.name
+            console.log(retailerDisplay)
             const newTitle = buildTitle(
               weekNumber,
-              selectedRetailerEntity?.name,
-              selectedClientEntity?.name
+              retailerDisplay,
+              clientDisplay
             )
             onTitleChange(newTitle)
           }}
@@ -1503,16 +1497,19 @@ const EstimateForm = (props: EstimateFormProps) => {
         />
 
         <div className="rw-button-group flex gap-2">
-          <Submit
+          {props.estimate?.id && (
+            <Button variant="ghost" size="sm" asChild>
+              <Link to={routes.estimate({ id: props.estimate.id })}>
+                View / Print
+              </Link>
+            </Button>
+          )}
+          <Button asChild variant="lime">
+            <Submit disabled={props.loading}>Save</Submit>
+          </Button>
+          <Button
             disabled={props.loading}
-            className="rw-button rw-button-green flex-1 sm:flex-none"
-          >
-            Save
-          </Submit>
-          <button
-            type="button"
-            disabled={props.loading}
-            className="rw-button flex-1 sm:flex-none"
+            variant="sky"
             onClick={() => {
               const submitData = {
                 title: titleValue,
@@ -1536,7 +1533,7 @@ const EstimateForm = (props: EstimateFormProps) => {
             }}
           >
             Save & Exit
-          </button>
+          </Button>
         </div>
       </Form>
     </div>

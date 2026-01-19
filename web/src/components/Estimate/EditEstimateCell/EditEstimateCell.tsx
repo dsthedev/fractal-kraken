@@ -55,6 +55,7 @@ export const QUERY: TypedDocumentNode<EditEstimateById> = gql`
         id
         type
         name
+        nickname
         addressLine1
         addressLine2
         city
@@ -66,6 +67,7 @@ export const QUERY: TypedDocumentNode<EditEstimateById> = gql`
         id
         type
         name
+        nickname
         addressLine1
         addressLine2
         city
@@ -77,6 +79,7 @@ export const QUERY: TypedDocumentNode<EditEstimateById> = gql`
         id
         type
         name
+        nickname
         addressLine1
         addressLine2
         city
@@ -194,10 +197,8 @@ export const Success = ({ estimate }: CellSuccessProps<EditEstimateById>) => {
 
   return (
     <div className="rw-segment">
-      <header className="rw-segment-header">
-        <h2 className="rw-heading rw-heading-secondary">
-          Edit Estimate {estimate?.id}
-        </h2>
+      <header className="mb-4 border-b pb-4 print:hidden">
+        <h2 className="text-2xl font-semibold">Estimate</h2>
       </header>
       <div className="rw-segment-main">
         <EstimateForm

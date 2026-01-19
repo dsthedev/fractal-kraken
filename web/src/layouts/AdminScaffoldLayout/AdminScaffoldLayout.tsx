@@ -1,6 +1,9 @@
+import { Plus } from 'lucide-react'
+
 import { Link, routes } from '@cedarjs/router'
 import { Toaster } from '@cedarjs/web/toast'
 
+import { Button } from 'src/components/ui/button'
 import { Input } from 'src/components/ui/input'
 import { SearchProvider, useSearch } from 'src/contexts/SearchContext'
 
@@ -46,12 +49,12 @@ const AdminScaffoldLayoutContent = ({
         </h1>
         {/* Search input only renders if showSearch prop is true */}
         <div className="flex-auto w-full">{showSearch && <SearchInput />}</div>
-        <Link
-          to={routes[buttonTo]()}
-          className="rw-button rw-button-green rw-button-small"
-        >
-          <div className="rw-button-icon">+</div> {buttonLabel}
-        </Link>
+        <Button asChild variant="lime" size="lg">
+          <Link to={routes[buttonTo]()}>
+            <Plus />
+            {buttonLabel}
+          </Link>
+        </Button>
       </header>
       <main className="rw-main">{children}</main>
     </div>
