@@ -74,6 +74,7 @@ const Routes = () => {
       </PrivateSet>
 
       <Set wrap={WrapperLayout as any}>
+        <Route path="/view-old-rates" page={ViewOldRatesPage} name="viewOldRates" />
         <Route path="/sandbox" page={SandboxPage} name="sandbox" />
 
         <Route path="/login" page={LoginPage} name="login" />

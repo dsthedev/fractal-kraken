@@ -28,6 +28,7 @@ const AdminNav = () => {
     { label: 'Units', route: routes.measurementUnits },
     { label: 'Users', route: routes.users },
     { label: 'Sandbox', route: routes.sandbox },
+    { label: 'Old Rates', route: routes.viewOldRates },
     // Add more admin items here as needed
   ]
 

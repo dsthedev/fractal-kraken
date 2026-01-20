@@ -629,12 +629,10 @@ const EstimateForm = (props: EstimateFormProps) => {
       id: _id,
       createdAt: _createdAt,
       updatedAt: _updatedAt,
-      author: _author,
       billableItems: _billableItems,
       installerEntity: _installerEntity,
       clientEntity: _clientEntity,
       retailerEntity: _retailerEntity,
-      entity: _entity,
       ...restData
     } = data
 

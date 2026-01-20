@@ -22,12 +22,8 @@ export const schema = gql`
 
   enum EntityType {
     CONTRACTOR
-    INSTALLER
     CLIENT
     RETAILER
-    SUPPLIER
-    COMPANY
-    INDIVIDUAL
     OTHER
   }
 

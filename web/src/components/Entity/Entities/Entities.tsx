@@ -1,14 +1,6 @@
 import { useState } from 'react'
 
-import {
-  Pencil,
-  Trash2,
-  Filter,
-  ChevronRight,
-  Mail,
-  Phone,
-  User,
-} from 'lucide-react'
+import { Pencil, Trash2, Filter, Mail, Phone, User, Eye } from 'lucide-react'
 import type {
   DeleteEntityMutation,
   DeleteEntityMutationVariables,
@@ -30,7 +22,6 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
-  DrawerClose,
 } from 'src/components/ui/drawer'
 import {
   DropdownMenu,
@@ -63,7 +54,11 @@ const DELETE_ENTITY_MUTATION: TypedDocumentNode<
 const ENTITY_TYPES: EntityType[] = ['CONTRACTOR', 'CLIENT', 'RETAILER', 'OTHER'] // Adjust based on your actual enum values
 
 // Reusable details content component for both Drawer and HoverCard
-const EntityDetailsContent = ({ entity }: { entity: FindEntities[0] }) => (
+const EntityDetailsContent = ({
+  entity,
+}: {
+  entity: FindEntities['entities'][number]
+}) => (
   <div className="space-y-4">
     <div className="flex items-center gap-3">
       <User className="h-4 w-4 text-muted-foreground" />
@@ -222,12 +217,15 @@ const EntitiesList = ({ entities }: FindEntities) => {
                 <button
                   type="button"
                   title={'Details for ' + entity.name}
-                  className="text-sm font-medium text-blue-600 hover:underline sm:hidden text-left"
-                  onClick={() => setOpenDrawerId(entity.id)}
+                  className="sm:hidden mx-auto w-full text-left"
+                  onClick={() => setOpenDrawerId(String(entity.id))}
                 >
                   {entity.nickname
                     ? truncate(entity.nickname)
                     : truncate(entity.name)}
+                  <span className="float-right">
+                    <Eye />
+                  </span>
                 </button>
               </td>
               <td className="hidden sm:table-cell">
@@ -278,8 +276,10 @@ const EntitiesList = ({ entities }: FindEntities) => {
       {filteredEntities.map((entity) => (
         <Drawer
           key={`drawer-${entity.id}`}
-          open={openDrawerId === entity.id}
-          onOpenChange={(open) => setOpenDrawerId(open ? entity.id : null)}
+          open={openDrawerId === String(entity.id)}
+          onOpenChange={(open) =>
+            setOpenDrawerId(open ? String(entity.id) : null)
+          }
         >
           <DrawerContent>
             <DrawerHeader>
