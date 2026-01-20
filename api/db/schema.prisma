@@ -207,6 +207,8 @@ enum EstimateStatus {
   DRAFT
   SENT
   ACCEPTED
+  UNDERWAY
+  INVOICED
   REJECTED
   EXPIRED
 }

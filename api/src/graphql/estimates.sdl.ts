@@ -34,6 +34,8 @@ export const schema = gql`
     DRAFT
     SENT
     ACCEPTED
+    UNDERWAY
+    INVOICED
     REJECTED
     EXPIRED
   }

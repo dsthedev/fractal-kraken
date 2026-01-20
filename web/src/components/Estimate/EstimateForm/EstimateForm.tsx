@@ -733,6 +733,8 @@ const EstimateForm = (props: EstimateFormProps) => {
                           'DRAFT',
                           'SENT',
                           'ACCEPTED',
+                          'UNDERWAY',
+                          'INVOICED',
                           'REJECTED',
                           'EXPIRED',
                         ].map((status) => (

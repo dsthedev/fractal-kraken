@@ -4,8 +4,9 @@ import type {
   EstimateRelationResolvers,
 } from 'types/graphql'
 
-import { db } from 'src/lib/db'
 import { context } from '@cedarjs/graphql-server'
+
+import { db } from 'src/lib/db'
 
 export const estimates: QueryResolvers['estimates'] = () => {
   return db.estimate.findMany({
