@@ -10,6 +10,7 @@ import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
 import { ExportButton } from 'src/components/ExportButton/ExportButton'
+import ImportUsersButton from 'src/components/ImportUsersButton/ImportUsersButton'
 import { QUERY } from 'src/components/User/UsersCell'
 import { truncate } from 'src/lib/formatters.js'
 import { todayAsYYYYMMDD } from 'src/lib/utils'
@@ -93,11 +94,14 @@ const UsersList = ({ users }: FindUsers) => {
       </table>
 
       <hr className="mb-6" />
-      <ExportButton
-        label="Export All Users"
-        data={users}
-        filename={`${todayAsYYYYMMDD()}-users.csv`}
-      />
+      <div className="flex flex-col md:flex-row gap-2">
+        <ExportButton
+          label="Export All Users"
+          data={users}
+          filename={`${todayAsYYYYMMDD()}-users.csv`}
+        />
+        <ImportUsersButton label="Import Users" refetchQuery={QUERY} />
+      </div>
     </div>
   )
 }
