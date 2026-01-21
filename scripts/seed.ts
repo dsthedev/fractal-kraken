@@ -29,7 +29,7 @@ const readCsv = (filename: string) => {
 // }
 
 const seedUsers = async () => {
-  const records = readCsv('20260111-users.csv')
+  const records = readCsv('20260121-users.csv')
   for (const row of records) {
     await db.user.upsert({
       where: { id: row.id },
@@ -52,7 +52,7 @@ const seedUsers = async () => {
 }
 
 const seedMeasurementUnits = async () => {
-  const records = readCsv('20260111-measurement-units.csv')
+  const records = readCsv('20260121-measurement-units.csv')
   for (const row of records) {
     await db.measurementUnit.upsert({
       where: { id: parseInt(row.id) },
@@ -77,7 +77,7 @@ const seedMeasurementUnits = async () => {
 }
 
 const seedMaterials = async () => {
-  const records = readCsv('20261019-materials.csv')
+  const records = readCsv('20260121-materials.csv')
   for (const row of records) {
     const name = row.name
     if (!name) continue
@@ -91,7 +91,7 @@ const seedMaterials = async () => {
 }
 
 const seedServices = async () => {
-  const records = readCsv('20260111-services.csv')
+  const records = readCsv('20260121-services.csv')
   for (const row of records) {
     await db.service.upsert({
       where: { id: parseInt(row.id) },
@@ -110,7 +110,7 @@ const seedServices = async () => {
 
 // Seed simple actions list (separate CSV) — can be run manually later
 export const seedActions = async () => {
-  const records = readCsv('20260119-actions.csv')
+  const records = readCsv('20260121-actions.csv')
   for (const row of records) {
     const actionName = (row.action || '').toString()
     if (!actionName) continue
@@ -125,7 +125,7 @@ export const seedActions = async () => {
 }
 
 const seedRates = async () => {
-  const records = readCsv('20260111-rates.csv')
+  const records = readCsv('20260121-rates.csv')
   for (const row of records) {
     await db.rate.upsert({
       where: {
@@ -155,7 +155,7 @@ const seedRates = async () => {
 }
 
 const seedEntities = async () => {
-  const records = readCsv('20260111-entities.csv')
+  const records = readCsv('20260121-entities.csv')
   for (const row of records) {
     await db.entity.upsert({
       where: { id: parseInt(row.id) },
@@ -181,7 +181,7 @@ const seedEntities = async () => {
 }
 
 const seedEstimates = async () => {
-  const records = readCsv('20260111-estimates.csv')
+  const records = readCsv('20260121-estimates.csv')
   for (const row of records) {
     await db.estimate.upsert({
       where: { uuid: row.uuid },
@@ -222,7 +222,7 @@ const seedEstimates = async () => {
 }
 
 const seedBillableItems = async () => {
-  const records = readCsv('20260111-billable-items.csv')
+  const records = readCsv('20260121-billable-items.csv')
   for (const row of records) {
     // BillableItems optionally reference estimates
     if (row.estimateId) {
@@ -262,18 +262,18 @@ const seedBillableItems = async () => {
 
 // Ordered model seed configuration. Adjust this array to control clean/seed order.
 const modelSeeds = [
-  // {
-  //   key: 'users',
-  //   sequenceName: 'User',
-  //   clean: async () => db.user.deleteMany({}),
-  //   seed: seedUsers,
-  // },
-  // {
-  //   key: 'measurementUnits',
-  //   sequenceName: 'MeasurementUnit',
-  //   clean: async () => db.measurementUnit.deleteMany({}),
-  //   seed: seedMeasurementUnits,
-  // },
+  {
+    key: 'users',
+    sequenceName: 'User',
+    clean: async () => db.user.deleteMany({}),
+    seed: seedUsers,
+  },
+  {
+    key: 'measurementUnits',
+    sequenceName: 'MeasurementUnit',
+    clean: async () => db.measurementUnit.deleteMany({}),
+    seed: seedMeasurementUnits,
+  },
   // {
   //   key: 'services',
   //   sequenceName: 'Service',
@@ -286,24 +286,24 @@ const modelSeeds = [
     clean: async () => db.material.deleteMany({}),
     seed: seedMaterials,
   },
-  // {
-  //   key: 'actions',
-  //   sequenceName: 'Action',
-  //   clean: async () => db.action.deleteMany({}),
-  //   seed: seedActions,
-  // },
+  {
+    key: 'actions',
+    sequenceName: 'Action',
+    clean: async () => db.action.deleteMany({}),
+    seed: seedActions,
+  },
   // {
   //   key: 'rates',
   //   sequenceName: 'Rate',
   //   clean: async () => db.rate.deleteMany({}),
   //   seed: seedRates,
   // },
-  // {
-  //   key: 'entities',
-  //   sequenceName: 'Entity',
-  //   clean: async () => db.entity.deleteMany({}),
-  //   seed: seedEntities,
-  // },
+  {
+    key: 'entities',
+    sequenceName: 'Entity',
+    clean: async () => db.entity.deleteMany({}),
+    seed: seedEntities,
+  },
   // {
   //   key: 'estimates',
   //   sequenceName: 'Estimate',
