@@ -128,6 +128,7 @@ export const importRates: MutationResolvers['importRates'] = async ({
             currency: rateData.currency,
             estimatedMinutesPerUnit: rateData.estimatedMinutesPerUnit,
             description: rateData.description,
+            context: rateData.context,
           },
         })
       } else {

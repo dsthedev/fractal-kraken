@@ -428,6 +428,14 @@ const RateForm = ({
 
         <div className="mt-4">
           <LabeledField
+            name="context"
+            label="Context"
+            defaultValue={(rate as any)?.context}
+            textarea
+            rows={2}
+          />
+
+          <LabeledField
             name="description"
             label="Description"
             defaultValue={rate?.description}

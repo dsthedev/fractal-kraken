@@ -48,8 +48,7 @@ const Rate = ({ rate }: Props) => {
       <div className="rw-segment">
         <header className="rw-segment-header">
           <h2 className="rw-heading rw-heading-secondary">
-            {rate.service.action} {rate.service.material} {rate.service.context}
-            {rate.service.context}{' '}
+            {rate.action?.name} {rate.material?.name} {rate.context || ''}
           </h2>
         </header>
         <table className="rw-table">
@@ -61,8 +60,7 @@ const Rate = ({ rate }: Props) => {
             <tr>
               <th>Service</th>
               <td>
-                {rate.service.action} {rate.service.material}{' '}
-                {rate.service.context}
+                {rate.action?.name} {rate.material?.name} {rate.context || ''}
               </td>
             </tr>
             <tr>

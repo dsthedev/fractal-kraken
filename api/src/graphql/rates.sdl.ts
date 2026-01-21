@@ -12,6 +12,7 @@ export const schema = gql`
     subAmount: Decimal!
     retailAmount: Decimal!
     currency: String!
+    context: String
     authorId: String!
     author: User!
     estimatedMinutesPerUnit: Int
@@ -50,6 +51,7 @@ export const schema = gql`
     authorId: String!
     estimatedMinutesPerUnit: Int
     description: String
+    context: String
   }
 
   input UpdateRateInput {
@@ -62,6 +64,7 @@ export const schema = gql`
     authorId: String
     estimatedMinutesPerUnit: Int
     description: String
+    context: String
   }
 
   input ImportRateInput {
@@ -73,6 +76,7 @@ export const schema = gql`
     currency: String!
     estimatedMinutesPerUnit: Int
     description: String
+    context: String
   }
 
   type ImportResult {

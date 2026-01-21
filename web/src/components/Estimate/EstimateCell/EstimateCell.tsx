@@ -67,6 +67,7 @@ export const QUERY: TypedDocumentNode<
           id
           symbol
           fullName
+          shortName
         }
         action {
           id

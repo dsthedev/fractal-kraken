@@ -50,7 +50,7 @@ const formatCurrency = (amount: number | null | undefined) => {
 }
 
 const formatAddress = (entity: any) => {
-  if (!entity) return 'N/A'
+  if (!entity) return '...'
   const parts = [
     entity.addressLine1,
     entity.addressLine2,
@@ -58,17 +58,23 @@ const formatAddress = (entity: any) => {
     entity.postalCode,
     entity.country,
   ].filter(Boolean)
-  return parts.join(', ') || 'N/A'
+  return parts.join(', ') || '...'
 }
 
-const formatService = (service: any) => {
-  if (!service) return 'N/A'
-  const action = service.action
-    ? service.action.toLowerCase().replace('_', ' ')
-    : ''
-  const material = service.material || ''
-  const context = service.context ? ` (${service.context})` : ''
-  return `${action} ${material}${context}`.trim()
+const formatService = (obj: any) => {
+  if (!obj) return '...'
+  // Support legacy Service shape (action: enum string) and new relations (action: { name })
+  const actionName =
+    (obj.action && typeof obj.action === 'string' && obj.action) ||
+    (obj.action && (obj.action.name || obj.action.fullName)) ||
+    ''
+  const materialName =
+    (obj.material && typeof obj.material === 'string' && obj.material) ||
+    (obj.material && (obj.material.name || '')) ||
+    ''
+  const context = obj.context ? ` (${obj.context})` : ''
+  const combined = [actionName, materialName].filter(Boolean).join(' ')
+  return `${combined}${context}`.trim() || '...'
 }
 
 const Estimate = ({ estimate }: Props) => {
@@ -145,7 +151,7 @@ const Estimate = ({ estimate }: Props) => {
               </div>
               <div className="font-semibold flex md:flex-col">
                 <span className="whitespace-nowrap">
-                  {estimate.installerEntity?.name || 'N/A'}
+                  {estimate.installerEntity?.name || '...'}
                 </span>
                 {estimate.installerEntity?.phone && (
                   <span className="font-normal whitespace-nowrap">
@@ -167,7 +173,7 @@ const Estimate = ({ estimate }: Props) => {
               </div>
               <div className="font-semibold flex md:flex-col">
                 <span className="whitespace-nowrap">
-                  {estimate.retailerEntity?.name || 'N/A'}
+                  {estimate.retailerEntity?.name || '...'}
                 </span>
                 {estimate.retailerEntity?.phone && (
                   <span className="font-normal whitespace-nowrap">
@@ -212,9 +218,9 @@ const Estimate = ({ estimate }: Props) => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-20">Qty</TableHead>
+                <TableHead className="w-20 text-right">Qty</TableHead>
                 <TableHead className="w-16">U/M</TableHead>
-                <TableHead>Service / Action</TableHead>
+                <TableHead>Service / Material</TableHead>
                 <TableHead>Notes</TableHead>
                 <TableHead className="w-24 text-right">Unit Price</TableHead>
                 <TableHead className="w-24 text-right">Subtotal</TableHead>
@@ -233,16 +239,20 @@ const Estimate = ({ estimate }: Props) => {
               ) : (
                 sortedItems.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell>{item.quantity}</TableCell>
-                    <TableCell>{item.unit?.symbol || 'N/A'}</TableCell>
-                    <TableCell>{formatService(item.service)}</TableCell>
+                    <TableCell className="text-right text-lg">
+                      {item.quantity}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {item.unit?.shortName || '...'}
+                    </TableCell>
+                    <TableCell>{formatService(item)}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {item.notes || '—'}
                     </TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(item.unitPrice)}
                     </TableCell>
-                    <TableCell className="text-right font-semibold">
+                    <TableCell className="text-right font-semibold text-lg">
                       {formatCurrency(item.subtotal)}
                     </TableCell>
                   </TableRow>

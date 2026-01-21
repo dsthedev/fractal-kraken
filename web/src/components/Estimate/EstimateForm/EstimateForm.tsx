@@ -200,6 +200,7 @@ const GET_RATES_QUERY: TypedDocumentNode<FindRates> = gql`
       subAmount
       retailAmount
       currency
+      context
       estimatedMinutesPerUnit
       action {
         id
@@ -478,30 +479,71 @@ const EstimateForm = (props: EstimateFormProps) => {
   }
 
   const buildRateLabel = (rate: FindRates['rates'][0]) => {
-    const serviceDisplay = [rate.service?.action, rate.service?.material]
+    const serviceDisplay = [rate.action?.name, rate.material?.name]
       .filter(Boolean)
       .join(' ')
-    const context = rate.service?.context ? ` (${rate.service.context})` : ''
+    const context = rate.context ? ` (${rate.context})` : ''
     const amount = pricingType === 'sub' ? rate.subAmount : rate.retailAmount
     return `${serviceDisplay}${context} - ${rate.unit?.fullName} - $${Number(amount).toFixed(2)}`
   }
 
   const buildRateSearchValue = (rate: FindRates['rates'][0]) => {
     return [
-      rate.service?.action,
-      rate.service?.material,
-      rate.service?.context,
+      rate.action?.name,
+      rate.material?.name,
+      rate.context,
       rate.unit?.shortName,
       rate.unit?.fullName,
       rate.currency,
       String(rate.subAmount ?? ''),
       String(rate.retailAmount ?? ''),
       String(rate.id ?? ''),
-      String(rate.serviceId ?? ''),
+      String(rate.actionId ?? ''),
+      String(rate.materialId ?? ''),
       String(rate.unitId ?? ''),
     ]
       .filter(Boolean)
       .join(' ')
+  }
+
+  // Quick-add state
+  const [selectedQuickAddRate, setSelectedQuickAddRate] = useState<
+    FindRates['rates'][0] | null
+  >(null)
+  const [quickAddQuantity, setQuickAddQuantity] = useState<number>(1)
+  const [openQuickAddCombobox, setOpenQuickAddCombobox] = useState(false)
+
+  const handleQuickAddFromRate = async (
+    rate: FindRates['rates'][0] | null | undefined
+  ) => {
+    if (!rate) return
+    if (!props.estimate?.id) {
+      toast.error('Save the estimate before adding items')
+      return
+    }
+
+    const unitPrice = pricingType === 'sub' ? rate.subAmount : rate.retailAmount
+    const input: CreateBillableItemInput = {
+      actionId: rate.actionId ?? undefined,
+      materialId: rate.materialId ?? undefined,
+      unitId: rate.unitId ?? undefined,
+      unitPrice: Number(unitPrice) as any,
+      pricingType: pricingType === 'sub' ? 'SUB' : 'RETAIL',
+      quantity: quickAddQuantity,
+      subtotal: Number(unitPrice) * quickAddQuantity,
+      estimatedMinutesPerUnit: rate.estimatedMinutesPerUnit ?? undefined,
+      notes:
+        rate.context ??
+        rate.action?.description ??
+        rate.material?.description ??
+        undefined,
+    }
+
+    await handleCreateBillableItem(input)
+    // reset selection
+    setSelectedQuickAddRate(null)
+    setQuickAddQuantity(1)
+    setOpenQuickAddCombobox(false)
   }
 
   // Quick-add handler removed for now. Reintroduce after action+material quick-add mapping is defined.
@@ -522,6 +564,8 @@ const EstimateForm = (props: EstimateFormProps) => {
           ...input,
           estimateId: props.estimate.id,
           sortOrder: nextSortOrder,
+          authorId:
+            currentUser?.id || (props.estimate?.authorId as unknown as string),
         },
       },
     })
@@ -590,6 +634,47 @@ const EstimateForm = (props: EstimateFormProps) => {
     )
   }
 
+  const recalculateAll = async () => {
+    if (billableItems.length === 0) {
+      toast.info('No billable items to recalculate')
+      return
+    }
+
+    try {
+      const updatedItems: any[] = []
+      for (const item of billableItems) {
+        const qty = Number(item.quantity ?? 0)
+        const price = Number(item.unitPrice ?? 0)
+        const newSubtotal = Number((qty * price).toFixed(2))
+
+        if (!item.id) continue
+
+        if (Number(item.subtotal ?? 0) !== newSubtotal) {
+          const { data } = await updateBillableItem({
+            variables: { id: item.id, input: { subtotal: newSubtotal } },
+          })
+          if (data?.updateBillableItem) {
+            updatedItems.push(data.updateBillableItem)
+          }
+        }
+      }
+
+      if (updatedItems.length > 0) {
+        setBillableItems((prev) =>
+          prev.map((it) => {
+            const updated = updatedItems.find((u) => u.id === it.id)
+            return updated ? { ...it, ...updated } : it
+          })
+        )
+        toast.success(`Recalculated ${updatedItems.length} item(s)`)
+      } else {
+        toast.info('All subtotals already up to date')
+      }
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to recalculate items')
+    }
+  }
+
   const onSubmit = (data: FormEstimate) => {
     // Exclude id, timestamps, and relations from the submission data
     const {
@@ -626,7 +711,8 @@ const EstimateForm = (props: EstimateFormProps) => {
   }
 
   return (
-    <div className="rw-form-wrapper">
+    <>
+      <div className="rw-form-wrapper">
       <Form<FormEstimate> onSubmit={onSubmit} error={props.error}>
         <FormError
           error={props.error}
@@ -1002,7 +1088,18 @@ const EstimateForm = (props: EstimateFormProps) => {
         {/* Billable Items Section */}
         <fieldset className="mt-6 space-y-3">
           <div className="flex items-center justify-between">
-            <legend className="text-sm font-medium">Billable Items</legend>
+            <legend className="text-sm font-medium flex items-center gap-2">
+                  Billable Items
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={recalculateAll}
+                    title="Recalculate all subtotals"
+                  >
+                    Recalculate
+                  </Button>
+                </legend>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Pricing:</span>
               <Toggle
@@ -1234,13 +1331,13 @@ const EstimateForm = (props: EstimateFormProps) => {
                           {ratesData?.rates
                             ?.slice()
                             .sort((a, b) => {
-                              const aAction = a.service?.action || ''
-                              const bAction = b.service?.action || ''
+                              const aAction = a.action?.name || ''
+                              const bAction = b.action?.name || ''
                               const actionCompare =
                                 aAction.localeCompare(bAction)
                               if (actionCompare !== 0) return actionCompare
-                              const aMaterial = a.service?.material || ''
-                              const bMaterial = b.service?.material || ''
+                              const aMaterial = a.material?.name || ''
+                              const bMaterial = b.material?.name || ''
                               return aMaterial.localeCompare(bMaterial)
                             })
                             .map((rate) => (
@@ -1357,55 +1454,6 @@ const EstimateForm = (props: EstimateFormProps) => {
           </div>
         </fieldset>
 
-        {isDesktop ? (
-          <Dialog
-            open={Boolean(editingBillableItem)}
-            onOpenChange={(open) => !open && setEditingBillableItem(null)}
-          >
-            <DialogContent className="max-w-full sm:max-w-3xl">
-              <DialogHeader>
-                <DialogTitle>Edit Billable Item</DialogTitle>
-              </DialogHeader>
-              {editingBillableItem && (
-                <BillableItemFormWrapper
-                  billableItem={editingBillableItem as BillableItem}
-                  onSave={(input, id) => handleUpdateBillableItem(input, id)}
-                  loading={updateBillableItemLoading}
-                  error={updateBillableItemError}
-                />
-              )}
-            </DialogContent>
-          </Dialog>
-        ) : (
-          <Drawer
-            open={Boolean(editingBillableItem)}
-            onOpenChange={(open) => !open && setEditingBillableItem(null)}
-          >
-            <DrawerContent>
-              <DrawerHeader>
-                <DrawerTitle>Edit Billable Item</DrawerTitle>
-              </DrawerHeader>
-              <div className="max-h-[calc(100vh-180px)] overflow-y-auto px-4 pb-6">
-                {editingBillableItem && (
-                  <BillableItemFormWrapper
-                    billableItem={editingBillableItem as BillableItem}
-                    onSave={(input, id) => handleUpdateBillableItem(input, id)}
-                    loading={updateBillableItemLoading}
-                    error={updateBillableItemError}
-                  />
-                )}
-              </div>
-              <div className="px-4 pb-4">
-                <DrawerClose asChild>
-                  <Button variant="outline" className="w-full">
-                    Close
-                  </Button>
-                </DrawerClose>
-              </div>
-            </DrawerContent>
-          </Drawer>
-        )}
-
         {/* Author ID - Visually hidden, auto-populated from current user */}
         <input type="hidden" name="authorId" value={currentUser?.id || ''} />
 
@@ -1504,6 +1552,56 @@ const EstimateForm = (props: EstimateFormProps) => {
         </div>
       </Form>
     </div>
+    {/* Edit Billable Item Dialog/Drawer moved outside the parent form to avoid nested form submission */}
+    {isDesktop ? (
+      <Dialog
+        open={Boolean(editingBillableItem)}
+        onOpenChange={(open) => !open && setEditingBillableItem(null)}
+      >
+        <DialogContent className="max-w-full sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Edit Billable Item</DialogTitle>
+          </DialogHeader>
+          {editingBillableItem && (
+            <BillableItemFormWrapper
+              billableItem={editingBillableItem as BillableItem}
+              onSave={(input, id) => handleUpdateBillableItem(input, id)}
+              loading={updateBillableItemLoading}
+              error={updateBillableItemError}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    ) : (
+      <Drawer
+        open={Boolean(editingBillableItem)}
+        onOpenChange={(open) => !open && setEditingBillableItem(null)}
+      >
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Edit Billable Item</DrawerTitle>
+          </DrawerHeader>
+          <div className="max-h-[calc(100vh-180px)] overflow-y-auto px-4 pb-6">
+            {editingBillableItem && (
+              <BillableItemFormWrapper
+                billableItem={editingBillableItem as BillableItem}
+                onSave={(input, id) => handleUpdateBillableItem(input, id)}
+                loading={updateBillableItemLoading}
+                error={updateBillableItemError}
+              />
+            )}
+          </div>
+          <div className="px-4 pb-4">
+            <DrawerClose asChild>
+              <Button variant="outline" className="w-full">
+                Close
+              </Button>
+            </DrawerClose>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    )}
+    </>
   )
 }
 

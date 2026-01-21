@@ -64,8 +64,6 @@ export const updateBillableItem: MutationResolvers['updateBillableItem'] = ({
 }) => {
   // Sanitize update input similarly to create
   const {
-    service,
-    serviceId,
     action: _action,
     material: _material,
     unit: _unit,
