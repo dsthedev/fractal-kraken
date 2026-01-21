@@ -20,8 +20,9 @@ import {
   TextField,
   TextAreaField,
   Submit,
+  useFormContext,
+  useWatch,
 } from '@cedarjs/forms'
-import { navigate, routes } from '@cedarjs/router'
 import { useQuery, useMutation } from '@cedarjs/web'
 import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
@@ -37,6 +38,7 @@ import {
   DialogTitle,
   DialogClose,
 } from 'src/components/ui/dialog'
+import formatRatePerHour from 'src/lib/utils'
 
 // Query and mutation for Service
 const SERVICE_QUERY: TypedDocumentNode<EditServiceById> = gql`
@@ -225,6 +227,55 @@ const LabeledField = ({
   </>
 )
 
+const ComputedRateDisplay = ({
+  rate,
+  selectedUnit,
+}: {
+  rate?: EditRateById['rate']
+  selectedUnit?: number
+}) => {
+  const { control } = useFormContext()
+
+  const estimated = useWatch({
+    control,
+    name: 'estimatedMinutesPerUnit' as const,
+    defaultValue: rate?.estimatedMinutesPerUnit,
+  }) as number | undefined
+
+  const subAmount = useWatch({
+    control,
+    name: 'subAmount' as const,
+    defaultValue: rate?.subAmount,
+  }) as number | undefined
+
+  const retailAmount = useWatch({
+    control,
+    name: 'retailAmount' as const,
+    defaultValue: rate?.retailAmount,
+  }) as number | undefined
+
+  const unitId = selectedUnit ?? rate?.unitId
+
+  const { data } = useQuery<EditMeasurementUnitById>(UNIT_QUERY, {
+    variables: { id: unitId as number },
+    skip: !unitId,
+  })
+
+  const unit = (data && data.measurementUnit) ?? rate?.unit
+
+  const text = formatRatePerHour({
+    estimatedMinutesPerUnit: estimated as number | undefined,
+    subAmount: subAmount as number | undefined,
+    retailAmount: retailAmount as number | undefined,
+    unit: unit as any,
+    unitFallback: (rate?.unit ?? undefined) as any,
+  })
+
+  return (
+    <span className="text-sm text-muted-foreground mt-2 block">{text}</span>
+  )
+}
+
 const RateForm = ({
   rate,
   onSave,
@@ -280,7 +331,6 @@ const RateForm = ({
       updatedAt: _updatedAt,
       service: _service,
       unit: _unit,
-      author: _author,
       ...restData
     } = data
 
@@ -396,6 +446,7 @@ const RateForm = ({
             defaultValue={rate?.estimatedMinutesPerUnit}
             type="number"
           />
+          <ComputedRateDisplay rate={rate} selectedUnit={selectedUnit} />
         </div>
 
         {/* Description */}

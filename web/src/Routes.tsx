@@ -10,6 +10,26 @@ const Routes = () => {
   return (
     <Router useAuth={useAuth}>
       <PrivateSet wrap={WrapperLayout as any} unauthenticated="login" roles={['guest', 'admin']}>
+        <Set wrap={AdminScaffoldLayout} title="Materials" titleTo="materials" buttonLabel="New Material" buttonTo="newMaterial">
+          <Route path="/materials/new" page={MaterialNewMaterialPage} name="newMaterial" />
+          <Route path="/materials/{id:Int}/edit" page={MaterialEditMaterialPage} name="editMaterial" />
+          <Route path="/materials/{id:Int}" page={MaterialMaterialPage} name="material" />
+        </Set>
+        <Set wrap={AdminScaffoldLayout} title="Materials" titleTo="materials" buttonLabel="New Material" buttonTo="newMaterial" showSearch={true}>
+          <Route path="/materials" page={MaterialMaterialsPage} name="materials" />
+        </Set>
+      </PrivateSet>
+      <PrivateSet wrap={WrapperLayout as any} unauthenticated="login" roles={['guest', 'admin']}>
+        <Set wrap={AdminScaffoldLayout} title="Actions" titleTo="actions" buttonLabel="New Action" buttonTo="newAction">
+          <Route path="/actions/new" page={ActionNewActionPage} name="newAction" />
+          <Route path="/actions/{id:Int}/edit" page={ActionEditActionPage} name="editAction" />
+          <Route path="/actions/{id:Int}" page={ActionActionPage} name="action" />
+        </Set>
+        <Set wrap={AdminScaffoldLayout} title="Actions" titleTo="actions" buttonLabel="New Action" buttonTo="newAction" showSearch={true}>
+          <Route path="/actions" page={ActionActionsPage} name="actions" />
+        </Set>
+      </PrivateSet>
+      <PrivateSet wrap={WrapperLayout as any} unauthenticated="login" roles={['guest', 'admin']}>
         <Set wrap={AdminScaffoldLayout} title="Estimates" titleTo="estimates" buttonLabel="New" buttonTo="newEstimate">
           <Route path="/estimates/new" page={EstimateNewEstimatePage} name="newEstimate" />
           <Route path="/estimates/{id:Int}/edit" page={EstimateEditEstimatePage} name="editEstimate" />

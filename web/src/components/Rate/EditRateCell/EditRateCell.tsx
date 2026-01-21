@@ -36,6 +36,8 @@ export const QUERY: TypedDocumentNode<EditRateById> = gql`
       }
       unit {
         fullName
+        shortName
+        pluralName
       }
     }
   }

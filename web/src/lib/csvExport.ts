@@ -23,15 +23,18 @@ export const generateCSV = (data: any[], filename: string) => {
   }
 
   // Escape CSV field values properly (escape quotes by doubling them)
-  const escapeCSVField = (value: any): string => {
+  // Always quote description fields to avoid breaking CSVs
+  const escapeCSVField = (header: string, value: any): string => {
     if (value === null || value === undefined) return ''
     const strValue = String(value)
-    // If field contains comma, quote, or newline, wrap in quotes and escape internal quotes
-    if (
+    const needsQuoting =
+      header.toLowerCase().endsWith('description') ||
+      header.toLowerCase().includes('.description') ||
       strValue.includes(',') ||
       strValue.includes('"') ||
       strValue.includes('\n')
-    ) {
+
+    if (needsQuoting) {
       return `"${strValue.replace(/"/g, '""')}"`
     }
     return strValue
@@ -49,9 +52,9 @@ export const generateCSV = (data: any[], filename: string) => {
 
   // Build CSV
   const csv = [
-    headers.map(escapeCSVField).join(','),
+    headers.map((h) => escapeCSVField(h, h)).join(','),
     ...flatData.map((row) =>
-      headers.map((h) => escapeCSVField(row[h] ?? '')).join(',')
+      headers.map((h) => escapeCSVField(h, row[h] ?? '')).join(',')
     ),
   ].join('\n')
 

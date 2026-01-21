@@ -1,3 +1,51 @@
+export interface UnitLabel {
+  id: number
+  fullName?: string | null
+  pluralName?: string | null
+}
+
+export function formatRatePerHour(opts: {
+  estimatedMinutesPerUnit?: number | null
+  subAmount?: number | null
+  retailAmount?: number | null
+  unit?: UnitLabel | null
+  unitFallback?: UnitLabel | null
+}): string {
+  const {
+    estimatedMinutesPerUnit,
+    subAmount,
+    retailAmount,
+    unit,
+    unitFallback,
+  } = opts
+  const minutes = Number(estimatedMinutesPerUnit ?? 0)
+  if (!minutes || minutes <= 0) return '—'
+
+  const perHr = 60 / minutes
+
+  const unitObj = unit ?? unitFallback
+  const unitLabel = unitObj
+    ? unitObj.id === 1
+      ? unitObj.fullName || 'unit'
+      : unitObj.pluralName || 'units'
+    : 'units'
+
+  const subStr =
+    subAmount !== undefined && subAmount !== null && !isNaN(Number(subAmount))
+      ? `$${(Number(subAmount) / perHr).toFixed(2)}`
+      : null
+
+  const retailStr =
+    retailAmount !== undefined &&
+    retailAmount !== null &&
+    !isNaN(Number(retailAmount))
+      ? `$${(Number(retailAmount) / perHr).toFixed(2)}`
+      : null
+
+  return `${perHr.toFixed(1)} ${unitLabel} / hr${subStr && retailStr ? ` ~ ${subStr} / ${retailStr} per hr` : ''}`
+}
+
+export default formatRatePerHour
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 

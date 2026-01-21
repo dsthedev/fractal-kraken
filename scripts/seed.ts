@@ -17,16 +17,16 @@ const readCsv = (filename: string) => {
   return parse(content, { columns: true, skip_empty_lines: true })
 }
 
-const _cleanDatabase = async () => {
-  // Delete in reverse order of dependencies to avoid FK constraint violations
-  await db.billableItem.deleteMany({})
-  await db.estimate.deleteMany({})
-  await db.rate.deleteMany({})
-  await db.entity.deleteMany({})
-  await db.service.deleteMany({})
-  await db.measurementUnit.deleteMany({})
-  await db.user.deleteMany({})
-}
+// const _cleanDatabase = async () => {
+//   // Delete in reverse order of dependencies to avoid FK constraint violations
+//   await db.billableItem.deleteMany({})
+//   await db.estimate.deleteMany({})
+//   await db.rate.deleteMany({})
+//   await db.entity.deleteMany({})
+//   await db.service.deleteMany({})
+//   await db.measurementUnit.deleteMany({})
+//   await db.user.deleteMany({})
+// }
 
 const seedUsers = async () => {
   const records = readCsv('20260111-users.csv')
@@ -64,13 +64,27 @@ const seedMeasurementUnits = async () => {
         shortName: row.shortName || null,
         symbol: row.symbol || null,
         notation: row.notation || null,
-        dimension: (row.dimension || 'CUSTOM') as any,
+        // dimension: (row.dimension || 'CUSTOM') as any,
         description: row.description || null,
-        conversionFactor: row.conversionFactor
-          ? parseFloat(row.conversionFactor)
-          : null,
-        baseUnit: row.baseUnit || null,
+        // conversionFactor: row.conversionFactor
+        //   ? parseFloat(row.conversionFactor)
+        //   : null,
+        // baseUnit: row.baseUnit || null,
       },
+    })
+  }
+  return records.length
+}
+
+const seedMaterials = async () => {
+  const records = readCsv('20261019-materials.csv')
+  for (const row of records) {
+    const name = row.name
+    if (!name) continue
+    await db.material.upsert({
+      where: { name },
+      update: { description: row.description || null },
+      create: { name, description: row.description || null },
     })
   }
   return records.length
@@ -89,6 +103,22 @@ const seedServices = async () => {
         context: row.context || null,
         description: row.description || null,
       },
+    })
+  }
+  return records.length
+}
+
+// Seed simple actions list (separate CSV) — can be run manually later
+export const seedActions = async () => {
+  const records = readCsv('20260119-actions.csv')
+  for (const row of records) {
+    const actionName = (row.action || '').toString()
+    if (!actionName) continue
+    // Upsert into the separate Action model (unique `name`)
+    await db.action.upsert({
+      where: { name: actionName },
+      update: { description: row.description || null },
+      create: { name: actionName, description: row.description || null },
     })
   }
   return records.length
@@ -230,64 +260,96 @@ const seedBillableItems = async () => {
   return records.length
 }
 
+// Ordered model seed configuration. Adjust this array to control clean/seed order.
+const modelSeeds = [
+  // {
+  //   key: 'users',
+  //   sequenceName: 'User',
+  //   clean: async () => db.user.deleteMany({}),
+  //   seed: seedUsers,
+  // },
+  // {
+  //   key: 'measurementUnits',
+  //   sequenceName: 'MeasurementUnit',
+  //   clean: async () => db.measurementUnit.deleteMany({}),
+  //   seed: seedMeasurementUnits,
+  // },
+  // {
+  //   key: 'services',
+  //   sequenceName: 'Service',
+  //   clean: async () => db.service.deleteMany({}),
+  //   seed: seedServices,
+  // },
+  {
+    key: 'materials',
+    sequenceName: 'Material',
+    clean: async () => db.material.deleteMany({}),
+    seed: seedMaterials,
+  },
+  // {
+  //   key: 'actions',
+  //   sequenceName: 'Action',
+  //   clean: async () => db.action.deleteMany({}),
+  //   seed: seedActions,
+  // },
+  // {
+  //   key: 'rates',
+  //   sequenceName: 'Rate',
+  //   clean: async () => db.rate.deleteMany({}),
+  //   seed: seedRates,
+  // },
+  // {
+  //   key: 'entities',
+  //   sequenceName: 'Entity',
+  //   clean: async () => db.entity.deleteMany({}),
+  //   seed: seedEntities,
+  // },
+  // {
+  //   key: 'estimates',
+  //   sequenceName: 'Estimate',
+  //   clean: async () => db.estimate.deleteMany({}),
+  //   seed: seedEstimates,
+  // },
+  // {
+  //   key: 'billableItems',
+  //   sequenceName: 'BillableItem',
+  //   clean: async () => db.billableItem.deleteMany({}),
+  //   seed: seedBillableItems,
+  // },
+]
+
 const resetSequences = async () => {
-  // Reset auto-increment sequences to the max ID + 1 for each table
-  // This is necessary after seeding with explicit IDs
-  await db.$executeRawUnsafe(`
-    SELECT setval(pg_get_serial_sequence('"MeasurementUnit"', 'id'), COALESCE((SELECT MAX(id) FROM "MeasurementUnit"), 0) + 1, false);
-  `)
-  await db.$executeRawUnsafe(`
-    SELECT setval(pg_get_serial_sequence('"Service"', 'id'), COALESCE((SELECT MAX(id) FROM "Service"), 0) + 1, false);
-  `)
-  await db.$executeRawUnsafe(`
-    SELECT setval(pg_get_serial_sequence('"Rate"', 'id'), COALESCE((SELECT MAX(id) FROM "Rate"), 0) + 1, false);
-  `)
-  await db.$executeRawUnsafe(`
-    SELECT setval(pg_get_serial_sequence('"Entity"', 'id'), COALESCE((SELECT MAX(id) FROM "Entity"), 0) + 1, false);
-  `)
-  await db.$executeRawUnsafe(`
-    SELECT setval(pg_get_serial_sequence('"Estimate"', 'id'), COALESCE((SELECT MAX(id) FROM "Estimate"), 0) + 1, false);
-  `)
-  await db.$executeRawUnsafe(`
-    SELECT setval(pg_get_serial_sequence('"BillableItem"', 'id'), COALESCE((SELECT MAX(id) FROM "BillableItem"), 0) + 1, false);
-  `)
+  // Reset auto-increment sequences based on configured models.
+  const sequences = new Set<string>()
+  for (const m of modelSeeds) {
+    if (m.sequenceName) sequences.add(m.sequenceName)
+  }
+
+  for (const seq of sequences) {
+    // Use pg_get_serial_sequence to find the underlying sequence for the id column
+    const sql = `SELECT setval(pg_get_serial_sequence('"${seq}"', 'id'), COALESCE((SELECT MAX(id) FROM "${seq}"), 0) + 1, false);`
+    await db.$executeRawUnsafe(sql)
+  }
 }
 
 export default async () => {
   try {
     console.info('\n🌱 Starting database seed...\n')
 
-    // console.info('  Cleaning database...')
-    // await cleanDatabase()
+    console.info('  Cleaning database...')
+    // Run cleans in reverse order to avoid FK violations
+    for (const model of [...modelSeeds].reverse()) {
+      console.info(`    - Cleaning ${model.key}`)
+      await model.clean()
+    }
     console.info('  ✓ Database cleaned')
 
-    console.info('  Seeding users...')
-    const userCount = await seedUsers()
-    console.info(`  ✓ Seeded ${userCount} users`)
-
-    console.info('  Seeding measurement units...')
-    const unitCount = await seedMeasurementUnits()
-    console.info(`  ✓ Seeded ${unitCount} measurement units`)
-
-    console.info('  Seeding services...')
-    const serviceCount = await seedServices()
-    console.info(`  ✓ Seeded ${serviceCount} services`)
-
-    console.info('  Seeding rates...')
-    const rateCount = await seedRates()
-    console.info(`  ✓ Seeded ${rateCount} rates`)
-
-    console.info('  Seeding entities...')
-    const entityCount = await seedEntities()
-    console.info(`  ✓ Seeded ${entityCount} entities`)
-
-    console.info('  Seeding estimates...')
-    const estimateCount = await seedEstimates()
-    console.info(`  ✓ Seeded ${estimateCount} estimates`)
-
-    console.info('  Seeding billable items...')
-    const billableItemCount = await seedBillableItems()
-    console.info(`  ✓ Seeded ${billableItemCount} billable items`)
+    // Seed each model in configured order
+    for (const model of modelSeeds) {
+      console.info(`  Seeding ${model.key}...`)
+      const count = await model.seed()
+      console.info(`  ✓ Seeded ${count} ${model.key}`)
+    }
 
     console.info('  Resetting auto-increment sequences...')
     await resetSequences()

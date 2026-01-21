@@ -95,6 +95,32 @@ model Service {
   billableItems BillableItem[]
 }
 
+model Action {
+  id Int @id @default(autoincrement())
+
+  name        String  @unique // INSTALL, REMOVE, REPAIR, etc.
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rates         Rate[]
+  billableItems BillableItem[]
+}
+
+model Material {
+  id Int @id @default(autoincrement())
+
+  name        String  @unique // tile, wood, drywall, etc.
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rates         Rate[]
+  billableItems BillableItem[]
+}
+
 model Rate {
   id Int @id @default(autoincrement())
 
@@ -114,8 +140,12 @@ model Rate {
   estimatedMinutesPerUnit Int?
   description             String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  action     Action?   @relation(fields: [actionId], references: [id])
+  actionId   Int?
+  material   Material? @relation(fields: [materialId], references: [id])
+  materialId Int?
 
   @@unique([authorId, serviceId, unitId])
   @@index([authorId])
@@ -157,6 +187,10 @@ model BillableItem {
 
   estimate   Estimate? @relation(fields: [estimateId], references: [id])
   estimateId Int?
+  action     Action?   @relation(fields: [actionId], references: [id])
+  actionId   Int?
+  material   Material? @relation(fields: [materialId], references: [id])
+  materialId Int?
 
   @@index([estimateId, sortOrder])
 }
