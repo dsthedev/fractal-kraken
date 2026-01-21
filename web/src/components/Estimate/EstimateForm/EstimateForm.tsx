@@ -112,7 +112,8 @@ const CREATE_BILLABLE_ITEM_MUTATION: TypedDocumentNode<
   mutation CreateBillableItemForEstimate($input: CreateBillableItemInput!) {
     createBillableItem(input: $input) {
       id
-      serviceId
+      actionId
+      materialId
       unitId
       unitPrice
       pricingType
@@ -123,12 +124,13 @@ const CREATE_BILLABLE_ITEM_MUTATION: TypedDocumentNode<
       sortOrder
       estimateId
       authorId
-      service {
+      action {
         id
-        action
-        material
-        context
-        description
+        name
+      }
+      material {
+        id
+        name
       }
       unit {
         id
@@ -149,7 +151,7 @@ const UPDATE_BILLABLE_ITEM_MUTATION: TypedDocumentNode<
   ) {
     updateBillableItem(id: $id, input: $input) {
       id
-      serviceId
+      actionId
       unitId
       unitPrice
       pricingType
@@ -160,12 +162,13 @@ const UPDATE_BILLABLE_ITEM_MUTATION: TypedDocumentNode<
       sortOrder
       estimateId
       authorId
-      service {
+      action {
         id
-        action
-        material
-        context
-        description
+        name
+      }
+      material {
+        id
+        name
       }
       unit {
         id
@@ -191,17 +194,22 @@ const GET_RATES_QUERY: TypedDocumentNode<FindRates> = gql`
   query GetRatesForQuickAdd {
     rates {
       id
-      serviceId
+      actionId
+      materialId
       unitId
       subAmount
       retailAmount
       currency
       estimatedMinutesPerUnit
-      service {
+      action {
         id
-        action
-        material
-        context
+        name
+        description
+      }
+      material {
+        id
+        name
+        description
       }
       unit {
         id
@@ -346,11 +354,7 @@ const EstimateForm = (props: EstimateFormProps) => {
   const [editingBillableItem, setEditingBillableItem] =
     useState<BillableItem | null>(null)
   const [billableItems, setBillableItems] = useState<BillableItem[]>([])
-  const [openQuickAddCombobox, setOpenQuickAddCombobox] = useState(false)
-  const [selectedQuickAddRate, setSelectedQuickAddRate] = useState<
-    FindRates['rates'][0] | null
-  >(null)
-  const [quickAddQuantity, setQuickAddQuantity] = useState(1)
+  // Quick-add temporarily disabled while billable item action/material integration is tested
   const [isDesktop, setIsDesktop] = useState(false)
 
   const weekNumber = getWeekNumber(new Date())
@@ -467,11 +471,10 @@ const EstimateForm = (props: EstimateFormProps) => {
   const formatMoney = (value?: number | null) => Number(value ?? 0).toFixed(2)
 
   const serviceLabel = (item: BillableItem) => {
-    const context = item.service?.context ? ` (${item.service.context})` : ''
-    const base = [item.service?.action, item.service?.material]
+    const base = [item.action?.name, item.material?.name]
       .filter(Boolean)
       .join(' ')
-    return `${base}${context}` || '—'
+    return `${base}` || '—'
   }
 
   const buildRateLabel = (rate: FindRates['rates'][0]) => {
@@ -501,43 +504,7 @@ const EstimateForm = (props: EstimateFormProps) => {
       .join(' ')
   }
 
-  const handleQuickAddFromRate = async (
-    rate: FindRates['rates'][0]
-  ): Promise<void> => {
-    if (!props.estimate?.id) {
-      toast.error('Save the estimate before adding items')
-      return
-    }
-
-    const nextSortOrder = billableItems.length
-    const amount = pricingType === 'sub' ? rate.subAmount : rate.retailAmount
-    const numericAmount = parseFloat(String(amount))
-    const subtotal = numericAmount * quickAddQuantity
-
-    const { data } = await createBillableItem({
-      variables: {
-        input: {
-          serviceId: rate.serviceId,
-          unitId: rate.unitId,
-          unitPrice: numericAmount,
-          pricingType: pricingType === 'sub' ? 'SUB' : 'RETAIL',
-          quantity: quickAddQuantity,
-          subtotal: subtotal,
-          estimatedMinutesPerUnit: rate.estimatedMinutesPerUnit || undefined,
-          estimateId: props.estimate.id,
-          sortOrder: nextSortOrder,
-          authorId: currentUser?.id || '',
-        },
-      },
-    })
-
-    if (data?.createBillableItem) {
-      setBillableItems((prev) => [...prev, data.createBillableItem])
-      setSelectedQuickAddRate(null)
-      setOpenQuickAddCombobox(false)
-      setQuickAddQuantity(1)
-    }
-  }
+  // Quick-add handler removed for now. Reintroduce after action+material quick-add mapping is defined.
 
   const handleCreateBillableItem = async (
     input: CreateBillableItemInput

@@ -20,12 +20,15 @@ export const QUERY: TypedDocumentNode<
   query FindBillableItems {
     billableItems {
       id
-      serviceId
-      service {
+      actionId
+      action {
         id
-        action
-        material
-        context
+        name
+      }
+      materialId
+      material {
+        id
+        name
       }
       unitId
       unit {
@@ -70,9 +73,9 @@ export const Success = ({
 
   const filtered = billableItems.filter((item) => {
     const searchable = [
-      item.service?.action || '',
-      item.service?.material || '',
-      item.service?.context || '',
+      item.action?.name || '',
+      item.material?.name || '',
+      '',
       item.unit?.fullName || '',
       item.unit?.shortName || '',
       item.notes || '',

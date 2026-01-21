@@ -15,7 +15,8 @@ export const QUERY: TypedDocumentNode<FindRates, FindRatesVariables> = gql`
   query FindRates {
     rates {
       id
-      serviceId
+      actionId
+      materialId
       unitId
       subAmount
       retailAmount
@@ -25,10 +26,15 @@ export const QUERY: TypedDocumentNode<FindRates, FindRatesVariables> = gql`
       description
       createdAt
       updatedAt
-      service {
-        action
-        material
-        context
+      action {
+        id
+        name
+        description
+      }
+      material {
+        id
+        name
+        description
       }
       unit {
         fullName
@@ -64,9 +70,10 @@ export const Success = ({
 
   const filtered = rates.filter((r) => {
     const searchable = [
-      r.service?.action,
-      r.service?.material,
-      r.service?.context,
+      r.action?.name,
+      r.material?.name,
+      r.action?.description,
+      r.material?.description,
       r.unit?.fullName,
       r.estimatedMinutesPerUnit,
       r.description,

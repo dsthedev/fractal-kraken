@@ -1,15 +1,8 @@
 import React from 'react'
 
-import { Pencil, X } from 'lucide-react'
+import { Pencil } from 'lucide-react'
 import type { EditRateById, UpdateRateInput } from 'types/graphql'
-import type {
-  EditServiceById,
-  UpdateServiceInput,
-  UpdateServiceMutationVariables,
-  EditMeasurementUnitById,
-  UpdateMeasurementUnitInput,
-  UpdateMeasurementUnitMutationVariables,
-} from 'types/graphql'
+import type { EditMeasurementUnitCellById } from 'types/graphql'
 
 import type { RWGqlError } from '@cedarjs/forms'
 import {
@@ -23,57 +16,17 @@ import {
   useFormContext,
   useWatch,
 } from '@cedarjs/forms'
-import { useQuery, useMutation } from '@cedarjs/web'
+import { navigate, routes } from '@cedarjs/router'
+import { useQuery } from '@cedarjs/web'
 import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
-import MeasurementUnitForm from 'src/components/MeasurementUnit/MeasurementUnitForm'
-import ServiceForm from 'src/components/Service/ServiceForm'
 import { Button } from 'src/components/ui/button'
 import { CurrencyField } from 'src/components/ui/currency-field'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
-} from 'src/components/ui/dialog'
 import formatRatePerHour from 'src/lib/utils'
 
-// Query and mutation for Service
-const SERVICE_QUERY: TypedDocumentNode<EditServiceById> = gql`
-  query EditServiceById($id: Int!) {
-    service: service(id: $id) {
-      id
-      action
-      material
-      context
-      description
-      createdAt
-      updatedAt
-    }
-  }
-`
-
-const UPDATE_SERVICE_MUTATION: TypedDocumentNode<
-  EditServiceById,
-  UpdateServiceMutationVariables
-> = gql`
-  mutation UpdateServiceMutation($id: Int!, $input: UpdateServiceInput!) {
-    updateService(id: $id, input: $input) {
-      id
-      action
-      material
-      context
-      description
-      createdAt
-      updatedAt
-    }
-  }
-`
-
 // Query and mutation for MeasurementUnit
-const UNIT_QUERY: TypedDocumentNode<EditMeasurementUnitById> = gql`
+const UNIT_QUERY: TypedDocumentNode<EditMeasurementUnitCellById> = gql`
   query RateFormUnitById($id: Int!) {
     measurementUnit: measurementUnit(id: $id) {
       id
@@ -89,27 +42,24 @@ const UNIT_QUERY: TypedDocumentNode<EditMeasurementUnitById> = gql`
   }
 `
 
-const UPDATE_UNIT_MUTATION: TypedDocumentNode<
-  EditMeasurementUnitById,
-  UpdateMeasurementUnitMutationVariables
-> = gql`
-  mutation UpdateRateFormUnitMutation(
-    $id: Int!
-    $input: UpdateMeasurementUnitInput!
-  ) {
-    updateMeasurementUnit(id: $id, input: $input) {
-      id
-      fullName
-      pluralName
-      shortName
-      symbol
-      notation
-      description
-      createdAt
-      updatedAt
-    }
-  }
-`
+// const UPDATE_UNIT_MUTATION: TypedDocumentNode<EditMeasurementUnitCellById> = gql`
+//   mutation UpdateRateFormUnitMutation(
+//     $id: Int!
+//     $input: UpdateMeasurementUnitInput!
+//   ) {
+//     updateMeasurementUnit(id: $id, input: $input) {
+//       id
+//       fullName
+//       pluralName
+//       shortName
+//       symbol
+//       notation
+//       description
+//       createdAt
+//       updatedAt
+//     }
+//   }
+// `
 
 type FormRate = NonNullable<EditRateById['rate']>
 
@@ -119,10 +69,15 @@ interface RateFormProps {
   error: RWGqlError
   loading: boolean
   authorId?: string
-  serviceId?: number
+  actionId?: number
+  materialId?: number
   estimatedMinutesPerUnit?: number
   unitId?: number
-  ServiceDropdown: React.ComponentType<{
+  ActionDropdown: React.ComponentType<{
+    value?: number
+    onChange: (id: number) => void
+  }>
+  MaterialDropdown: React.ComponentType<{
     value?: number
     onChange: (id: number) => void
   }>
@@ -217,7 +172,6 @@ const LabeledField = ({
         }
       />
     )}
-    <FieldError name={name} className="rw-field-error" />
   </>
 )
 
@@ -250,7 +204,7 @@ const ComputedRateDisplay = ({
 
   const unitId = selectedUnit ?? rate?.unitId
 
-  const { data } = useQuery<EditMeasurementUnitById>(UNIT_QUERY, {
+  const { data } = useQuery<EditMeasurementUnitCellById>(UNIT_QUERY, {
     variables: { id: unitId as number },
     skip: !unitId,
   })
@@ -276,33 +230,38 @@ const RateForm = ({
   error,
   loading,
   authorId,
-  serviceId,
+  actionId,
+  materialId,
   unitId,
-  ServiceDropdown,
+  ActionDropdown,
+  MaterialDropdown,
   UnitDropdown,
 }: RateFormProps) => {
-  const [selectedService, setSelectedService] = React.useState<
+  const [selectedAction, setSelectedAction] = React.useState<
     number | undefined
-  >(serviceId ?? rate?.serviceId)
+  >(actionId ?? rate?.actionId)
+  const [selectedMaterial, setSelectedMaterial] = React.useState<
+    number | undefined
+  >(materialId ?? rate?.materialId)
   const [selectedUnit, setSelectedUnit] = React.useState<number | undefined>(
     unitId ?? rate?.unitId
   )
-  const [editDialogOpen, setEditDialogOpen] = React.useState(false)
-  const [editingType, setEditingType] = React.useState<
-    'service' | 'unit' | null
-  >(null)
 
-  // Keep selected IDs in sync if props change (e.g., edit load)
   React.useEffect(() => {
-    if (serviceId !== undefined) setSelectedService(serviceId)
-  }, [serviceId])
+    if (actionId !== undefined) setSelectedAction(actionId)
+  }, [actionId])
+
+  React.useEffect(() => {
+    if (materialId !== undefined) setSelectedMaterial(materialId)
+  }, [materialId])
 
   React.useEffect(() => {
     if (unitId !== undefined) setSelectedUnit(unitId)
   }, [unitId])
 
   const onSubmit = (data: FormRate) => {
-    const finalServiceId = selectedService
+    const finalActionId = selectedAction
+    const finalMaterialId = selectedMaterial
     const finalUnitId = selectedUnit
     const finalAuthorId = authorId ?? String(data.authorId)
     const minutesValue =
@@ -311,19 +270,21 @@ const RateForm = ({
         ? undefined
         : Number(data.estimatedMinutesPerUnit)
 
-    if (!finalServiceId || !finalUnitId) {
-      throw new Error('Service and Unit must be selected before saving')
+    if (!finalActionId || !finalMaterialId || !finalUnitId) {
+      throw new Error(
+        'Action, Material and Unit must be selected before saving'
+      )
     }
     if (!finalAuthorId) {
       throw new Error('Author ID is required')
     }
 
-    // Exclude id and timestamps from the submission data
     const {
       id: _id,
       createdAt: _createdAt,
       updatedAt: _updatedAt,
-      service: _service,
+      action: _action,
+      material: _material,
       unit: _unit,
       ...restData
     } = data
@@ -331,7 +292,8 @@ const RateForm = ({
     onSave(
       {
         ...restData,
-        serviceId: finalServiceId,
+        actionId: finalActionId,
+        materialId: finalMaterialId,
         unitId: finalUnitId,
         authorId: finalAuthorId,
         subAmount: data.subAmount,
@@ -353,7 +315,6 @@ const RateForm = ({
           listClassName="rw-form-error-list"
         />
 
-        {/* Hidden author (registered) */}
         <HiddenField
           name="authorId"
           value={authorId ?? rate?.authorId}
@@ -361,29 +322,53 @@ const RateForm = ({
           asNumber={false}
         />
 
-        {/* Service + Unit Row (Dropdowns) */}
         <div className="flex gap-4 mt-2">
           <div className="flex-1 flex gap-2 items-end">
             <Button
               variant="outline"
               type="button"
               onClick={() => {
-                if (selectedService) {
-                  setEditingType('service')
-                  setEditDialogOpen(true)
+                if (selectedAction) {
+                  navigate(routes.editAction({ id: selectedAction }))
                 }
               }}
-              disabled={!selectedService}
+              disabled={!selectedAction}
             >
               <Pencil className="h-4 w-4" />
             </Button>
             <div className="flex-1">
-              <ServiceDropdown
-                value={selectedService}
-                onChange={setSelectedService}
+              {/* Action dropdown */}
+              {/* @ts-ignore */}
+              <ActionDropdown
+                value={selectedAction}
+                onChange={setSelectedAction}
               />
             </div>
           </div>
+
+          <div className="flex-1 flex gap-2 items-end">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => {
+                if (selectedMaterial) {
+                  navigate(routes.editMaterial({ id: selectedMaterial }))
+                }
+              }}
+              disabled={!selectedMaterial}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <div className="flex-1">
+              {/* Material dropdown */}
+              {/* @ts-ignore */}
+              <MaterialDropdown
+                value={selectedMaterial}
+                onChange={setSelectedMaterial}
+              />
+            </div>
+          </div>
+
           <div className="flex-1 flex gap-2 items-end border-l pl-4">
             <div className="flex-1">
               <UnitDropdown value={selectedUnit} onChange={setSelectedUnit} />
@@ -393,8 +378,7 @@ const RateForm = ({
               type="button"
               onClick={() => {
                 if (selectedUnit) {
-                  setEditingType('unit')
-                  setEditDialogOpen(true)
+                  navigate(routes.editMeasurementUnit({ id: selectedUnit }))
                 }
               }}
               disabled={!selectedUnit}
@@ -404,7 +388,6 @@ const RateForm = ({
           </div>
         </div>
 
-        {/* Sub + Retail + Currency Row */}
         <div className="flex gap-4 mt-4 items-end">
           <div className="flex-1">
             <CurrencyField
@@ -443,7 +426,6 @@ const RateForm = ({
           <ComputedRateDisplay rate={rate} selectedUnit={selectedUnit} />
         </div>
 
-        {/* Description */}
         <div className="mt-4">
           <LabeledField
             name="description"
@@ -460,181 +442,6 @@ const RateForm = ({
           </Submit>
         </div>
       </Form>
-
-      {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {editingType === 'service'
-                ? 'Edit Service'
-                : 'Edit Measurement Unit'}
-            </DialogTitle>
-            <DialogClose asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute right-4 top-4"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogClose>
-          </DialogHeader>
-
-          {editingType === 'service' && selectedService && (
-            <ServiceEditDialogContent
-              serviceId={selectedService}
-              onSave={() => setEditDialogOpen(false)}
-            />
-          )}
-
-          {editingType === 'unit' && selectedUnit && (
-            <UnitEditDialogContent
-              unitId={selectedUnit}
-              onSave={() => setEditDialogOpen(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
-  )
-}
-
-/**
- * Edit dialog content for Service
- * Loads and displays the ServiceForm in the dialog
- */
-const ServiceEditDialogContent = ({
-  serviceId,
-  onSave,
-}: {
-  serviceId: number
-  onSave: () => void
-}) => {
-  const { data, loading, error } = useQuery<EditServiceById>(SERVICE_QUERY, {
-    variables: { id: serviceId },
-  })
-
-  const [updateService, { loading: saving, error: saveError }] = useMutation(
-    UPDATE_SERVICE_MUTATION,
-    {
-      onCompleted: () => {
-        toast.success('Service updated')
-        onSave()
-      },
-      onError: (error) => {
-        toast.error(error.message)
-      },
-    }
-  )
-
-  if (loading) {
-    return (
-      <div className="py-4 text-center text-sm text-muted-foreground">
-        Loading...
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="py-4 text-center text-sm text-red-500">
-        Failed to load service
-      </div>
-    )
-  }
-
-  if (!data?.service) {
-    return (
-      <div className="py-4 text-center text-sm text-muted-foreground">
-        Service not found
-      </div>
-    )
-  }
-
-  const handleSave = (input: UpdateServiceInput) => {
-    updateService({ variables: { id: serviceId, input } })
-  }
-
-  return (
-    <div className="py-4">
-      <ServiceForm
-        service={data.service}
-        onSave={handleSave}
-        error={saveError}
-        loading={saving}
-      />
-    </div>
-  )
-}
-
-/**
- * Edit dialog content for MeasurementUnit
- * Loads and displays the MeasurementUnitForm in the dialog
- */
-const UnitEditDialogContent = ({
-  unitId,
-  onSave,
-}: {
-  unitId: number
-  onSave: () => void
-}) => {
-  const { data, loading, error } = useQuery<EditMeasurementUnitById>(
-    UNIT_QUERY,
-    {
-      variables: { id: unitId },
-    }
-  )
-
-  const [updateUnit, { loading: saving, error: saveError }] = useMutation(
-    UPDATE_UNIT_MUTATION,
-    {
-      onCompleted: () => {
-        toast.success('Measurement unit updated')
-        onSave()
-      },
-      onError: (error) => {
-        toast.error(error.message)
-      },
-    }
-  )
-
-  if (loading) {
-    return (
-      <div className="py-4 text-center text-sm text-muted-foreground">
-        Loading...
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="py-4 text-center text-sm text-red-500">
-        Failed to load measurement unit
-      </div>
-    )
-  }
-
-  if (!data?.measurementUnit) {
-    return (
-      <div className="py-4 text-center text-sm text-muted-foreground">
-        Measurement unit not found
-      </div>
-    )
-  }
-
-  const handleSave = (input: UpdateMeasurementUnitInput) => {
-    updateUnit({ variables: { id: unitId, input } })
-  }
-
-  return (
-    <div className="py-4">
-      <MeasurementUnitForm
-        measurementUnit={data.measurementUnit}
-        onSave={handleSave}
-        error={saveError}
-        loading={saving}
-      />
     </div>
   )
 }

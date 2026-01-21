@@ -225,9 +225,6 @@
 .rw-table-actions .rw-button-red:hover {
   @apply bg-red-600 text-white;
 }
-.rw-text-center {
-  @apply text-center;
-}
 .rw-login-container {
   @apply flex items-center justify-center flex-wrap mx-auto my-16;
 }

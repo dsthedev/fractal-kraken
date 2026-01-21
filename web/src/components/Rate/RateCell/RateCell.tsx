@@ -13,7 +13,6 @@ export const QUERY: TypedDocumentNode<FindRateById, FindRateByIdVariables> =
     query FindRateById($id: Int!) {
       rate: rate(id: $id) {
         id
-        serviceId
         unitId
         subAmount
         retailAmount
@@ -23,10 +22,15 @@ export const QUERY: TypedDocumentNode<FindRateById, FindRateByIdVariables> =
         description
         createdAt
         updatedAt
-        service {
-          action
-          material
-          context
+        action {
+          id
+          name
+          description
+        }
+        material {
+          id
+          name
+          description
         }
         unit {
           fullName

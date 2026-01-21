@@ -15,6 +15,12 @@ export const rates: QueryResolvers['rates'] = () => {
     where: {
       authorId: context.currentUser?.id,
     },
+    include: {
+      unit: true,
+      author: true,
+      action: true,
+      material: true,
+    },
   })
 }
 
@@ -23,6 +29,12 @@ export const rate: QueryResolvers['rate'] = ({ id }) => {
     where: {
       id,
       authorId: context.currentUser?.id,
+    },
+    include: {
+      unit: true,
+      author: true,
+      action: true,
+      material: true,
     },
   })
 }
@@ -95,14 +107,16 @@ export const importRates: MutationResolvers['importRates'] = async ({
 
   for (const rateData of data) {
     try {
-      // Check if rate already exists based on service + unit combination
-      const existingRate = await db.rate.findFirst({
-        where: {
-          serviceId: rateData.serviceId,
-          unitId: rateData.unitId,
-          authorId: userId,
-        },
-      })
+      // Check if rate already exists based on action/material + unit combination (if provided)
+      const lookup: any = { unitId: rateData.unitId, authorId: userId }
+      if (rateData.actionId !== undefined && rateData.actionId !== null) {
+        lookup.actionId = rateData.actionId
+      }
+      if (rateData.materialId !== undefined && rateData.materialId !== null) {
+        lookup.materialId = rateData.materialId
+      }
+
+      const existingRate = await db.rate.findFirst({ where: lookup })
 
       if (existingRate) {
         // Update existing rate
@@ -165,13 +179,16 @@ export const deleteAllRates: MutationResolvers['deleteAllRates'] = async () => {
 }
 
 export const Rate: RateRelationResolvers = {
-  service: (_obj, { root }) => {
-    return db.rate.findUnique({ where: { id: root?.id } }).service()
-  },
   unit: (_obj, { root }) => {
     return db.rate.findUnique({ where: { id: root?.id } }).unit()
   },
   author: (_obj, { root }) => {
     return db.rate.findUnique({ where: { id: root?.id } }).author()
+  },
+  action: (_obj, { root }) => {
+    return db.rate.findUnique({ where: { id: root?.id } }).action()
+  },
+  material: (_obj, { root }) => {
+    return db.rate.findUnique({ where: { id: root?.id } }).material()
   },
 }

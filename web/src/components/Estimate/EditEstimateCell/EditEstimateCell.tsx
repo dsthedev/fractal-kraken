@@ -103,7 +103,6 @@ export const QUERY: TypedDocumentNode<EditEstimateById> = gql`
       entityId
       billableItems {
         id
-        serviceId
         unitId
         unitPrice
         pricingType
@@ -113,11 +112,14 @@ export const QUERY: TypedDocumentNode<EditEstimateById> = gql`
         notes
         sortOrder
         estimateId
-        service {
+        action {
           id
-          action
-          material
-          context
+          name
+          description
+        }
+        material {
+          id
+          name
           description
         }
         unit {

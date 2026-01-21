@@ -18,12 +18,15 @@ export const QUERY: TypedDocumentNode<
   query FindBillableItemById($id: Int!) {
     billableItem: billableItem(id: $id) {
       id
-      serviceId
-      service {
+      actionId
+      action {
         id
-        action
-        material
-        context
+        name
+      }
+      materialId
+      material {
+        id
+        name
       }
       unitId
       unit {

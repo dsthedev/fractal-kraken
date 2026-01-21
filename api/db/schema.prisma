@@ -48,12 +48,12 @@ enum UnitDimension {
 model MeasurementUnit {
   id Int @id @default(autoincrement())
 
-  fullName         String // square foot - Full name of the unit of measurement.
-  pluralName       String // square feet - Full plural name of the unit of measurement.
-  shortName        String? // sqft - Abbreviated name of the unit of measurement.
-  symbol           String? // ft² - Symbolic notation used for the unit of measurement.
-  notation         String? // ' - Notation used for the unit (e.g., feet is ' and inches is ").
-  description      String? // Square feet is a unit of area measurement. - Detailed description of the unit.
+  fullName    String // square foot - Full name of the unit of measurement.
+  pluralName  String // square feet - Full plural name of the unit of measurement.
+  shortName   String? // sqft - Abbreviated name of the unit of measurement.
+  symbol      String? // ft² - Symbolic notation used for the unit of measurement.
+  notation    String? // ' - Notation used for the unit (e.g., feet is ' and inches is ").
+  description String? // Square feet is a unit of area measurement. - Detailed description of the unit.
 
   // dimension        UnitDimension // Dimension of the unit (e.g., linear, square, cubic).
   // conversionFactor Float? // 0.092903 - Factor for converting to a standard unit.
@@ -82,7 +82,6 @@ enum ServiceAction {
 
 model Service {
   id Int @id @default(autoincrement())
-  // uuid String @default(uuid())
 
   action   ServiceAction
   material String
@@ -92,8 +91,6 @@ model Service {
 
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-  rates         Rate[]
-  billableItems BillableItem[]
 }
 
 model Action {
@@ -125,8 +122,11 @@ model Material {
 model Rate {
   id Int @id @default(autoincrement())
 
-  serviceId Int
-  service   Service @relation(fields: [serviceId], references: [id])
+  action     Action?   @relation(fields: [actionId], references: [id])
+  actionId   Int?
+
+  material   Material? @relation(fields: [materialId], references: [id])
+  materialId Int?
 
   unitId Int
   unit   MeasurementUnit @relation(fields: [unitId], references: [id])
@@ -143,14 +143,8 @@ model Rate {
 
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
-  action     Action?   @relation(fields: [actionId], references: [id])
-  actionId   Int?
-  material   Material? @relation(fields: [materialId], references: [id])
-  materialId Int?
 
-  @@unique([authorId, serviceId, unitId])
   @@index([authorId])
-  @@index([serviceId, unitId])
 }
 
 enum PricingType {
@@ -161,8 +155,11 @@ enum PricingType {
 model BillableItem {
   id Int @id @default(autoincrement())
 
-  serviceId Int
-  service   Service @relation(fields: [serviceId], references: [id])
+  actionId Int?
+  action   Action? @relation(fields: [actionId], references: [id])
+
+  materialId Int?
+  material   Material? @relation(fields: [materialId], references: [id])
 
   unitId Int
   unit   MeasurementUnit @relation(fields: [unitId], references: [id])
@@ -188,10 +185,6 @@ model BillableItem {
 
   estimate   Estimate? @relation(fields: [estimateId], references: [id])
   estimateId Int?
-  action     Action?   @relation(fields: [actionId], references: [id])
-  actionId   Int?
-  material   Material? @relation(fields: [materialId], references: [id])
-  materialId Int?
 
   @@index([estimateId, sortOrder])
 }

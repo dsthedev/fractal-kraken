@@ -1,12 +1,16 @@
-import type { EditBillableItemById, UpdateBillableItemInput } from 'types/graphql'
+import type {
+  EditBillableItemById,
+  UpdateBillableItemInput,
+} from 'types/graphql'
 import type { CreateBillableItemInput } from 'types/graphql'
 
 import type { RWGqlError } from '@cedarjs/forms'
 
 import { useAuth } from 'src/auth'
+import SelectActionCell from 'src/components/Action/SelectActionCell'
 import BillableItemForm from 'src/components/BillableItem/BillableItemForm'
+import SelectMaterialCell from 'src/components/Material/SelectMaterialCell'
 import SelectMeasurementUnitCell from 'src/components/MeasurementUnit/SelectMeasurementUnitCell'
-import SelectServiceCell from 'src/components/Service/SelectServiceCell'
 
 type FormBillableItem = NonNullable<EditBillableItemById['billableItem']>
 type BillableItemInput = UpdateBillableItemInput | CreateBillableItemInput
@@ -28,10 +32,12 @@ const BillableItemFormWrapper = (props: BillableItemFormWrapperProps) => {
       error={props.error}
       loading={props.loading}
       authorId={currentUser?.id}
-      serviceId={props.billableItem?.serviceId}
       unitId={props.billableItem?.unitId}
-      ServiceDropdown={({ value, onChange }) => (
-        <SelectServiceCell onSelect={onChange} selectedId={value} />
+      ActionDropdown={({ value, onChange }) => (
+        <SelectActionCell onSelect={onChange} selectedId={value} />
+      )}
+      MaterialDropdown={({ value, onChange }) => (
+        <SelectMaterialCell onSelect={onChange} selectedId={value} />
       )}
       UnitDropdown={({ value, onChange }) => (
         <SelectMeasurementUnitCell onSelect={onChange} selectedId={value} />

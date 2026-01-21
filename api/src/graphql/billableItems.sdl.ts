@@ -1,8 +1,10 @@
 export const schema = gql`
   type BillableItem {
     id: Int!
-    serviceId: Int!
-    service: Service!
+    actionId: Int
+    action: Action
+    materialId: Int
+    material: Material
     unitId: Int!
     unit: MeasurementUnit!
     unitPrice: Float!
@@ -31,7 +33,8 @@ export const schema = gql`
   }
 
   input CreateBillableItemInput {
-    serviceId: Int!
+    actionId: Int
+    materialId: Int
     unitId: Int!
     unitPrice: Float!
     pricingType: PricingType!
@@ -45,7 +48,8 @@ export const schema = gql`
   }
 
   input UpdateBillableItemInput {
-    serviceId: Int
+    actionId: Int
+    materialId: Int
     unitId: Int
     unitPrice: Float
     pricingType: PricingType

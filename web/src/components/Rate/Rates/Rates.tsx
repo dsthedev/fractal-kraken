@@ -1,12 +1,11 @@
 import { useState } from 'react'
 
-import { Pencil, Trash2, Filter } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
 import type {
   DeleteRateMutation,
   DeleteRateMutationVariables,
   DeleteAllRatesMutation,
   FindRates,
-  ServiceAction,
 } from 'types/graphql'
 
 import { Link, routes } from '@cedarjs/router'
@@ -29,26 +28,17 @@ import {
   AlertDialogTrigger,
 } from 'src/components/ui/alert-dialog'
 import { Button } from 'src/components/ui/button'
-import { Checkbox } from 'src/components/ui/checkbox'
+// filter UI removed - no Checkbox needed
 import {
   Drawer,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
-  DrawerClose,
 } from 'src/components/ui/drawer'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from 'src/components/ui/dropdown-menu'
+// filter UI removed - dropdown menu components removed
 import {
   truncate,
   currencyDisplay,
-  formatEnum,
   fullServiceDisplay,
 } from 'src/lib/formatters.js'
 import { todayAsYYYYMMDD } from 'src/lib/utils'
@@ -80,24 +70,9 @@ const DELETE_ALL_RATES_MUTATION: TypedDocumentNode<
 // Define a custom type for sortable fields including nested paths
 type SortableField =
   | keyof FindRates['rates'][0]
-  | 'service.action'
   | 'unit.fullName'
-
-// All service action types from the enum
-const SERVICE_ACTIONS: ServiceAction[] = [
-  'INSTALL',
-  'REMOVE',
-  'REPLACE',
-  'RESET',
-  'REPAIR',
-  'FINISH',
-  'PREPARE',
-  'CLEAN',
-  'MOVE',
-  'INSPECT',
-  'PERFORM',
-  'CUSTOM',
-]
+  | 'action.name'
+  | 'material.name'
 
 const RatesList = ({ rates }: FindRates) => {
   const [sortConfig, setSortConfig] = useState<{
@@ -105,9 +80,6 @@ const RatesList = ({ rates }: FindRates) => {
     direction: 'asc' | 'desc'
   }>({ key: 'id', direction: 'asc' })
   const [openDrawerId, setOpenDrawerId] = useState<number | null>(null)
-  const [selectedActions, setSelectedActions] = useState<Set<ServiceAction>>(
-    new Set(SERVICE_ACTIONS)
-  )
 
   const [deleteRate] = useMutation(DELETE_RATE_MUTATION, {
     onCompleted: () => {
@@ -152,33 +124,20 @@ const RatesList = ({ rates }: FindRates) => {
     }
   }
 
-  const toggleAction = (action: ServiceAction) => {
-    const newSelected = new Set(selectedActions)
-    if (newSelected.has(action)) {
-      newSelected.delete(action)
-    } else {
-      newSelected.add(action)
-    }
-    setSelectedActions(newSelected)
-  }
-
-  const selectAll = () => setSelectedActions(new Set(SERVICE_ACTIONS))
-  const deselectAll = () => setSelectedActions(new Set())
+  // No filter UI: show all rates
 
   // Helper function to get nested property value
-  const getNestedValue = (obj: FindRates['rates'][0], path: SortableField) => {
-    if (path === 'service.action') {
-      return obj.service?.action
+  const getNestedValue = (obj: any, path: SortableField) => {
+    if (path === 'action.name') {
+      return obj.action?.name
     }
     if (path === 'unit.fullName') {
       return obj.unit?.fullName
     }
-    return obj[path as keyof FindRates['rates'][0]]
+    return obj[path as keyof any]
   }
 
-  const filteredRates = rates.filter((rate) =>
-    selectedActions.has(rate.service?.action)
-  )
+  const filteredRates = rates
 
   const sortedRates = [...filteredRates].sort((a, b) => {
     const aValue = getNestedValue(a, sortConfig.key)
@@ -223,43 +182,7 @@ const RatesList = ({ rates }: FindRates) => {
           {filteredRates.length} of {rates.length}
           <span className="hidden sm:block">rates</span>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Filter className="h-4 w-4 mr-2" />
-              Filter by Action
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuGroup>
-              <DropdownMenuItem onSelect={selectAll}>
-                Select All
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={deselectAll}>
-                Deselect All
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              {SERVICE_ACTIONS.map((action) => (
-                <DropdownMenuItem
-                  key={action}
-                  onSelect={(e) => {
-                    e.preventDefault()
-                    toggleAction(action)
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <Checkbox
-                    checked={selectedActions.has(action)}
-                    onCheckedChange={() => toggleAction(action)}
-                  />
-                  <span>{formatEnum(action)}</span>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* filter removed - showing all rates */}
       </div>
 
       <table className="rw-table">
@@ -267,12 +190,13 @@ const RatesList = ({ rates }: FindRates) => {
           <tr>
             {/* <th>Id</th> */}
             <th
-              onClick={() => handleSort('service.action')}
+              onClick={() => handleSort('action.name')}
               className="cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800 text-left"
             >
-              Service
-              <SortIcon columnKey="service.action" />
+              Action
+              <SortIcon columnKey="action.name" />
             </th>
+            <th className="hidden sm:table-cell text-left">Material</th>
             <th
               onClick={() => handleSort('unit.fullName')}
               className="hidden sm:table-cell cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800 text-left"
@@ -313,31 +237,27 @@ const RatesList = ({ rates }: FindRates) => {
                   title={
                     'Show ' +
                     fullServiceDisplay(
-                      formatEnum(rate.service?.action),
-                      rate.service?.material,
-                      rate.service?.context
-                    ) +
-                    ' details'
+                      rate.action?.name,
+                      rate.material?.name,
+                      'details'
+                    )
                   }
                   className="text-left text-sm font-medium text-blue-600 hover:underline sm:hidden"
                   onClick={() => setOpenDrawerId(rate.id)}
                 >
                   {fullServiceDisplay(
-                    formatEnum(rate.service?.action),
-                    rate.service?.material,
-                    rate.service?.context
+                    rate.action?.name,
+                    rate.material?.name,
+                    ''
                   )}
                 </button>
-                <span className="hidden sm:inline">
-                  {fullServiceDisplay(
-                    formatEnum(rate.service?.action),
-                    rate.service?.material,
-                    rate.service?.context
-                  )}
-                </span>
+                <span className="hidden sm:inline">{rate.action?.name}</span>
               </td>
               <td className="hidden sm:table-cell">
-                {rate.unit?.shortName || 'N/A'}
+                {rate.material?.name || '...'}
+              </td>
+              <td className="hidden sm:table-cell text-muted-foreground">
+                {rate.unit?.shortName || '...'}
               </td>
               {/* <td>{truncate(rate.serviceId)}</td>
               <td>{truncate(rate.unitId)}</td> */}
@@ -396,9 +316,9 @@ const RatesList = ({ rates }: FindRates) => {
                   <DrawerHeader>
                     <DrawerTitle>
                       {fullServiceDisplay(
-                        formatEnum(rate.service?.action),
-                        rate.service?.material,
-                        rate.service?.context
+                        rate.action?.name,
+                        rate.material?.name,
+                        rate.action?.description ?? rate.material?.description
                       )}
                     </DrawerTitle>
                   </DrawerHeader>
@@ -408,7 +328,7 @@ const RatesList = ({ rates }: FindRates) => {
                         Measurement Unit
                       </p>
                       <p className="text-sm font-medium">
-                        {rate.unit?.fullName || 'N/A'}
+                        {rate.unit?.fullName || '...'}
                       </p>
                     </div>
                     <div className="flex py-4">

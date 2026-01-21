@@ -109,6 +109,8 @@ const BillableItemsList = ({ billableItems }: FindBillableItems) => {
 
         const serviceId =
           toInt(row.serviceId) ?? toInt(row['service.id']) ?? undefined
+        const actionId =
+          toInt(row.actionId) ?? toInt(row['action.id']) ?? serviceId
         const unitId = toInt(row.unitId) ?? toInt(row['unit.id']) ?? undefined
         const unitPrice =
           toFloat(row.unitPrice) ?? toFloat(row['unitPrice']) ?? undefined
@@ -131,7 +133,7 @@ const BillableItemsList = ({ billableItems }: FindBillableItems) => {
               : undefined
 
         if (
-          serviceId === undefined ||
+          actionId === undefined ||
           unitId === undefined ||
           unitPrice === undefined ||
           quantity === undefined ||
@@ -150,7 +152,7 @@ const BillableItemsList = ({ billableItems }: FindBillableItems) => {
         await createBillableItem({
           variables: {
             input: {
-              serviceId,
+              actionId,
               unitId,
               unitPrice,
               pricingType,
@@ -196,7 +198,7 @@ const BillableItemsList = ({ billableItems }: FindBillableItems) => {
       <table className="rw-table">
         <thead>
           <tr>
-            <th>Service</th>
+            <th className="text-left">Action + Material</th>
             {/* <th>Unit</th> */}
             <th>Unit price</th>
             {/* <th>Pricing type</th> */}
@@ -211,9 +213,8 @@ const BillableItemsList = ({ billableItems }: FindBillableItems) => {
           {billableItems.map((billableItem) => (
             <tr key={billableItem.id}>
               <td>
-                {truncate(formatEnum(billableItem.service?.action))}{' '}
-                {truncate(billableItem.service?.material)}{' '}
-                {truncate(billableItem.service?.context)}
+                {truncate(billableItem.action?.name)}{' '}
+                {truncate(billableItem.material?.name)}
               </td>
               <td>
                 {currencyDisplay(billableItem.unitPrice)}/

@@ -3,9 +3,10 @@ import type { EditRateById, UpdateRateInput } from 'types/graphql'
 import type { RWGqlError } from '@cedarjs/forms'
 
 import { useAuth } from 'src/auth'
+import SelectActionCell from 'src/components/Action/SelectActionCell'
+import SelectMaterialCell from 'src/components/Material/SelectMaterialCell'
 import SelectMeasurementUnitCell from 'src/components/MeasurementUnit/SelectMeasurementUnitCell'
 import RateForm from 'src/components/Rate/RateForm'
-import SelectServiceCell from 'src/components/Service/SelectServiceCell'
 
 type FormRate = NonNullable<EditRateById['rate']>
 
@@ -26,10 +27,14 @@ const RateFormWrapper = (props: RateFormWrapperProps) => {
       error={props.error}
       loading={props.loading}
       authorId={currentUser?.id}
-      serviceId={props.rate?.serviceId}
+      actionId={props.rate?.actionId}
+      materialId={props.rate?.materialId}
       unitId={props.rate?.unitId}
-      ServiceDropdown={({ value, onChange }) => (
-        <SelectServiceCell onSelect={onChange} selectedId={value} />
+      ActionDropdown={({ value, onChange }) => (
+        <SelectActionCell onSelect={onChange} selectedId={value} />
+      )}
+      MaterialDropdown={({ value, onChange }) => (
+        <SelectMaterialCell onSelect={onChange} selectedId={value} />
       )}
       UnitDropdown={({ value, onChange }) => (
         <SelectMeasurementUnitCell onSelect={onChange} selectedId={value} />

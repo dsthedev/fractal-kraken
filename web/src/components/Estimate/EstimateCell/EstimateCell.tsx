@@ -68,12 +68,17 @@ export const QUERY: TypedDocumentNode<
           symbol
           fullName
         }
-        service {
+        action {
           id
-          action
-          material
-          context
+          name
+          description
         }
+        material {
+          id
+          name
+          description
+        }
+        pricingType
         notes
         unitPrice
         subtotal

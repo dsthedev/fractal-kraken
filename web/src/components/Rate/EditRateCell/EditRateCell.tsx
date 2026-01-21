@@ -19,7 +19,8 @@ export const QUERY: TypedDocumentNode<EditRateById> = gql`
   query EditRateById($id: Int!) {
     rate: rate(id: $id) {
       id
-      serviceId
+      actionId
+      materialId
       unitId
       subAmount
       retailAmount
@@ -29,10 +30,15 @@ export const QUERY: TypedDocumentNode<EditRateById> = gql`
       description
       createdAt
       updatedAt
-      service {
-        action
-        material
-        context
+      action {
+        id
+        name
+        description
+      }
+      material {
+        id
+        name
+        description
       }
       unit {
         fullName
@@ -50,7 +56,8 @@ const UPDATE_RATE_MUTATION: TypedDocumentNode<
   mutation UpdateRateMutation($id: Int!, $input: UpdateRateInput!) {
     updateRate(id: $id, input: $input) {
       id
-      serviceId
+      actionId
+      materialId
       unitId
       subAmount
       retailAmount
@@ -89,8 +96,7 @@ export const Success = ({ rate }: CellSuccessProps<EditRateById>) => {
     <div className="rw-segment">
       <header className="rw-segment-header">
         <h2 className="rw-heading rw-heading-secondary">
-          {rate?.service.action} {rate?.service.material}{' '}
-          {rate?.service.context}{' '}
+          {rate.action?.name} {rate.material?.name}{' '}
         </h2>
       </header>
       <div className="rw-segment-main">

@@ -54,10 +54,9 @@ const BillableItem = ({ billableItem }: Props) => {
         <table className="rw-table">
           <tbody>
             <tr>
-              <th>Service</th>
+              <th className="text-left">Action | Material</th>
               <td>
-                {formatEnum(billableItem.service?.action)}{' '}
-                {billableItem.service?.material} {billableItem.service?.context}
+                {billableItem.action?.name} {billableItem.material?.name}
               </td>
             </tr>
             <tr>

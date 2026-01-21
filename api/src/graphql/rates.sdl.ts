@@ -3,8 +3,10 @@ export const schema = gql`
 
   type Rate {
     id: Int!
-    serviceId: Int!
-    service: Service!
+    actionId: Int
+    action: Action
+    materialId: Int
+    material: Material
     unitId: Int!
     unit: MeasurementUnit!
     subAmount: Decimal!
@@ -39,7 +41,8 @@ export const schema = gql`
   }
 
   input CreateRateInput {
-    serviceId: Int!
+    actionId: Int
+    materialId: Int
     unitId: Int!
     subAmount: Decimal!
     retailAmount: Decimal!
@@ -50,7 +53,8 @@ export const schema = gql`
   }
 
   input UpdateRateInput {
-    serviceId: Int
+    actionId: Int
+    materialId: Int
     unitId: Int
     subAmount: Decimal
     retailAmount: Decimal
@@ -61,7 +65,8 @@ export const schema = gql`
   }
 
   input ImportRateInput {
-    serviceId: Int!
+    actionId: Int
+    materialId: Int
     unitId: Int!
     subAmount: Decimal!
     retailAmount: Decimal!

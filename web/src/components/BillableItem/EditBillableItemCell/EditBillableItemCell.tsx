@@ -19,7 +19,8 @@ export const QUERY: TypedDocumentNode<EditBillableItemById> = gql`
   query EditBillableItemById($id: Int!) {
     billableItem: billableItem(id: $id) {
       id
-      serviceId
+      actionId
+      materialId
       unitId
       unitPrice
       pricingType
@@ -44,7 +45,8 @@ const UPDATE_BILLABLE_ITEM_MUTATION: TypedDocumentNode<
   ) {
     updateBillableItem(id: $id, input: $input) {
       id
-      serviceId
+      actionId
+      materialId
       unitId
       unitPrice
       pricingType

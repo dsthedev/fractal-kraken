@@ -14,7 +14,14 @@ export const billableItems: QueryResolvers['billableItems'] = () => {
       authorId: context.currentUser?.id,
     },
     orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
-  })
+    include: {
+      action: true,
+      material: true,
+      unit: true,
+      author: true,
+      estimate: true,
+    },
+  }) as unknown as any
 }
 
 export const billableItem: QueryResolvers['billableItem'] = ({ id }) => {
@@ -23,14 +30,31 @@ export const billableItem: QueryResolvers['billableItem'] = ({ id }) => {
       id,
       authorId: context.currentUser?.id,
     },
-  })
+    include: {
+      action: true,
+      material: true,
+      unit: true,
+      author: true,
+      estimate: true,
+    },
+  }) as unknown as any
 }
 
 export const createBillableItem: MutationResolvers['createBillableItem'] = ({
   input,
 }) => {
+  // Sanitize input: remove any nested relation objects (e.g., legacy `service`)
+  const {
+    action: _action,
+    material: _material,
+    unit: _unit,
+    author: _author,
+    estimate: _estimate,
+    ...data
+  } = input as any
+
   return db.billableItem.create({
-    data: input,
+    data,
   })
 }
 
@@ -38,8 +62,20 @@ export const updateBillableItem: MutationResolvers['updateBillableItem'] = ({
   id,
   input,
 }) => {
+  // Sanitize update input similarly to create
+  const {
+    service,
+    serviceId,
+    action: _action,
+    material: _material,
+    unit: _unit,
+    author: _author,
+    estimate: _estimate,
+    ...data
+  } = input as any
+
   return db.billableItem.update({
-    data: input,
+    data,
     where: { id },
   })
 }
@@ -53,8 +89,11 @@ export const deleteBillableItem: MutationResolvers['deleteBillableItem'] = ({
 }
 
 export const BillableItem: BillableItemRelationResolvers = {
-  service: (_obj, { root }) => {
-    return db.billableItem.findUnique({ where: { id: root?.id } }).service()
+  action: (_obj, { root }) => {
+    return db.billableItem.findUnique({ where: { id: root?.id } }).action()
+  },
+  material: (_obj, { root }) => {
+    return db.billableItem.findUnique({ where: { id: root?.id } }).material()
   },
   unit: (_obj, { root }) => {
     return db.billableItem.findUnique({ where: { id: root?.id } }).unit()

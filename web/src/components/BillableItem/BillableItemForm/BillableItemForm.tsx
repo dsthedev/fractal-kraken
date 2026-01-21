@@ -39,7 +39,11 @@ interface BillableItemFormProps {
   authorId?: string
   serviceId?: number
   unitId?: number
-  ServiceDropdown: React.ComponentType<{
+  ActionDropdown: React.ComponentType<{
+    value?: number
+    onChange: (id: number) => void
+  }>
+  MaterialDropdown: React.ComponentType<{
     value?: number
     onChange: (id: number) => void
   }>
@@ -84,12 +88,16 @@ const BillableItemForm = ({
   authorId,
   serviceId,
   unitId,
-  ServiceDropdown,
+  ActionDropdown,
+  MaterialDropdown,
   UnitDropdown,
 }: BillableItemFormProps) => {
-  const [selectedService, setSelectedService] = React.useState<
+  const [selectedAction, setSelectedAction] = React.useState<
     number | undefined
-  >(serviceId ?? billableItem?.serviceId)
+  >(serviceId ?? billableItem?.actionId)
+  const [selectedMaterial, setSelectedMaterial] = React.useState<
+    number | undefined
+  >(billableItem?.materialId ?? undefined)
   const [selectedUnit, setSelectedUnit] = React.useState<number | undefined>(
     unitId ?? billableItem?.unitId
   )
@@ -118,12 +126,17 @@ const BillableItemForm = ({
 
   // Keep selected IDs in sync if props change
   React.useEffect(() => {
-    if (serviceId !== undefined) setSelectedService(serviceId)
+    if (serviceId !== undefined) setSelectedAction(serviceId)
   }, [serviceId])
 
   React.useEffect(() => {
     if (unitId !== undefined) setSelectedUnit(unitId)
   }, [unitId])
+
+  React.useEffect(() => {
+    if (billableItem?.materialId !== undefined)
+      setSelectedMaterial(billableItem.materialId)
+  }, [billableItem?.materialId])
 
   const handlePriceOrQuantityChange = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -199,12 +212,12 @@ const BillableItemForm = ({
   }
 
   const onSubmit = (data: FormBillableItem) => {
-    const finalServiceId = selectedService
+    const finalActionId = selectedAction
     const finalUnitId = selectedUnit
     const finalAuthorId = authorId ?? String(data.authorId)
 
-    if (!finalServiceId || !finalUnitId) {
-      throw new Error('Service and Unit must be selected before saving')
+    if (!finalActionId || !finalUnitId) {
+      throw new Error('Action and Unit must be selected before saving')
     }
     if (!finalAuthorId) {
       throw new Error('Author ID is required')
@@ -215,7 +228,7 @@ const BillableItemForm = ({
       id: _id,
       createdAt: _createdAt,
       updatedAt: _updatedAt,
-      service: _service,
+      action: _action,
       unit: _unit,
       author: _author,
       estimate: _estimate,
@@ -225,7 +238,8 @@ const BillableItemForm = ({
     onSave(
       {
         ...inputData,
-        serviceId: finalServiceId,
+        actionId: finalActionId,
+        materialId: selectedMaterial,
         unitId: finalUnitId,
         authorId: finalAuthorId,
       },
@@ -254,45 +268,21 @@ const BillableItemForm = ({
         {/* Service + Unit Row (Dropdowns) */}
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 flex gap-2 items-end">
-            <Button
-              variant="outline"
-              className="-translate-y-2"
-              size="sm"
-              type="button"
-              onClick={() => {
-                if (selectedService) {
-                  navigate(routes.editService({ id: selectedService }))
-                }
-              }}
-              disabled={!selectedService}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <div className="flex-1">
-              <ServiceDropdown
-                value={selectedService}
-                onChange={setSelectedService}
+            <div>
+              <ActionDropdown
+                value={selectedAction}
+                onChange={setSelectedAction}
+              />
+            </div>
+            <div>
+              <MaterialDropdown
+                value={selectedMaterial}
+                onChange={setSelectedMaterial}
               />
             </div>
           </div>
-          <div className="flex-1 flex gap-2 items-end border-l pl-4">
-            <div className="flex-1">
-              <UnitDropdown value={selectedUnit} onChange={setSelectedUnit} />
-            </div>
-            <Button
-              variant="outline"
-              className="-translate-y-2"
-              size="sm"
-              type="button"
-              onClick={() => {
-                if (selectedUnit) {
-                  navigate(routes.editMeasurementUnit({ id: selectedUnit }))
-                }
-              }}
-              disabled={!selectedUnit}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
+          <div>
+            <UnitDropdown value={selectedUnit} onChange={setSelectedUnit} />
           </div>
         </div>
 

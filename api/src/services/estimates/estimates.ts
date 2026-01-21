@@ -13,6 +13,22 @@ export const estimates: QueryResolvers['estimates'] = () => {
     where: {
       authorId: context.currentUser?.id,
     },
+    include: {
+      installerEntity: true,
+      clientEntity: true,
+      retailerEntity: true,
+      author: true,
+      entity: true,
+      billableItems: {
+        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+        include: {
+          action: true,
+          material: true,
+          unit: true,
+          author: true,
+        },
+      },
+    },
   })
 }
 
@@ -21,6 +37,22 @@ export const estimate: QueryResolvers['estimate'] = ({ id }) => {
     where: {
       id,
       authorId: context.currentUser?.id,
+    },
+    include: {
+      installerEntity: true,
+      clientEntity: true,
+      retailerEntity: true,
+      author: true,
+      entity: true,
+      billableItems: {
+        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+        include: {
+          action: true,
+          material: true,
+          unit: true,
+          author: true,
+        },
+      },
     },
   })
 }
