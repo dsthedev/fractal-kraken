@@ -10,7 +10,6 @@ import {
   FieldError,
   Label,
   TextField,
-  SelectField,
   TextAreaField,
   Submit,
 } from '@cedarjs/forms'
@@ -18,16 +17,16 @@ import {
 // ============================================================================
 // ENUM OPTIONS
 // ============================================================================
-const DIMENSION_OPTIONS = [
-  { value: 'LINEAR', label: 'Linear' },
-  { value: 'SQUARE', label: 'Square' },
-  { value: 'CUBIC', label: 'Cubic' },
-  { value: 'VOLUME', label: 'Volume' },
-  { value: 'TEMPORAL', label: 'Temporal' },
-  { value: 'COUNT', label: 'Count' },
-  { value: 'AREA', label: 'Area' },
-  { value: 'CUSTOM', label: 'Custom' },
-] as const
+// const DIMENSION_OPTIONS = [
+//   { value: 'LINEAR', label: 'Linear' },
+//   { value: 'SQUARE', label: 'Square' },
+//   { value: 'CUBIC', label: 'Cubic' },
+//   { value: 'VOLUME', label: 'Volume' },
+//   { value: 'TEMPORAL', label: 'Temporal' },
+//   { value: 'COUNT', label: 'Count' },
+//   { value: 'AREA', label: 'Area' },
+//   { value: 'CUSTOM', label: 'Custom' },
+// ] as const
 
 // ============================================================================
 // FORM TYPES
@@ -162,7 +161,7 @@ const MeasurementUnitForm = (props: MeasurementUnitFormProps) => {
         </div>
 
         {/* Dimension dropdown */}
-        <Label
+        {/* <Label
           name="dimension"
           className="rw-label"
           errorClassName="rw-label rw-label-error"
@@ -182,7 +181,7 @@ const MeasurementUnitForm = (props: MeasurementUnitFormProps) => {
             </option>
           ))}
         </SelectField>
-        <FieldError name="dimension" className="rw-field-error" />
+        <FieldError name="dimension" className="rw-field-error" /> */}
 
         {/* Description textarea */}
         <Label
@@ -202,7 +201,7 @@ const MeasurementUnitForm = (props: MeasurementUnitFormProps) => {
         <FieldError name="description" className="rw-field-error" />
 
         {/* 50/50: Conversion factor + Base unit */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label
               name="conversionFactor"
@@ -237,7 +236,7 @@ const MeasurementUnitForm = (props: MeasurementUnitFormProps) => {
             />
             <FieldError name="baseUnit" className="rw-field-error" />
           </div>
-        </div>
+        </div> */}
 
         <div className="rw-button-group">
           <Submit disabled={props.loading} className="rw-button rw-button-blue">

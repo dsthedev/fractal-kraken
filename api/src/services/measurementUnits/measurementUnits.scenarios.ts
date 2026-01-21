@@ -8,7 +8,7 @@ export const standard = defineScenario<Prisma.MeasurementUnitCreateArgs>({
       data: {
         fullName: 'String',
         pluralName: 'String',
-        dimension: 'LINEAR',
+        // dimension: 'LINEAR',
         category: 'LENGTH',
         updatedAt: '2026-01-10T01:48:41.115Z',
       },
@@ -17,7 +17,7 @@ export const standard = defineScenario<Prisma.MeasurementUnitCreateArgs>({
       data: {
         fullName: 'String',
         pluralName: 'String',
-        dimension: 'LINEAR',
+        // dimension: 'LINEAR',
         category: 'LENGTH',
         updatedAt: '2026-01-10T01:48:41.115Z',
       },

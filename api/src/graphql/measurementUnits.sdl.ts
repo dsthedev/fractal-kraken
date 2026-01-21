@@ -6,24 +6,24 @@ export const schema = gql`
     shortName: String
     symbol: String
     notation: String
-    dimension: UnitDimension!
+    # dimension: UnitDimension!
     description: String
-    conversionFactor: Float
-    baseUnit: String
+    # conversionFactor: Float
+    # baseUnit: String
     createdAt: DateTime!
     updatedAt: DateTime!
   }
 
-  enum UnitDimension {
-    LINEAR
-    SQUARE
-    CUBIC
-    VOLUME
-    TEMPORAL
-    COUNT
-    AREA
-    CUSTOM
-  }
+  # enum UnitDimension {
+  #   LINEAR
+  #   SQUARE
+  #   CUBIC
+  #   VOLUME
+  #   TEMPORAL
+  #   COUNT
+  #   AREA
+  #   CUSTOM
+  # }
 
   enum UnitCategory {
     LENGTH
@@ -45,10 +45,10 @@ export const schema = gql`
     shortName: String
     symbol: String
     notation: String
-    dimension: UnitDimension!
+    # dimension: UnitDimension!
     description: String
-    conversionFactor: Float
-    baseUnit: String
+    # conversionFactor: Float
+    # baseUnit: String
   }
 
   input UpdateMeasurementUnitInput {
@@ -57,10 +57,10 @@ export const schema = gql`
     shortName: String
     symbol: String
     notation: String
-    dimension: UnitDimension
+    # # dimension: UnitDimension
     description: String
-    conversionFactor: Float
-    baseUnit: String
+    # conversionFactor: Float
+    # baseUnit: String
   }
 
   type Mutation {

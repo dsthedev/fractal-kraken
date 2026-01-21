@@ -16,7 +16,7 @@ import { toast } from '@cedarjs/web/toast'
 import MeasurementUnitForm from 'src/components/MeasurementUnit/MeasurementUnitForm'
 
 export const QUERY: TypedDocumentNode<EditMeasurementUnitById> = gql`
-  query EditMeasurementUnitById($id: Int!) {
+  query EditMeasurementUnitCellById($id: Int!) {
     measurementUnit: measurementUnit(id: $id) {
       id
       fullName
@@ -24,10 +24,7 @@ export const QUERY: TypedDocumentNode<EditMeasurementUnitById> = gql`
       shortName
       symbol
       notation
-      dimension
       description
-      conversionFactor
-      baseUnit
       createdAt
       updatedAt
     }
@@ -38,7 +35,7 @@ const UPDATE_MEASUREMENT_UNIT_MUTATION: TypedDocumentNode<
   EditMeasurementUnitById,
   UpdateMeasurementUnitMutationVariables
 > = gql`
-  mutation UpdateMeasurementUnitMutation(
+  mutation UpdateMeasurementUnitCellMutation(
     $id: Int!
     $input: UpdateMeasurementUnitInput!
   ) {
@@ -49,10 +46,7 @@ const UPDATE_MEASUREMENT_UNIT_MUTATION: TypedDocumentNode<
       shortName
       symbol
       notation
-      dimension
       description
-      conversionFactor
-      baseUnit
       createdAt
       updatedAt
     }

@@ -74,7 +74,7 @@ const UPDATE_SERVICE_MUTATION: TypedDocumentNode<
 
 // Query and mutation for MeasurementUnit
 const UNIT_QUERY: TypedDocumentNode<EditMeasurementUnitById> = gql`
-  query EditMeasurementUnitById($id: Int!) {
+  query RateFormUnitById($id: Int!) {
     measurementUnit: measurementUnit(id: $id) {
       id
       fullName
@@ -82,10 +82,7 @@ const UNIT_QUERY: TypedDocumentNode<EditMeasurementUnitById> = gql`
       shortName
       symbol
       notation
-      dimension
       description
-      conversionFactor
-      baseUnit
       createdAt
       updatedAt
     }
@@ -96,7 +93,7 @@ const UPDATE_UNIT_MUTATION: TypedDocumentNode<
   EditMeasurementUnitById,
   UpdateMeasurementUnitMutationVariables
 > = gql`
-  mutation UpdateMeasurementUnitMutation(
+  mutation UpdateRateFormUnitMutation(
     $id: Int!
     $input: UpdateMeasurementUnitInput!
   ) {
@@ -107,10 +104,7 @@ const UPDATE_UNIT_MUTATION: TypedDocumentNode<
       shortName
       symbol
       notation
-      dimension
       description
-      conversionFactor
-      baseUnit
       createdAt
       updatedAt
     }

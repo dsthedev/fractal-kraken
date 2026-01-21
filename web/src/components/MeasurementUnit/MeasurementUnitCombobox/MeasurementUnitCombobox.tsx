@@ -24,7 +24,7 @@ type MeasurementUnit = {
   pluralName: string
   shortName?: string | null
   symbol?: string | null
-  dimension: string
+  // dimension: string
   description?: string | null
 }
 

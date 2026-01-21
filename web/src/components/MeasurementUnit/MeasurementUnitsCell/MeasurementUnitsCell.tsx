@@ -25,10 +25,10 @@ export const QUERY: TypedDocumentNode<
       shortName
       symbol
       notation
-      dimension
+      # dimension
       description
-      conversionFactor
-      baseUnit
+      # conversionFactor
+      # baseUnit
       createdAt
       updatedAt
     }
@@ -73,8 +73,8 @@ export const Success = ({
       unit.shortName || '',
       unit.symbol || '',
       unit.description || '',
-      unit.baseUnit || '',
-      unit.dimension || '',
+      // unit.baseUnit || '',
+      // unit.dimension || '',
       unit.category || '',
     ]
       .join(' ')

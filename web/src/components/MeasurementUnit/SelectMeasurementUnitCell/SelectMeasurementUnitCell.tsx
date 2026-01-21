@@ -23,10 +23,10 @@ export const QUERY: TypedDocumentNode<
       shortName
       symbol
       notation
-      dimension
+      # dimension
       description
-      conversionFactor
-      baseUnit
+      # conversionFactor
+      # baseUnit
       createdAt
       updatedAt
     }

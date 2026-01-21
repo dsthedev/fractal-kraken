@@ -53,10 +53,11 @@ model MeasurementUnit {
   shortName        String? // sqft - Abbreviated name of the unit of measurement.
   symbol           String? // ft² - Symbolic notation used for the unit of measurement.
   notation         String? // ' - Notation used for the unit (e.g., feet is ' and inches is ").
-  dimension        UnitDimension // Dimension of the unit (e.g., linear, square, cubic).
   description      String? // Square feet is a unit of area measurement. - Detailed description of the unit.
-  conversionFactor Float? // 0.092903 - Factor for converting to a standard unit.
-  baseUnit         String? // meter - The base unit of measurement related to this unit.
+
+  // dimension        UnitDimension // Dimension of the unit (e.g., linear, square, cubic).
+  // conversionFactor Float? // 0.092903 - Factor for converting to a standard unit.
+  // baseUnit         String? // meter - The base unit of measurement related to this unit.
 
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt

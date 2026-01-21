@@ -9,8 +9,6 @@ import { useMutation } from '@cedarjs/web'
 import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
-import { formatEnum, timeTag } from 'src/lib/formatters.js'
-
 const DELETE_MEASUREMENT_UNIT_MUTATION: TypedDocumentNode<
   DeleteMeasurementUnitMutation,
   DeleteMeasurementUnitMutationVariables
@@ -78,22 +76,22 @@ const MeasurementUnit = ({ measurementUnit }: Props) => {
               <th>Notation</th>
               <td>{measurementUnit.notation}</td>
             </tr>
-            <tr>
+            {/* <tr>
               <th>Dimension</th>
               <td>{formatEnum(measurementUnit.dimension)}</td>
-            </tr>
+            </tr> */}
             <tr>
               <th>Description</th>
               <td>{measurementUnit.description}</td>
             </tr>
-            <tr>
+            {/* <tr>
               <th>Conversion factor</th>
               <td>{measurementUnit.conversionFactor}</td>
             </tr>
             <tr>
               <th>Base unit</th>
               <td>{measurementUnit.baseUnit}</td>
-            </tr>
+            </tr> */}
           </tbody>
         </table>
       </div>
