@@ -422,7 +422,6 @@ const RateForm = ({
               name="context"
               label="Context"
               defaultValue={(rate as any)?.context}
-              rows={2}
             />
           </div>
           <div className="flex-col flex-1">

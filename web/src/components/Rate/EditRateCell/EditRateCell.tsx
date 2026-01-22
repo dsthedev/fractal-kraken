@@ -19,6 +19,7 @@ export const QUERY: TypedDocumentNode<EditRateById> = gql`
   query EditRateById($id: Int!) {
     rate: rate(id: $id) {
       id
+      context
       actionId
       materialId
       unitId
@@ -56,6 +57,7 @@ const UPDATE_RATE_MUTATION: TypedDocumentNode<
   mutation UpdateRateMutation($id: Int!, $input: UpdateRateInput!) {
     updateRate(id: $id, input: $input) {
       id
+      context
       actionId
       materialId
       unitId
