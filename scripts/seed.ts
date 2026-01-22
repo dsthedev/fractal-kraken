@@ -262,36 +262,36 @@ const seedBillableItems = async () => {
 
 // Ordered model seed configuration. Adjust this array to control clean/seed order.
 const modelSeeds = [
-  {
-    key: 'users',
-    sequenceName: 'User',
-    clean: async () => db.user.deleteMany({}),
-    seed: seedUsers,
-  },
-  {
-    key: 'measurementUnits',
-    sequenceName: 'MeasurementUnit',
-    clean: async () => db.measurementUnit.deleteMany({}),
-    seed: seedMeasurementUnits,
-  },
+  // {
+  //   key: 'users',
+  //   sequenceName: 'User',
+  //   clean: async () => db.user.deleteMany({}),
+  //   seed: seedUsers,
+  // },
+  // {
+  //   key: 'measurementUnits',
+  //   sequenceName: 'MeasurementUnit',
+  //   clean: async () => db.measurementUnit.deleteMany({}),
+  //   seed: seedMeasurementUnits,
+  // },
   // {
   //   key: 'services',
   //   sequenceName: 'Service',
   //   clean: async () => db.service.deleteMany({}),
   //   seed: seedServices,
   // },
-  {
-    key: 'materials',
-    sequenceName: 'Material',
-    clean: async () => db.material.deleteMany({}),
-    seed: seedMaterials,
-  },
-  {
-    key: 'actions',
-    sequenceName: 'Action',
-    clean: async () => db.action.deleteMany({}),
-    seed: seedActions,
-  },
+  // {
+  //   key: 'materials',
+  //   sequenceName: 'Material',
+  //   clean: async () => db.material.deleteMany({}),
+  //   seed: seedMaterials,
+  // },
+  // {
+  //   key: 'actions',
+  //   sequenceName: 'Action',
+  //   clean: async () => db.action.deleteMany({}),
+  //   seed: seedActions,
+  // },
   // {
   //   key: 'rates',
   //   sequenceName: 'Rate',

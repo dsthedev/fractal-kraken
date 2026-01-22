@@ -416,25 +416,28 @@ const RateForm = ({
           </div>
         </div>
 
-        <div className="mt-4">
-          <LabeledField
-            name="estimatedMinutesPerUnit"
-            label="Estimated Minutes per Unit"
-            defaultValue={rate?.estimatedMinutesPerUnit}
-            type="number"
-          />
-          <ComputedRateDisplay rate={rate} selectedUnit={selectedUnit} />
+        <div className="mt-4 flex flex-col sm:flex-row justify-stretch gap-4">
+          <div className="flex-col flex-1">
+            <LabeledField
+              name="context"
+              label="Context"
+              defaultValue={(rate as any)?.context}
+              rows={2}
+            />
+          </div>
+          <div className="flex-col flex-1">
+            <LabeledField
+              name="estimatedMinutesPerUnit"
+              label="Estimated Minutes per Unit"
+              defaultValue={rate?.estimatedMinutesPerUnit}
+              type="number"
+            />
+          </div>
         </div>
 
         <div className="mt-4">
-          <LabeledField
-            name="context"
-            label="Context"
-            defaultValue={(rate as any)?.context}
-            textarea
-            rows={2}
-          />
-
+          <ComputedRateDisplay rate={rate} selectedUnit={selectedUnit} />
+          <hr className="my-4" />
           <LabeledField
             name="description"
             label="Description"

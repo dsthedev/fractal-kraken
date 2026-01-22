@@ -17,6 +17,7 @@ export const QUERY: TypedDocumentNode<FindRates, FindRatesVariables> = gql`
       id
       actionId
       materialId
+      context
       unitId
       subAmount
       retailAmount

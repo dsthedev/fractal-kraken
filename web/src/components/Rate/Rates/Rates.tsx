@@ -73,6 +73,7 @@ type SortableField =
   | 'unit.fullName'
   | 'action.name'
   | 'material.name'
+  | 'retailAmount'
 
 const RatesList = ({ rates }: FindRates) => {
   const [sortConfig, setSortConfig] = useState<{
@@ -80,6 +81,7 @@ const RatesList = ({ rates }: FindRates) => {
     direction: 'asc' | 'desc'
   }>({ key: 'id', direction: 'asc' })
   const [openDrawerId, setOpenDrawerId] = useState<number | null>(null)
+  const [showRetail, setShowRetail] = useState<boolean>(true)
 
   const [deleteRate] = useMutation(DELETE_RATE_MUTATION, {
     onCompleted: () => {
@@ -182,13 +184,26 @@ const RatesList = ({ rates }: FindRates) => {
           {filteredRates.length} of {rates.length}
           <span className="hidden sm:block">rates</span>
         </div>
-        {/* filter removed - showing all rates */}
+      </div>
+
+      <div className="flex justify-end mb-2">
+        <span className="text-muted-foreground">
+          Show rates for:{' '}
+          <Button
+            size="sm"
+            variant="outline"
+            className="ml-2"
+            onClick={() => setShowRetail((s) => !s)}
+            title="Toggle shown rate"
+          >
+            {showRetail ? 'Sub' : 'Retail'}
+          </Button>
+        </span>
       </div>
 
       <table className="rw-table">
         <thead>
           <tr>
-            {/* <th>Id</th> */}
             <th
               onClick={() => handleSort('action.name')}
               className="cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800 text-left"
@@ -205,32 +220,20 @@ const RatesList = ({ rates }: FindRates) => {
               <SortIcon columnKey="unit.fullName" />
             </th>
             <th
-              onClick={() => handleSort('subAmount')}
-              className="cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800 text-center"
+              onClick={() =>
+                handleSort(showRetail ? 'retailAmount' : 'subAmount')
+              }
+              className="cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800 text-right"
             >
-              Rate
-              <SortIcon columnKey="subAmount" />
+              {showRetail ? 'Retail Rate' : 'Sub Rate'}
+              <SortIcon columnKey={showRetail ? 'retailAmount' : 'subAmount'} />
             </th>
-            {/* <th
-              onClick={() => handleSort('retailAmount')}
-              className="cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800 text-left"
-            >
-              Retail
-              <SortIcon columnKey="retailAmount" />
-            </th> */}
-            {/* <th>Currency</th> */}
-            {/* <th>Author id</th> */}
-            {/* <th className="hidden sm:table-cell text-left">{'eMpU'}</th> */}
-            {/* <th>Description</th> */}
-            {/* <th>Created at</th> */}
-            {/* <th>Updated at</th> */}
             <th className="hidden sm:table-cell">&nbsp;</th>
           </tr>
         </thead>
         <tbody>
           {sortedRates.map((rate) => (
             <tr key={rate.id}>
-              {/* <td>{truncate(rate.id)}</td> */}
               <td>
                 <button
                   type="button"
@@ -239,42 +242,41 @@ const RatesList = ({ rates }: FindRates) => {
                     fullServiceDisplay(
                       rate.action?.name,
                       rate.material?.name,
-                      'details'
+                      rate?.context
                     )
                   }
-                  className="text-left text-sm font-medium text-blue-600 hover:underline sm:hidden"
+                  className="text-left text-lg font-medium text-blue-600 hover:underline sm:hidden"
                   onClick={() => setOpenDrawerId(rate.id)}
                 >
                   {fullServiceDisplay(
                     rate.action?.name,
                     rate.material?.name,
                     ''
-                  )}
+                  )}{' '}
+                  <span className="text-sm text-muted-foreground">
+                    {rate?.context}
+                  </span>
                 </button>
                 <span className="hidden sm:inline">{rate.action?.name}</span>
               </td>
               <td className="hidden sm:table-cell">
-                {rate.material?.name || '...'}
+                {rate.material?.name || '...'}{' '}
+                <span className="text-sm text-muted-foreground">
+                  {rate?.context}
+                </span>
               </td>
               <td className="hidden sm:table-cell text-muted-foreground">
                 {rate.unit?.shortName || '...'}
               </td>
-              {/* <td>{truncate(rate.serviceId)}</td>
-              <td>{truncate(rate.unitId)}</td> */}
-              <td className="flex flex-col sm:flex-row sm:gap-4 text-right sm:justify-center">
-                <span className="text-muted-foreground">
-                  {currencyDisplay(rate.subAmount)}
-                </span>
-                <strong>{currencyDisplay(rate.retailAmount)}</strong>
+              <td className="flex justify-end text-right text-xl">
+                {showRetail ? (
+                  <strong>{currencyDisplay(rate.retailAmount)}</strong>
+                ) : (
+                  <strong className="text-muted-foreground">
+                    {currencyDisplay(rate.subAmount)}
+                  </strong>
+                )}
               </td>
-              {/* <td>{truncate(rate.currency)}</td> */}
-              {/* <td>{truncate(rate.authorId)}</td> */}
-              {/* <td className="hidden sm:table-cell text-left">
-                {truncate(rate.estimatedMinutesPerUnit)}
-              </td>
-              {/* <td>{truncate(rate.description)}</td> */}
-              {/* <td>{timeTag(rate.createdAt)}</td> */}
-              {/* <td>{timeTag(rate.updatedAt)}</td> */}
               <td className="print:hidden hidden sm:table-cell">
                 <nav className="rw-table-actions flex gap-2 justify-end">
                   <Link
@@ -318,8 +320,9 @@ const RatesList = ({ rates }: FindRates) => {
                       {fullServiceDisplay(
                         rate.action?.name,
                         rate.material?.name,
-                        rate.action?.description ?? rate.material?.description
-                      )}
+                        ''
+                      )}{' '}
+                      <span className="text-sm text-muted-foreground"></span>
                     </DrawerTitle>
                   </DrawerHeader>
                   <div className="px-4 pb-6 space-y-4">
