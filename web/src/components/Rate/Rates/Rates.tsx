@@ -234,7 +234,7 @@ const RatesList = ({ rates }: FindRates) => {
         <tbody>
           {sortedRates.map((rate) => (
             <tr key={rate.id}>
-              <td>
+              <td className="text-lg font-semibold">
                 <button
                   type="button"
                   title={
@@ -253,22 +253,22 @@ const RatesList = ({ rates }: FindRates) => {
                     rate.material?.name,
                     ''
                   )}{' '}
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm print:text-xs text-muted-foreground">
                     {rate?.context}
                   </span>
                 </button>
                 <span className="hidden sm:inline">{rate.action?.name}</span>
               </td>
-              <td className="hidden sm:table-cell">
+              <td className="hidden sm:table-cell text-xl print:text-lg">
                 {rate.material?.name || '...'}{' '}
-                <span className="text-sm text-muted-foreground">
+                <span className="text-sm print:text-xs text-muted-foreground">
                   {rate?.context}
                 </span>
               </td>
-              <td className="hidden sm:table-cell text-muted-foreground">
+              <td className="hidden sm:table-cell text-xs text-muted-foreground">
                 {rate.unit?.shortName || '...'}
               </td>
-              <td className="flex justify-end text-right text-xl">
+              <td className="flex justify-end text-right text-xl print:text-lg">
                 {showRetail ? (
                   <strong>{currencyDisplay(rate.retailAmount)}</strong>
                 ) : (
