@@ -75,6 +75,7 @@ export const Success = ({
       r.material?.name,
       r.action?.description,
       r.material?.description,
+      r.context,
       r.unit?.fullName,
       r.estimatedMinutesPerUnit,
       r.description,

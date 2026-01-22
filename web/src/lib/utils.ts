@@ -30,19 +30,28 @@ export function formatRatePerHour(opts: {
       : unitObj.pluralName || 'units'
     : 'units'
 
+  // `perHr` is a multiplier: how many units are completed per hour.
+  // To get dollar-per-hour, multiply the per-unit amount by the multiplier.
   const subStr =
     subAmount !== undefined && subAmount !== null && !isNaN(Number(subAmount))
-      ? `$${(Number(subAmount) / perHr).toFixed(2)}`
+      ? `$${(Number(subAmount) * perHr).toFixed(2)}`
       : null
 
   const retailStr =
     retailAmount !== undefined &&
     retailAmount !== null &&
     !isNaN(Number(retailAmount))
-      ? `$${(Number(retailAmount) / perHr).toFixed(2)}`
+      ? `$${(Number(retailAmount) * perHr).toFixed(2)}`
       : null
 
-  return `${perHr.toFixed(1)} ${unitLabel} / hr${subStr && retailStr ? ` ~ ${subStr} / ${retailStr} per hr` : ''}`
+  // If we have dollar amounts, show them as "$x.xx per hr" and include
+  // the units-per-hour in parentheses. Otherwise show the units-per-hour.
+  if (subStr || retailStr) {
+    const amounts = [subStr, retailStr].filter(Boolean).join(' ~ ')
+    return `${amounts} per hr (${perHr.toFixed(1)} ${unitLabel} / hr)`
+  }
+
+  return `${perHr.toFixed(1)} ${unitLabel} / hr`
 }
 
 export default formatRatePerHour
