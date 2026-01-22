@@ -187,7 +187,7 @@ const RatesList = ({ rates }: FindRates) => {
       </div>
 
       <div className="flex justify-end mb-2">
-        <span className="text-muted-foreground">
+        <span className="text-muted-foreground print:hidden">
           Show rates for:{' '}
           <Button
             size="sm"
