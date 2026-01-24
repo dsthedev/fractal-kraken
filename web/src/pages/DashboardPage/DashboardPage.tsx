@@ -42,7 +42,7 @@ const DashboardPage = () => {
           <Button variant="outline" size="sm" asChild>
             <Link to={routes.rates()}>Rates</Link>
           </Button>
-          <hr className="my-6" />
+          <span className="flex border-b-1 my-6" />
           If you already have rates set up, you can start managing{' '}
           <Button variant="outline" size="sm" asChild>
             <Link to={routes.estimates()}>Estimates</Link>

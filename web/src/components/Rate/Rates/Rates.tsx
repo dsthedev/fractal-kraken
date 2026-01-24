@@ -211,13 +211,11 @@ const RatesList = ({ rates }: FindRates) => {
               Action
               <SortIcon columnKey="action.name" />
             </th>
-            <th className="hidden sm:table-cell text-left">Material</th>
             <th
-              onClick={() => handleSort('unit.fullName')}
-              className="hidden sm:table-cell cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800 text-left"
+              onClick={() => handleSort('material.name')}
+              className="hidden sm:table-cell text-left"
             >
-              Unit
-              <SortIcon columnKey="unit.fullName" />
+              Material
             </th>
             <th
               onClick={() =>
@@ -227,6 +225,14 @@ const RatesList = ({ rates }: FindRates) => {
             >
               {showRetail ? 'Retail Rate' : 'Sub Rate'}
               <SortIcon columnKey={showRetail ? 'retailAmount' : 'subAmount'} />
+            </th>
+            <th>&nbsp;</th>
+            <th
+              onClick={() => handleSort('unit.fullName')}
+              className="hidden sm:table-cell cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800 text-left"
+            >
+              Unit
+              <SortIcon columnKey="unit.fullName" />
             </th>
             <th className="hidden sm:table-cell">&nbsp;</th>
           </tr>
@@ -265,9 +271,6 @@ const RatesList = ({ rates }: FindRates) => {
                   {rate?.context}
                 </span>
               </td>
-              <td className="hidden sm:table-cell text-xs text-muted-foreground">
-                {rate.unit?.shortName || '...'}
-              </td>
               <td className="flex justify-end text-right text-xl print:text-lg">
                 {showRetail ? (
                   <strong>{currencyDisplay(rate.retailAmount)}</strong>
@@ -276,6 +279,10 @@ const RatesList = ({ rates }: FindRates) => {
                     {currencyDisplay(rate.subAmount)}
                   </strong>
                 )}
+              </td>
+              <td className="text-muted-foreground">/</td>
+              <td className="table-cell text-xs text-muted-foreground">
+                {rate.unit?.shortName || '...'}
               </td>
               <td className="print:hidden hidden sm:table-cell">
                 <nav className="rw-table-actions flex gap-2 justify-end">

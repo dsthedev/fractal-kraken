@@ -49,7 +49,7 @@ const MaterialCombobox = ({
 
   return (
     <div className="space-y-2">
-      <label htmlFor="material-combobox" className="block text-sm font-medium">
+      <label htmlFor="material-combobox" className="block font-light">
         {label}
       </label>
       <Popover open={open} onOpenChange={setOpen}>

@@ -19,8 +19,8 @@ import {
 import { navigate, routes } from '@cedarjs/router'
 import { useQuery } from '@cedarjs/web'
 import type { TypedDocumentNode } from '@cedarjs/web'
-import { toast } from '@cedarjs/web/toast'
 
+import { useAuth } from 'src/auth'
 import { Button } from 'src/components/ui/button'
 import { CurrencyField } from 'src/components/ui/currency-field'
 import formatRatePerHour from 'src/lib/utils'
@@ -140,7 +140,7 @@ const LabeledField = ({
   <>
     <Label
       name={name}
-      className="rw-label"
+      className="block font-light"
       errorClassName="rw-label rw-label-error"
     >
       {label ?? name}
@@ -220,7 +220,7 @@ const ComputedRateDisplay = ({
   })
 
   return (
-    <span className="text-sm text-muted-foreground mt-2 block">{text}</span>
+    <span className="text-lg text-muted-foreground mt-2 block">{text}</span>
   )
 }
 
@@ -246,6 +246,7 @@ const RateForm = ({
   const [selectedUnit, setSelectedUnit] = React.useState<number | undefined>(
     unitId ?? rate?.unitId
   )
+  const { currentUser } = useAuth()
 
   React.useEffect(() => {
     if (actionId !== undefined) setSelectedAction(actionId)
@@ -322,20 +323,22 @@ const RateForm = ({
           asNumber={false}
         />
 
-        <div className="flex gap-4 mt-2">
-          <div className="flex-1 flex gap-2 items-end">
-            <Button
-              variant="outline"
-              type="button"
-              onClick={() => {
-                if (selectedAction) {
-                  navigate(routes.editAction({ id: selectedAction }))
-                }
-              }}
-              disabled={!selectedAction}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+          <div className="flex gap-2 items-end">
+            {currentUser.roles.includes('superadmin') && (
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => {
+                  if (selectedAction) {
+                    navigate(routes.editAction({ id: selectedAction }))
+                  }
+                }}
+                disabled={!selectedAction}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            )}
             <div className="flex-1">
               {/* Action dropdown */}
               {/* @ts-ignore */}
@@ -346,19 +349,21 @@ const RateForm = ({
             </div>
           </div>
 
-          <div className="flex-1 flex gap-2 items-end">
-            <Button
-              variant="outline"
-              type="button"
-              onClick={() => {
-                if (selectedMaterial) {
-                  navigate(routes.editMaterial({ id: selectedMaterial }))
-                }
-              }}
-              disabled={!selectedMaterial}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
+          <div className="flex gap-2 items-end">
+            {currentUser.roles.includes('superadmin') && (
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => {
+                  if (selectedMaterial) {
+                    navigate(routes.editMaterial({ id: selectedMaterial }))
+                  }
+                }}
+                disabled={!selectedMaterial}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            )}
             <div className="flex-1">
               {/* Material dropdown */}
               {/* @ts-ignore */}
@@ -369,22 +374,32 @@ const RateForm = ({
             </div>
           </div>
 
-          <div className="flex-1 flex gap-2 items-end border-l pl-4">
+          <div className="flex flex-col">
+            <LabeledField
+              name="context"
+              label="Context"
+              defaultValue={(rate as any)?.context}
+            />
+          </div>
+
+          <div className="flex gap-2 items-end">
             <div className="flex-1">
               <UnitDropdown value={selectedUnit} onChange={setSelectedUnit} />
             </div>
-            <Button
-              variant="outline"
-              type="button"
-              onClick={() => {
-                if (selectedUnit) {
-                  navigate(routes.editMeasurementUnit({ id: selectedUnit }))
-                }
-              }}
-              disabled={!selectedUnit}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
+            {currentUser.roles.includes('superadmin') && (
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => {
+                  if (selectedUnit) {
+                    navigate(routes.editMeasurementUnit({ id: selectedUnit }))
+                  }
+                }}
+                disabled={!selectedUnit}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
 
@@ -416,26 +431,7 @@ const RateForm = ({
           </div>
         </div>
 
-        <div className="mt-4 flex flex-col sm:flex-row justify-stretch gap-4">
-          <div className="flex-col flex-1">
-            <LabeledField
-              name="context"
-              label="Context"
-              defaultValue={(rate as any)?.context}
-            />
-          </div>
-          <div className="flex-col flex-1">
-            <LabeledField
-              name="estimatedMinutesPerUnit"
-              label="Estimated Minutes per Unit"
-              defaultValue={rate?.estimatedMinutesPerUnit}
-              type="number"
-            />
-          </div>
-        </div>
-
         <div className="mt-4">
-          <ComputedRateDisplay rate={rate} selectedUnit={selectedUnit} />
           <hr className="my-4" />
           <LabeledField
             name="description"
@@ -444,12 +440,34 @@ const RateForm = ({
             textarea
             rows={4}
           />
+
+          <div className="mt-4 flex flex-col md:flex-row gap-4 items-start">
+            <div className="flex-shrink-0 w-full md:w-40">
+              <LabeledField
+                name="estimatedMinutesPerUnit"
+                label="~ Minutes per Unit"
+                defaultValue={rate?.estimatedMinutesPerUnit}
+                type="number"
+              />
+              <p className="text-xs text-muted-foreground">
+                Approximate time (in minutes) to complete one unit of work.
+              </p>
+            </div>
+            <div className="flex-1">
+              <ComputedRateDisplay rate={rate} selectedUnit={selectedUnit} />
+            </div>
+          </div>
         </div>
 
-        <div className="rw-button-group mt-6">
-          <Submit disabled={loading} className="rw-button rw-button-blue">
-            Save
-          </Submit>
+        <div className="my-6 mx-auto flex w-full justify-center">
+          <Button
+            asChild
+            variant="sky"
+            size="lg"
+            className="w-full md:max-w-md"
+          >
+            <Submit disabled={loading}>Save</Submit>
+          </Button>
         </div>
       </Form>
     </div>

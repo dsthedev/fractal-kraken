@@ -1344,7 +1344,10 @@ const EstimateForm = (props: EstimateFormProps) => {
                                 <CommandItem
                                   key={rate.id}
                                   value={buildRateSearchValue(rate)}
-                                  onSelect={() => setSelectedQuickAddRate(rate)}
+                                  onSelect={() => {
+                                    setSelectedQuickAddRate(rate)
+                                    setOpenQuickAddCombobox(false)
+                                  }}
                                 >
                                   {buildRateLabel(rate)}
                                 </CommandItem>

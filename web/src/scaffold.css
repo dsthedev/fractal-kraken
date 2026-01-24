@@ -60,10 +60,10 @@
   @apply print:hidden w-full;
 }
 .rw-heading.rw-heading-primary {
-  @apply text-2xl;
+  @apply text-xl;
 }
 .rw-heading.rw-heading-secondary {
-  @apply text-xl;
+  @apply text-2xl p-2 md:p-4 md:text-4xl;
 }
 .rw-heading .rw-link {
   @apply no-underline;

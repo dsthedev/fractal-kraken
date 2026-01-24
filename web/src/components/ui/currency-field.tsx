@@ -94,7 +94,7 @@ export const CurrencyField = ({
       <Label
         name={name}
         htmlFor={name}
-        className="rw-label"
+        className="block font-light"
         errorClassName="rw-label rw-label-error"
       >
         {label ?? name}
