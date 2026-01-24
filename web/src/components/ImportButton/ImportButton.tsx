@@ -41,10 +41,13 @@ export const ImportButton = ({
 
   const [importRates] = useMutation(IMPORT_RATES_MUTATION, {
     onCompleted: (data) => {
-      const msg = data.importRates.message + ` (${data.importRates.count} rates imported)`
+      const msg =
+        data.importRates.message + ` (${data.importRates.count} rates imported)`
       if (data.importRates.errors && data.importRates.errors.length) {
         // show primary message and log detailed errors to console, and show toast with brief note
-        toast.error(msg + ` — ${data.importRates.errors.length} errors (see console)`)
+        toast.error(
+          msg + ` — ${data.importRates.errors.length} errors (see console)`
+        )
         console.groupCollapsed('Import errors')
         data.importRates.errors.forEach((e: string) => console.error(e))
         console.groupEnd()
@@ -128,7 +131,8 @@ export const ImportButton = ({
         const unitId = row.unitId ? parseInt(row.unitId) : NaN
 
         // Only include rows with valid required fields: must have unitId, amounts, and at least one of actionId/materialId/serviceId
-        const hasServiceKey = !isNaN(actionId) || !isNaN(materialId) || !isNaN(serviceId)
+        const hasServiceKey =
+          !isNaN(actionId) || !isNaN(materialId) || !isNaN(serviceId)
         if (
           hasServiceKey &&
           !isNaN(unitId) &&
@@ -156,30 +160,44 @@ export const ImportButton = ({
               rateData.estimatedMinutesPerUnit = eMpU
             }
           }
-            if (row.description && row.description !== '') {
-              rateData.description = row.description
-            }
+          if (row.description && row.description !== '') {
+            rateData.description = row.description
+          }
 
-            // Support unit name fields from export CSV so server can resolve units
-            const unitFullName = row['unit.fullName'] || row['unit_fullName'] || row['unitFullName']
-            const unitShortName = row['unit.shortName'] || row['unit_shortName'] || row['unitShortName']
-            if (unitFullName && unitFullName !== '') rateData.unitFullName = unitFullName
-            if (unitShortName && unitShortName !== '') rateData.unitShortName = unitShortName
+          // Support unit name fields from export CSV so server can resolve units
+          const unitFullName =
+            row['unit.fullName'] || row['unit_fullName'] || row['unitFullName']
+          const unitShortName =
+            row['unit.shortName'] ||
+            row['unit_shortName'] ||
+            row['unitShortName']
+          if (unitFullName && unitFullName !== '')
+            rateData.unitFullName = unitFullName
+          if (unitShortName && unitShortName !== '')
+            rateData.unitShortName = unitShortName
 
-            // Support action/material names from CSV (headers like "action.name" / "material.name")
-            const actionName = row['action.name'] || row['action_name'] || row['action']
-            const materialName = row['material.name'] || row['material_name'] || row['material']
-            if (actionName && actionName !== '') {
-              rateData.actionName = actionName
-            }
-            if (materialName && materialName !== '') {
-              rateData.materialName = materialName
-            }
+          // Support action/material names from CSV (headers like "action.name" / "material.name")
+          const actionName =
+            row['action.name'] || row['action_name'] || row['action']
+          const materialName =
+            row['material.name'] || row['material_name'] || row['material']
+          if (actionName && actionName !== '') {
+            rateData.actionName = actionName
+          }
+          if (materialName && materialName !== '') {
+            rateData.materialName = materialName
+          }
 
           data.push(rateData)
         } else {
           skippedCount++
-          console.log('Skipped row:', { actionId, materialId, serviceId, unitId, row })
+          console.log('Skipped row:', {
+            actionId,
+            materialId,
+            serviceId,
+            unitId,
+            row,
+          })
         }
       }
 

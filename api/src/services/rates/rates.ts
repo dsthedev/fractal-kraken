@@ -119,11 +119,15 @@ export const importRates: MutationResolvers['importRates'] = async ({
         })
         if (!existingAction) {
           if (rateData.actionName) {
-            const byName = await db.action.findFirst({ where: { name: rateData.actionName } })
+            const byName = await db.action.findFirst({
+              where: { name: rateData.actionName },
+            })
             if (byName) {
               rateData.actionId = byName.id
             } else {
-              const created = await db.action.create({ data: { name: rateData.actionName } })
+              const created = await db.action.create({
+                data: { name: rateData.actionName },
+              })
               rateData.actionId = created.id
             }
           } else {
@@ -132,11 +136,15 @@ export const importRates: MutationResolvers['importRates'] = async ({
           }
         }
       } else if (rateData.actionName) {
-        const byName = await db.action.findFirst({ where: { name: rateData.actionName } })
+        const byName = await db.action.findFirst({
+          where: { name: rateData.actionName },
+        })
         if (byName) {
           rateData.actionId = byName.id
         } else {
-          const created = await db.action.create({ data: { name: rateData.actionName } })
+          const created = await db.action.create({
+            data: { name: rateData.actionName },
+          })
           rateData.actionId = created.id
         }
       }
@@ -145,14 +153,20 @@ export const importRates: MutationResolvers['importRates'] = async ({
       // and no materialName is present, drop materialId so the import can still
       // proceed (material is optional on Rate).
       if (rateData.materialId) {
-        const existingMaterial = await db.material.findUnique({ where: { id: rateData.materialId } })
+        const existingMaterial = await db.material.findUnique({
+          where: { id: rateData.materialId },
+        })
         if (!existingMaterial) {
           if (rateData.materialName) {
-            const byName = await db.material.findFirst({ where: { name: rateData.materialName } })
+            const byName = await db.material.findFirst({
+              where: { name: rateData.materialName },
+            })
             if (byName) {
               rateData.materialId = byName.id
             } else {
-              const created = await db.material.create({ data: { name: rateData.materialName } })
+              const created = await db.material.create({
+                data: { name: rateData.materialName },
+              })
               rateData.materialId = created.id
             }
           } else {
@@ -160,11 +174,15 @@ export const importRates: MutationResolvers['importRates'] = async ({
           }
         }
       } else if (rateData.materialName) {
-        const byName = await db.material.findFirst({ where: { name: rateData.materialName } })
+        const byName = await db.material.findFirst({
+          where: { name: rateData.materialName },
+        })
         if (byName) {
           rateData.materialId = byName.id
         } else {
-          const created = await db.material.create({ data: { name: rateData.materialName } })
+          const created = await db.material.create({
+            data: { name: rateData.materialName },
+          })
           rateData.materialId = created.id
         }
       }
@@ -174,20 +192,28 @@ export const importRates: MutationResolvers['importRates'] = async ({
       // attempt to match by `unitFullName` or `unitShortName` if provided in
       // the payload. If still not found, throw a descriptive error for this row.
       if (rateData.unitId !== undefined && rateData.unitId !== null) {
-        const existingUnit = await db.measurementUnit.findUnique({ where: { id: rateData.unitId } })
+        const existingUnit = await db.measurementUnit.findUnique({
+          where: { id: rateData.unitId },
+        })
         if (!existingUnit) {
           // attempt match by provided unitFullName/shortName
           let foundUnit = null
           if (rateData.unitShortName) {
-            foundUnit = await db.measurementUnit.findFirst({ where: { shortName: rateData.unitShortName } })
+            foundUnit = await db.measurementUnit.findFirst({
+              where: { shortName: rateData.unitShortName },
+            })
           }
           if (!foundUnit && rateData.unitFullName) {
-            foundUnit = await db.measurementUnit.findFirst({ where: { fullName: rateData.unitFullName } })
+            foundUnit = await db.measurementUnit.findFirst({
+              where: { fullName: rateData.unitFullName },
+            })
           }
           if (foundUnit) {
             rateData.unitId = foundUnit.id
           } else {
-            throw new Error(`Unit with id ${rateData.unitId} not found and no matching unit name provided`)
+            throw new Error(
+              `Unit with id ${rateData.unitId} not found and no matching unit name provided`
+            )
           }
         }
       } else {
@@ -233,8 +259,12 @@ export const importRates: MutationResolvers['importRates'] = async ({
         if (rateData.materialId !== undefined && rateData.materialId !== null) {
           createPayload.materialId = rateData.materialId
         }
-        if (rateData.estimatedMinutesPerUnit !== undefined && rateData.estimatedMinutesPerUnit !== null) {
-          createPayload.estimatedMinutesPerUnit = rateData.estimatedMinutesPerUnit
+        if (
+          rateData.estimatedMinutesPerUnit !== undefined &&
+          rateData.estimatedMinutesPerUnit !== null
+        ) {
+          createPayload.estimatedMinutesPerUnit =
+            rateData.estimatedMinutesPerUnit
         }
         if (rateData.description !== undefined) {
           createPayload.description = rateData.description
@@ -247,7 +277,10 @@ export const importRates: MutationResolvers['importRates'] = async ({
         if (!createPayload.unitId) {
           throw new Error('unitId could not be resolved or is missing')
         }
-        if (createPayload.subAmount === undefined || createPayload.retailAmount === undefined) {
+        if (
+          createPayload.subAmount === undefined ||
+          createPayload.retailAmount === undefined
+        ) {
           throw new Error('subAmount and retailAmount are required')
         }
 
