@@ -60,6 +60,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from 'src/components/ui/drawer'
+import { Input } from 'src/components/ui/input'
 import {
   Popover,
   PopoverTrigger,
@@ -357,6 +358,22 @@ const EstimateForm = (props: EstimateFormProps) => {
   const [billableItems, setBillableItems] = useState<BillableItem[]>([])
   // Quick-add temporarily disabled while billable item action/material integration is tested
   const [isDesktop, setIsDesktop] = useState(false)
+
+  // Delete confirmation dialog state
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [billableItemToDelete, setBillableItemToDelete] = useState<
+    number | null
+  >(null)
+
+  const openDeleteConfirm = (id: number) => {
+    setBillableItemToDelete(id)
+    setDeleteConfirmOpen(true)
+  }
+
+  const closeDeleteConfirm = () => {
+    setBillableItemToDelete(null)
+    setDeleteConfirmOpen(false)
+  }
 
   const weekNumber = getWeekNumber(new Date())
 
@@ -1188,7 +1205,7 @@ const EstimateForm = (props: EstimateFormProps) => {
                           size="sm"
                           className="flex-1"
                           title="Remove"
-                          onClick={() => handleDeleteBillableItem(item.id)}
+                          onClick={() => openDeleteConfirm(item.id)}
                         >
                           <Trash2Icon className="h-4 w-4 mr-1" />
                           Delete
@@ -1261,7 +1278,7 @@ const EstimateForm = (props: EstimateFormProps) => {
                             variant="outline"
                             size="icon"
                             title="Remove"
-                            onClick={() => handleDeleteBillableItem(item.id)}
+                            onClick={() => openDeleteConfirm(item.id)}
                           >
                             <Trash2Icon className="h-4 w-4" />
                           </Button>
@@ -1274,101 +1291,111 @@ const EstimateForm = (props: EstimateFormProps) => {
             )}
 
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2">
-              <div className="flex flex-col gap-3 w-full">
+              <div className="flex flex-col gap-4 w-full">
                 {/* Quick add controls */}
-                <div className="flex flex-col md:flex-row md:items-end gap-2">
-                  {/* Quantity */}
-                  <div className="flex items-center gap-2 md:flex-shrink-0">
-                    <label
-                      htmlFor="quickAddQuantity"
-                      className="text-xs text-muted-foreground whitespace-nowrap"
-                    >
-                      Qty
-                    </label>
-                    <input
-                      id="quickAddQuantity"
-                      type="number"
-                      min="1"
-                      value={quickAddQuantity}
-                      onChange={(e) =>
-                        setQuickAddQuantity(
-                          Math.max(1, parseInt(e.target.value) || 1)
-                        )
-                      }
-                      className="rw-input w-20"
-                      disabled={!isPersistedEstimate}
-                      onFocus={(e) => e.target.select()}
-                    />
+                <div className="flex flex-1 flex-col md:flex-row items-end gap-4 justify-between">
+                  <div className="flex flex-row items-end">
+                    {/* Quantity */}
+                    <div className="flex-0 gap-2 mr-2">
+                      <label
+                        htmlFor="quickAddQuantity"
+                        className="text-xs text-muted-foreground whitespace-nowrap"
+                      >
+                        Qty
+                      </label>
+                      <Input
+                        id="quickAddQuantity"
+                        type="number"
+                        min="1"
+                        value={quickAddQuantity}
+                        onChange={(e) =>
+                          setQuickAddQuantity(
+                            Math.max(1, parseInt(e.target.value) || 1)
+                          )
+                        }
+                        className=" w-20"
+                        disabled={!isPersistedEstimate}
+                        onFocus={(e) => e.target.select()}
+                      />
+                    </div>
+
+                    {/* Rate combobox */}
+                    <div className="flex-1">
+                      <Popover
+                        open={openQuickAddCombobox}
+                        onOpenChange={setOpenQuickAddCombobox}
+                      >
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={openQuickAddCombobox}
+                            className={cn(
+                              'w-full',
+                              !selectedQuickAddRate && 'text-muted-foreground'
+                            )}
+                            disabled={!isPersistedEstimate || ratesLoading}
+                          >
+                            {selectedQuickAddRate
+                              ? buildRateLabel(selectedQuickAddRate)
+                              : 'Select from Rates...'}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="p-0 w-fit">
+                          <Command>
+                            <CommandInput placeholder="Search rates..." />
+                            <CommandEmpty>No rates found.</CommandEmpty>
+                            <CommandList>
+                              <CommandGroup>
+                                {ratesData?.rates
+                                  ?.slice()
+                                  .sort((a, b) => {
+                                    const aAction = a.action?.name || ''
+                                    const bAction = b.action?.name || ''
+                                    const actionCompare =
+                                      aAction.localeCompare(bAction)
+                                    if (actionCompare !== 0)
+                                      return actionCompare
+                                    const aMaterial = a.material?.name || ''
+                                    const bMaterial = b.material?.name || ''
+                                    return aMaterial.localeCompare(bMaterial)
+                                  })
+                                  .map((rate) => (
+                                    <CommandItem
+                                      key={rate.id}
+                                      value={buildRateSearchValue(rate)}
+                                      onSelect={() => {
+                                        setSelectedQuickAddRate(rate)
+                                        setOpenQuickAddCombobox(false)
+                                      }}
+                                    >
+                                      {buildRateLabel(rate)}
+                                    </CommandItem>
+                                  ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                   </div>
 
-                  {/* Rate combobox */}
-                  <Popover
-                    open={openQuickAddCombobox}
-                    onOpenChange={setOpenQuickAddCombobox}
-                  >
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={openQuickAddCombobox}
-                        className={cn(
-                          'flex-1',
-                          !selectedQuickAddRate && 'text-muted-foreground'
-                        )}
-                        disabled={!isPersistedEstimate || ratesLoading}
-                      >
-                        {selectedQuickAddRate
-                          ? buildRateLabel(selectedQuickAddRate)
-                          : 'Quick Add from Rates…'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="p-0 w-fit">
-                      <Command>
-                        <CommandInput placeholder="Search rates..." />
-                        <CommandEmpty>No rates found.</CommandEmpty>
-                        <CommandList>
-                          <CommandGroup>
-                            {ratesData?.rates
-                              ?.slice()
-                              .sort((a, b) => {
-                                const aAction = a.action?.name || ''
-                                const bAction = b.action?.name || ''
-                                const actionCompare =
-                                  aAction.localeCompare(bAction)
-                                if (actionCompare !== 0) return actionCompare
-                                const aMaterial = a.material?.name || ''
-                                const bMaterial = b.material?.name || ''
-                                return aMaterial.localeCompare(bMaterial)
-                              })
-                              .map((rate) => (
-                                <CommandItem
-                                  key={rate.id}
-                                  value={buildRateSearchValue(rate)}
-                                  onSelect={() => {
-                                    setSelectedQuickAddRate(rate)
-                                    setOpenQuickAddCombobox(false)
-                                  }}
-                                >
-                                  {buildRateLabel(rate)}
-                                </CommandItem>
-                              ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-
                   {/* Add selected rate */}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full md:w-auto md:flex-shrink-0"
-                    onClick={() => handleQuickAddFromRate(selectedQuickAddRate)}
-                    disabled={!isPersistedEstimate || !selectedQuickAddRate}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add
-                  </Button>
+                  <div className="flex">
+                    <Button
+                      type="button"
+                      variant="lime"
+                      size="xl"
+                      className="w-full md:w-auto md:flex-shrink-0"
+                      onClick={() =>
+                        handleQuickAddFromRate(selectedQuickAddRate)
+                      }
+                      disabled={!isPersistedEstimate || !selectedQuickAddRate}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add from Rate
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Persisted estimate warning */}
@@ -1383,7 +1410,7 @@ const EstimateForm = (props: EstimateFormProps) => {
                 )}
 
                 {/* Add a custom item */}
-                <div className="flex flex-col md:flex-row gap-2">
+                <div className="flex flex-col md:flex-row gap-2 my-2">
                   {isDesktop ? (
                     <Dialog
                       open={openNewBillableItem}
@@ -1604,6 +1631,42 @@ const EstimateForm = (props: EstimateFormProps) => {
           </DrawerContent>
         </Drawer>
       )}
+      {/* Delete confirmation dialog for billable items */}
+      <Dialog
+        open={deleteConfirmOpen}
+        onOpenChange={(open) => {
+          if (!open) closeDeleteConfirm()
+          else setDeleteConfirmOpen(open)
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete line item?</DialogTitle>
+          </DialogHeader>
+          <div className="px-3 pb-3 pt-1">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to delete this billable item? This action
+              cannot be undone if the estimate is saved afterwards.
+            </p>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={closeDeleteConfirm}>
+                No
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={async () => {
+                  if (billableItemToDelete) {
+                    await handleDeleteBillableItem(billableItemToDelete)
+                  }
+                  closeDeleteConfirm()
+                }}
+              >
+                Yes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
