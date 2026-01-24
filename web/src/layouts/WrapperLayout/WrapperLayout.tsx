@@ -4,18 +4,25 @@ import { Wrench } from 'lucide-react'
 
 import { Link, routes } from '@cedarjs/router'
 
+import { useAuth } from 'src/auth'
 import { ModeCycle } from 'src/components/mode-cycle'
+import { Badge } from 'src/components/ui/badge'
 import { Button } from 'src/components/ui/button'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from 'src/components/ui/tooltip'
 import Webtoolsheet from 'src/components/Webtoolsheet/Webtoolsheet'
 import Footer from 'src/layouts/footer'
 import Nav from 'src/layouts/nav'
-
 type WrapperLayoutProps = {
   children?: React.ReactNode
 }
 
 const WrapperLayout = ({ children }: WrapperLayoutProps) => {
   const [webToolsOpen, setWebToolsOpen] = useState(false)
+  const { isAuthenticated, currentUser } = useAuth()
 
   return (
     <div id="wrapper">
@@ -26,21 +33,43 @@ const WrapperLayout = ({ children }: WrapperLayoutProps) => {
           </div>
           <span className="flex-1 ml-4 text-muted-foreground">
             <Button asChild size="sm" variant="ghost">
-              <Link to={routes.home()}>Home</Link>
+              <Link to={routes.home()}>{process.env.PROJECT_NAME}</Link>
             </Button>
           </span>
           <div className="flex-shrink pr-2">
             <div className="flex flex-row gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setWebToolsOpen(true)}
-                aria-label="Open Web Tools"
-                className="relative"
-              >
-                <Wrench />
-                <span className="sr-only">Open Tool Sheet</span>
-              </Button>
+              {isAuthenticated ? (
+                <Badge variant="outline" className="px-4 py-2 text-sm">
+                  Hello, {currentUser?.name || 'User'}!
+                </Badge>
+              ) : (
+                <>
+                  <Button asChild size="sm" variant="sky">
+                    <Link to={routes.login()}>Log In</Link>
+                  </Button>
+                  <Button asChild size="lg" variant="lime">
+                    <Link to={routes.signup()}>Sign Up</Link>
+                  </Button>
+                </>
+              )}
+              <Tooltip>
+                <TooltipTrigger>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setWebToolsOpen(true)}
+                    aria-label="Open Web Tools"
+                    className="relative"
+                  >
+                    <Wrench />
+                    <span className="sr-only">Open Tool Sheet</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Access Quick Contractor Tools</p>
+                </TooltipContent>
+              </Tooltip>
+
               <ModeCycle />
             </div>
           </div>

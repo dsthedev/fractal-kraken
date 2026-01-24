@@ -71,9 +71,13 @@ export const schema = gql`
     actionId: Int
     materialId: Int
     unitId: Int!
+    unitFullName: String
+    unitShortName: String
     subAmount: Decimal!
     retailAmount: Decimal!
     currency: String!
+    actionName: String
+    materialName: String
     estimatedMinutesPerUnit: Int
     description: String
     context: String
@@ -82,6 +86,7 @@ export const schema = gql`
   type ImportResult {
     success: Boolean!
     message: String!
+    errors: [String!]
     count: Int!
   }
 

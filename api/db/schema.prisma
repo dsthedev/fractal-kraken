@@ -34,16 +34,16 @@ model User {
   estimates     Estimate[]
 }
 
-enum UnitDimension {
-  LINEAR
-  SQUARE
-  CUBIC
-  VOLUME
-  TEMPORAL
-  COUNT
-  AREA
-  CUSTOM
-}
+// enum UnitDimension {
+//   LINEAR
+//   SQUARE
+//   CUBIC
+//   VOLUME
+//   TEMPORAL
+//   COUNT
+//   AREA
+//   CUSTOM
+// }
 
 model MeasurementUnit {
   id Int @id @default(autoincrement())
@@ -94,8 +94,8 @@ model Material {
 model Rate {
   id Int @id @default(autoincrement())
 
-  action     Action?   @relation(fields: [actionId], references: [id])
-  actionId   Int?
+  action   Action? @relation(fields: [actionId], references: [id])
+  actionId Int?
 
   material   Material? @relation(fields: [materialId], references: [id])
   materialId Int?
@@ -115,8 +115,8 @@ model Rate {
   estimatedMinutesPerUnit Int?
   description             String?
 
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([authorId])
 }
