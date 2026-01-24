@@ -29,6 +29,7 @@ import {
   timeTagMDY,
   truncate,
 } from 'src/lib/formatters.js'
+import { sortByField, toggleSort } from 'src/lib/sort'
 import { todayAsYYYYMMDD } from 'src/lib/utils'
 
 const DELETE_ESTIMATE_MUTATION: TypedDocumentNode<
@@ -44,6 +45,10 @@ const DELETE_ESTIMATE_MUTATION: TypedDocumentNode<
 
 const EstimatesList = ({ estimates }: FindEstimates) => {
   const [openDrawerId, setOpenDrawerId] = useState<number | null>(null)
+  const [sortConfig, setSortConfig] = useState<{
+    key: string
+    direction: 'asc' | 'desc'
+  }>({ key: 'id', direction: 'asc' })
 
   const [deleteEstimate] = useMutation(DELETE_ESTIMATE_MUTATION, {
     onCompleted: () => {
@@ -65,19 +70,46 @@ const EstimatesList = ({ estimates }: FindEstimates) => {
     }
   }
 
+  const handleSort = (key: string) => {
+    setSortConfig((c) => toggleSort(c, key))
+  }
+
+  const SortIcon = ({ columnKey }: { columnKey: string }) => {
+    if (sortConfig.key !== columnKey) return null
+    return sortConfig.direction === 'asc' ? ' ↑' : ' ↓'
+  }
+
+  const sortedEstimates = sortByField(
+    estimates,
+    sortConfig.key,
+    sortConfig.direction
+  )
+
   return (
     <div className="rw-segment rw-table-wrapper-responsive">
       <table className="rw-table">
         <thead>
           <tr>
-            <th className="hidden sm:table-cell">Title</th>
-            <th className="hidden sm:table-cell">Total</th>
+            <th
+              onClick={() => handleSort('title')}
+              className="table-cell text-left cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              Title
+              <SortIcon columnKey="title" />
+            </th>
+            <th
+              onClick={() => handleSort('total')}
+              className="table-cell text-right cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              Total
+              <SortIcon columnKey="total" />
+            </th>
             <th className="hidden sm:table-cell">Created at</th>
             <th className="hidden sm:table-cell">&nbsp;</th>
           </tr>
         </thead>
         <tbody>
-          {estimates.map((estimate) => (
+          {sortedEstimates.map((estimate) => (
             <tr key={estimate.id}>
               <td>
                 <button
@@ -101,7 +133,7 @@ const EstimatesList = ({ estimates }: FindEstimates) => {
                   </Link>
                 </Button>
               </td>
-              <td className="hidden sm:table-cell">
+              <td className="table-cell text-right">
                 {currencyDisplay(estimate.total)}
               </td>
               <td className="hidden sm:table-cell">

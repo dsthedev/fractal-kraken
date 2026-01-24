@@ -41,6 +41,7 @@ import {
   currencyDisplay,
   fullServiceDisplay,
 } from 'src/lib/formatters.js'
+import { sortByField, toggleSort } from 'src/lib/sort'
 import { todayAsYYYYMMDD } from 'src/lib/utils'
 
 const DELETE_RATE_MUTATION: TypedDocumentNode<
@@ -77,7 +78,7 @@ type SortableField =
 
 const RatesList = ({ rates }: FindRates) => {
   const [sortConfig, setSortConfig] = useState<{
-    key: SortableField
+    key: string
     direction: 'asc' | 'desc'
   }>({ key: 'id', direction: 'asc' })
   const [openDrawerId, setOpenDrawerId] = useState<number | null>(null)
@@ -112,58 +113,18 @@ const RatesList = ({ rates }: FindRates) => {
   })
 
   const handleSort = (key: SortableField) => {
-    if (sortConfig.key === key) {
-      // Cycle through: asc -> desc -> remove (back to default)
-      if (sortConfig.direction === 'asc') {
-        setSortConfig({ key, direction: 'desc' })
-      } else {
-        // Reset to default
-        setSortConfig({ key: 'id', direction: 'asc' })
-      }
-    } else {
-      // New column clicked, start with asc
-      setSortConfig({ key, direction: 'asc' })
-    }
+    setSortConfig((c) => toggleSort(c, key as string))
   }
 
   // No filter UI: show all rates
 
-  // Helper function to get nested property value
-  const getNestedValue = (obj: any, path: SortableField) => {
-    if (path === 'action.name') {
-      return obj.action?.name
-    }
-    if (path === 'unit.fullName') {
-      return obj.unit?.fullName
-    }
-    return obj[path as keyof any]
-  }
-
   const filteredRates = rates
 
-  const sortedRates = [...filteredRates].sort((a, b) => {
-    const aValue = getNestedValue(a, sortConfig.key)
-    const bValue = getNestedValue(b, sortConfig.key)
-
-    if (aValue === null || aValue === undefined) return 1
-    if (bValue === null || bValue === undefined) return -1
-
-    // Handle string comparison (case-insensitive)
-    if (typeof aValue === 'string' && typeof bValue === 'string') {
-      const comparison = aValue
-        .toLowerCase()
-        .localeCompare(bValue.toLowerCase())
-      return sortConfig.direction === 'asc' ? comparison : -comparison
-    }
-
-    if (aValue < bValue) {
-      return sortConfig.direction === 'asc' ? -1 : 1
-    }
-    if (aValue > bValue) {
-      return sortConfig.direction === 'asc' ? 1 : -1
-    }
-    return 0
-  })
+  const sortedRates = sortByField(
+    filteredRates,
+    sortConfig.key,
+    sortConfig.direction
+  )
 
   const onDeleteClick = (id: DeleteRateMutationVariables['id']) => {
     if (confirm('Are you sure you want to delete rate ' + id + '?')) {
@@ -213,9 +174,10 @@ const RatesList = ({ rates }: FindRates) => {
             </th>
             <th
               onClick={() => handleSort('material.name')}
-              className="hidden sm:table-cell text-left"
+              className="hidden sm:table-cell cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800 text-left"
             >
               Material
+              <SortIcon columnKey="material.name" />
             </th>
             <th
               onClick={() =>
