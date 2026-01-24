@@ -116,7 +116,7 @@ const LoginPage = () => {
               </Form>
             </div>
           </div>
-          <div className="rw-login-link">
+          <div className="rw-login-link hidden">
             <span>Don&apos;t have an account?</span>{' '}
             <Link to={routes.signup()} className="rw-link">
               Sign up!

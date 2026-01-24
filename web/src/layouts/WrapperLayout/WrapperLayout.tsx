@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { Wrench } from 'lucide-react'
 
-import { Link, routes } from '@cedarjs/router'
+import { Link, navigate, routes } from '@cedarjs/router'
 
 import { useAuth } from 'src/auth'
 import { ModeCycle } from 'src/components/mode-cycle'
@@ -33,13 +33,15 @@ const WrapperLayout = ({ children }: WrapperLayoutProps) => {
           </div>
           <span className="flex-1 ml-4 text-muted-foreground">
             <Button asChild size="sm" variant="ghost">
-              <Link to={routes.home()}>{process.env.PROJECT_NAME}</Link>
+              <Link to={isAuthenticated ? routes.dashboard() : routes.home()}>
+                {process.env.PROJECT_NAME}
+              </Link>
             </Button>
           </span>
           <div className="flex-shrink pr-2">
-            <div className="flex flex-row gap-2">
+            <div className="flex flex-row gap-2 items-end">
               {isAuthenticated ? (
-                <Badge variant="outline" className="px-4 py-2 text-sm">
+                <Badge variant="outline" className="text-sm px-4 py-1">
                   Hello, {currentUser?.name || 'User'}!
                 </Badge>
               ) : (
@@ -47,13 +49,18 @@ const WrapperLayout = ({ children }: WrapperLayoutProps) => {
                   <Button asChild size="sm" variant="sky">
                     <Link to={routes.login()}>Log In</Link>
                   </Button>
-                  <Button asChild size="lg" variant="lime">
-                    <Link to={routes.signup()}>Sign Up</Link>
+                  <Button
+                    size="lg"
+                    variant="lime"
+                    disabled
+                    onClick={() => navigate(routes.signup())}
+                  >
+                    Sign Up
                   </Button>
                 </>
               )}
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger asChild>
                   <Button
                     variant="outline"
                     size="icon"
