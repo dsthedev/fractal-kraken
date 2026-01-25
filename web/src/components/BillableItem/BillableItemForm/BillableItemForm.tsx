@@ -150,7 +150,8 @@ const BillableItemForm = ({
       : '~0.00 hrs'
   )
   const [hourlyRate, setHourlyRate] = React.useState(
-    billableItem?.estimatedMinutesPerUnit && initialQuantity &&
+    billableItem?.estimatedMinutesPerUnit &&
+      initialQuantity &&
       billableItem?.subtotal
       ? calculateHourlyRate(
           Number(billableItem.subtotal),
