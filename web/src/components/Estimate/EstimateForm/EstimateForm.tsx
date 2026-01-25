@@ -66,7 +66,7 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from 'src/components/ui/popover'
-import { Toggle } from 'src/components/ui/toggle'
+import { ToggleGroup, ToggleGroupItem } from 'src/components/ui/toggle-group'
 import { currencyDisplay } from 'src/lib/formatters.js'
 import { cn, getWeekNumber, buildTitle } from 'src/lib/utils'
 
@@ -653,7 +653,7 @@ const EstimateForm = (props: EstimateFormProps) => {
 
   const recalculateAll = async () => {
     if (billableItems.length === 0) {
-      toast.info('No billable items to recalculate')
+      toast.success('No billable items to recalculate')
       return
     }
 
@@ -685,7 +685,7 @@ const EstimateForm = (props: EstimateFormProps) => {
         )
         toast.success(`Recalculated ${updatedItems.length} item(s)`)
       } else {
-        toast.info('All subtotals already up to date')
+        toast.success('All subtotals already up to date')
       }
     } catch (e: any) {
       toast.error(e?.message || 'Failed to recalculate items')
@@ -1118,20 +1118,22 @@ const EstimateForm = (props: EstimateFormProps) => {
                 </Button>
               </legend>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Pricing:</span>
-                <Toggle
-                  variant="outline"
-                  pressed={pricingType === 'sub'}
-                  onPressedChange={(pressed) =>
-                    setPricingType(pressed ? 'sub' : 'retail')
-                  }
-                  aria-label="Toggle pricing type"
-                  className="h-8"
+                <span className="text-xs text-muted-foreground">
+                  Default Rate:
+                </span>
+                <ToggleGroup
+                  type="single"
+                  value={pricingType}
+                  onValueChange={(v) => setPricingType(v as 'sub' | 'retail')}
+                  className="p-1"
                 >
-                  <span className="text-xs">
-                    {pricingType === 'sub' ? 'Subcontractor' : 'Retailer'}
-                  </span>
-                </Toggle>
+                  <ToggleGroupItem value="retail" className="text-xs">
+                    Retailer
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="sub" className="text-xs">
+                    Subcontractor
+                  </ToggleGroupItem>
+                </ToggleGroup>
               </div>
             </div>
 

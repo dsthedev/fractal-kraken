@@ -19,6 +19,7 @@ import {
 } from '@cedarjs/forms'
 
 import { CurrencyField } from 'src/components/ui/currency-field'
+import { ToggleGroup, ToggleGroupItem } from 'src/components/ui/toggle-group'
 import {
   calculateSubtotal,
   calculateEstimatedHours,
@@ -102,7 +103,8 @@ const BillableItemDerivedMetrics = ({
 
 const BillableItemFormInner = ({
   billableItem,
-  pricingType,
+  isSub,
+  setIsSub,
   ActionDropdown,
   MaterialDropdown,
   UnitDropdown,
@@ -175,22 +177,22 @@ const BillableItemFormInner = ({
         <div className="grid grid-cols-2 gap-4 items-end">
           <div>
             <Label name="pricingType">Pricing type</Label>
-            <select
-              name="pricingType"
-              value={pricingType}
-              disabled
-              className="rw-input w-full"
+            <ToggleGroup
+              type="single"
+              value={isSub ? 'SUB' : 'RETAIL'}
+              onValueChange={(v: string) => setIsSub(v === 'SUB')}
+              disabled={false}
+              className="p-1"
             >
-              <option value="RETAIL">Retail</option>
-              <option value="SUB">Sub</option>
-            </select>
+              <ToggleGroupItem value="RETAIL">Retail</ToggleGroupItem>
+              <ToggleGroupItem value="SUB">Sub</ToggleGroupItem>
+            </ToggleGroup>
 
             <CurrencyField
               name="unitPrice"
               label="Unit price"
               required
               defaultValue={billableItem?.unitPrice ?? 0}
-              onFocus={() => {}}
             />
           </div>
 
@@ -259,11 +261,13 @@ const BillableItemForm = ({
     resolveId(billableItem?.unitId, billableItem?.unit)
   )
 
-  const resolvedPricingType =
+  const initialPricing =
     pricingType ??
     billableItem?.estimate?.pricingType ??
     billableItem?.pricingType ??
     'RETAIL'
+
+  const [isSub, setIsSub] = React.useState(initialPricing === 'SUB')
 
   const onSubmit = (data: BillableItemLike) => {
     if (!selectedAction || !selectedUnit) {
@@ -286,7 +290,7 @@ const BillableItemForm = ({
       materialId: selectedMaterial,
       unitId: selectedUnit,
       authorId: authorId ?? data.authorId,
-      pricingType: resolvedPricingType,
+      pricingType: isSub ? 'SUB' : 'RETAIL',
       quantity: data.quantity ?? 1,
       unitPrice: parseNumber((data as any).unitPrice) ?? 0,
       subtotal: parseNumber((data as any).subtotal) ?? 0,
@@ -302,7 +306,8 @@ const BillableItemForm = ({
       <Form<BillableItemLike> onSubmit={onSubmit} error={error}>
         <BillableItemFormInner
           billableItem={billableItem}
-          pricingType={resolvedPricingType}
+          isSub={isSub}
+          setIsSub={setIsSub}
           ActionDropdown={ActionDropdown}
           MaterialDropdown={MaterialDropdown}
           UnitDropdown={UnitDropdown}
