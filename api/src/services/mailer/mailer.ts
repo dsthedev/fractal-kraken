@@ -104,12 +104,11 @@ export const sendEstimateEmail = async ({
     renderAsync(emailNode, { plainText: true }),
   ])
 
+  // subject: `${estimate.installerEntity?.name || 'Your Contractor'} - Estimate: ${
   await nodemailerTransport.sendMail({
     to: recipientEmail,
     from: process.env.BREVO_SENDER_EMAIL || process.env.NOREPLY_EMAIL,
-    subject: `${estimate.installerEntity?.name || 'Your Contractor'} - Estimate: ${
-      estimate.title || 'Untitled Estimate'
-    }`,
+    subject: `${estimate.installerEntity?.name || 'Your Contractor'} - Estimate`,
     html: htmlContent,
     text: textContent,
   })

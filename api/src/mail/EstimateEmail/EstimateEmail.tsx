@@ -53,22 +53,22 @@ export function EstimateEmail({
     typeof value === 'number' ? `$${value.toFixed(2)}` : '$0.00'
 
   const installerLines = [
-    installer?.name,
+    // installer?.name,
     installer?.contactName,
     installer?.email,
     installer?.phone,
-    [installer?.addressLine1, installer?.addressLine2]
-      .filter(Boolean)
-      .join(', '),
-    [installer?.city, installer?.state].filter(Boolean).join(', '),
-    installer?.postalCode,
-    installer?.country,
+    // [installer?.addressLine1, installer?.addressLine2]
+    //   .filter(Boolean)
+    //   .join(', '),
+    // [installer?.city, installer?.state].filter(Boolean).join(', '),
+    // installer?.postalCode,
+    // installer?.country,
   ].filter(Boolean)
 
   return (
     <Html lang="en">
       <Head />
-      <Preview>{`${contractorName} - Estimate: ${estimateTitle}`}</Preview>
+      <Preview>{`${estimateTitle}`}</Preview>
       <Tailwind>
         <Body className="mx-auto my-auto bg-white font-sans">
           <Container className="mx-auto my-[32px] rounded border border-solid border-gray-200 p-[20px]">
@@ -84,12 +84,6 @@ export function EstimateEmail({
               <Text>
                 This estimate is based on the items we discussed. Please review
                 the details below and reach out if you have any questions.
-              </Text>
-              <Text>
-                You can view the full estimate here:{' '}
-                <Link href={estimateLink} className="text-blue-600 underline">
-                  View Estimate
-                </Link>
               </Text>
             </div>
 
