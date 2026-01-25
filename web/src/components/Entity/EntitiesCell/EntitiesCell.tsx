@@ -8,6 +8,14 @@ import type {
 } from '@cedarjs/web'
 
 import Entities from 'src/components/Entity/Entities'
+import { ImportEntitiesButton } from 'src/components/ImportEntitiesButton/ImportEntitiesButton'
+import { Button } from 'src/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from 'src/components/ui/card'
 import { useSearch } from 'src/contexts/SearchContext'
 
 export const QUERY: TypedDocumentNode<FindEntities, FindEntitiesVariables> =
@@ -38,11 +46,52 @@ export const Loading = () => <div>Loading...</div>
 
 export const Empty = () => {
   return (
-    <div className="rw-text-center">
-      No entities yet.{' '}
-      <Link to={routes.newEntity()} className="rw-link">
-        Create one?
-      </Link>
+    <div className="flex justify-center py-12">
+      <Card className="w-full max-w-md text-center">
+        <CardHeader>
+          <CardTitle>
+            <h2 className="text-4xl">No Entities... Yet!</h2>
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          <div className="space-y-3 text-sm text-muted-foreground">
+            <p>
+              An entity represents any person or business involved in your
+              flooring work. Each entity can have a specific role.
+            </p>
+
+            <div className="rounded-md border p-3 text-left text-sm">
+              <ul className="space-y-1">
+                <li>
+                  <strong>Contractor:</strong> Your business (installer)
+                </li>
+                <li>
+                  <strong>Client:</strong> The customer hiring you
+                </li>
+                <li>
+                  <strong>Retailer:</strong> Where materials are sourced
+                </li>
+                <li>
+                  <strong>Other:</strong> Any additional contacts
+                </li>
+              </ul>
+            </div>
+
+            <p>
+              Track contact information, addresses, and associate them with your
+              estimates and invoices.
+            </p>
+          </div>
+
+          <Button asChild variant="lime" size="lg" className="w-full">
+            <Link to={routes.newEntity()}>Create an Entity</Link>
+          </Button>
+
+          <hr className="my-6" />
+          <ImportEntitiesButton label="Import Entities" refetchQuery={QUERY} />
+        </CardContent>
+      </Card>
     </div>
   )
 }

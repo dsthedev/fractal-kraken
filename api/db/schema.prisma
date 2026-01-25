@@ -32,6 +32,7 @@ model User {
   rates         Rate[]
   billableItems BillableItem[]
   estimates     Estimate[]
+  entities      Entity[]
 }
 
 // enum UnitDimension {
@@ -193,10 +194,14 @@ model Entity {
 
   notes String?
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  usersDefault  User[]   @relation("defaultEntity")
-  usersRetailer User[]   @relation("defaultRetailerEntity")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  authorId String @default()
+  author   User   @relation(fields: [authorId], references: [id])
+
+  usersDefault  User[] @relation("defaultEntity")
+  usersRetailer User[] @relation("defaultRetailerEntity")
 
   // Estimate relations (explicitly named to avoid conflicts)
   estimatesAsInstaller Estimate[] @relation("installerEntity")

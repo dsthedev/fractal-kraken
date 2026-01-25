@@ -38,6 +38,46 @@ export const deleteEntity: MutationResolvers['deleteEntity'] = ({ id }) => {
   })
 }
 
+export const deleteAllEntities: MutationResolvers['deleteAllEntities'] =
+  async () => {
+    const result = await db.entity.deleteMany({})
+    return {
+      success: true,
+      message: 'All entities deleted successfully',
+      count: result.count,
+    }
+  }
+
+export const importEntities: MutationResolvers['importEntities'] = async ({
+  data,
+}) => {
+  const errors: string[] = []
+  let successCount = 0
+
+  for (const entityData of data) {
+    try {
+      await db.entity.create({
+        data: entityData,
+      })
+      successCount++
+    } catch (error) {
+      errors.push(
+        `Failed to import entity "${entityData.name}": ${error.message}`
+      )
+    }
+  }
+
+  return {
+    success: successCount > 0,
+    message:
+      successCount > 0
+        ? 'Entities imported successfully'
+        : 'No entities imported',
+    errors: errors.length > 0 ? errors : null,
+    count: successCount,
+  }
+}
+
 export const Entity: EntityRelationResolvers = {
   usersDefault: (_obj, { root }) => {
     return db.entity.findUnique({ where: { id: root?.id } }).usersDefault()

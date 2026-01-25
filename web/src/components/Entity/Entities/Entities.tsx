@@ -8,6 +8,14 @@ import type {
   EntityType,
 } from 'types/graphql'
 
+type DeleteAllEntitiesMutation = {
+  deleteAllEntities: {
+    success: boolean
+    message: string
+    count: number
+  }
+}
+
 import { Link, routes } from '@cedarjs/router'
 import { useMutation } from '@cedarjs/web'
 import type { TypedDocumentNode } from '@cedarjs/web'
@@ -15,6 +23,18 @@ import { toast } from '@cedarjs/web/toast'
 
 import { QUERY } from 'src/components/Entity/EntitiesCell'
 import { ExportButton } from 'src/components/ExportButton/ExportButton'
+import { ImportEntitiesButton } from 'src/components/ImportEntitiesButton/ImportEntitiesButton'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from 'src/components/ui/alert-dialog'
 import { Button } from 'src/components/ui/button'
 import { Checkbox } from 'src/components/ui/checkbox'
 import {
@@ -46,6 +66,19 @@ const DELETE_ENTITY_MUTATION: TypedDocumentNode<
   mutation DeleteEntityMutation($id: Int!) {
     deleteEntity(id: $id) {
       id
+    }
+  }
+`
+
+const DELETE_ALL_ENTITIES_MUTATION: TypedDocumentNode<
+  DeleteAllEntitiesMutation,
+  Record<string, never>
+> = gql`
+  mutation DeleteAllEntitiesMutation {
+    deleteAllEntities {
+      success
+      message
+      count
     }
   }
 `
@@ -110,6 +143,20 @@ const EntitiesList = ({ entities }: FindEntities) => {
   const [deleteEntity] = useMutation(DELETE_ENTITY_MUTATION, {
     onCompleted: () => {
       toast.success('Entity deleted')
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    },
+    refetchQueries: [{ query: QUERY }],
+    awaitRefetchQueries: true,
+  })
+
+  const [deleteAllEntities] = useMutation(DELETE_ALL_ENTITIES_MUTATION, {
+    onCompleted: (data) => {
+      toast.success(
+        data.deleteAllEntities.message +
+          ` (${data.deleteAllEntities.count} entities deleted)`
+      )
     },
     onError: (error) => {
       toast.error(error.message)
@@ -312,11 +359,39 @@ const EntitiesList = ({ entities }: FindEntities) => {
       ))}
 
       <hr className="mb-6" />
-      <ExportButton
-        label="Export All Entities"
-        data={filteredEntities}
-        filename={`${todayAsYYYYMMDD()}-entities.csv`}
-      />
+      <div className="flex flex-col md:flex-row gap-2">
+        <ExportButton
+          label="Export All Entities"
+          data={filteredEntities}
+          filename={`${todayAsYYYYMMDD()}-entities.csv`}
+        />
+        <ImportEntitiesButton label="Import Entities" refetchQuery={QUERY} />
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" size="sm" className="print:hidden">
+              Delete All Entities
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will delete all your entities. Make sure to export a copy
+                first. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deleteAllEntities()}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete All
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   )
 }
