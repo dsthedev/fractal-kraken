@@ -26,6 +26,7 @@ import {
 import { currencyDisplay, timeTagMDY, truncate } from 'src/lib/formatters.js'
 import { sortByField, toggleSort } from 'src/lib/sort'
 import { todayAsYYYYMMDD } from 'src/lib/utils'
+import { generateCSV } from 'src/lib/csvExport'
 
 const DELETE_ESTIMATE_MUTATION: TypedDocumentNode<
   DeleteEstimateMutation,
@@ -79,6 +80,83 @@ const EstimatesList = ({ estimates }: FindEstimates) => {
     sortConfig.key,
     sortConfig.direction
   )
+
+  const handleExportEstimates = () => {
+    // Transform estimates with billable items into flat rows
+    const exportData: any[] = []
+
+    estimates.forEach((estimate) => {
+      if (!estimate.billableItems || estimate.billableItems.length === 0) {
+        // Export estimate with empty line item if no billable items
+        exportData.push({
+          estimateId: estimate.id,
+          estimateUuid: estimate.uuid,
+          title: estimate.title,
+          status: estimate.status,
+          total: estimate.total,
+          subtotal: estimate.subtotal,
+          taxTotal: estimate.taxTotal,
+          installerEntityId: estimate.installerEntityId,
+          clientEntityId: estimate.clientEntityId,
+          retailerEntityId: estimate.retailerEntityId,
+          jobAddressLine1: estimate.jobAddressLine1,
+          jobAddressLine2: estimate.jobAddressLine2,
+          jobCity: estimate.jobCity,
+          jobState: estimate.jobState,
+          jobPostalCode: estimate.jobPostalCode,
+          jobCountry: estimate.jobCountry,
+          createdAt: estimate.createdAt,
+          // Empty line item fields
+          lineItemId: '',
+          actionId: '',
+          actionName: '',
+          materialId: '',
+          materialName: '',
+          unitId: '',
+          unitName: '',
+          quantity: '',
+          unitPrice: '',
+          lineItemSubtotal: '',
+        })
+      } else {
+        // Create one row per billable item
+        estimate.billableItems.forEach((item) => {
+          exportData.push({
+            estimateId: estimate.id,
+            estimateUuid: estimate.uuid,
+            title: estimate.title,
+            status: estimate.status,
+            total: estimate.total,
+            subtotal: estimate.subtotal,
+            taxTotal: estimate.taxTotal,
+            installerEntityId: estimate.installerEntityId,
+            clientEntityId: estimate.clientEntityId,
+            retailerEntityId: estimate.retailerEntityId,
+            jobAddressLine1: estimate.jobAddressLine1,
+            jobAddressLine2: estimate.jobAddressLine2,
+            jobCity: estimate.jobCity,
+            jobState: estimate.jobState,
+            jobPostalCode: estimate.jobPostalCode,
+            jobCountry: estimate.jobCountry,
+            createdAt: estimate.createdAt,
+            // Line item data
+            lineItemId: item.id,
+            actionId: item.actionId,
+            actionName: item.action?.name || '',
+            materialId: item.materialId,
+            materialName: item.material?.name || '',
+            unitId: item.unitId,
+            unitName: item.unit?.fullName || '',
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            lineItemSubtotal: item.subtotal,
+          })
+        })
+      }
+    })
+
+    generateCSV(exportData, `${todayAsYYYYMMDD()}-estimates.csv`)
+  }
 
   return (
     <div className="rw-segment rw-table-wrapper-responsive">
@@ -176,11 +254,14 @@ const EstimatesList = ({ estimates }: FindEstimates) => {
       ))}
 
       <hr className="mb-6" />
-      <ExportButton
-        label="Export All Estimates"
-        data={estimates}
-        filename={`${todayAsYYYYMMDD()}-estimates.csv`}
-      />
+      <Button
+        className="print:hidden"
+        variant="outline"
+        size="sm"
+        onClick={handleExportEstimates}
+      >
+        Export All Estimates
+      </Button>
     </div>
   )
 }

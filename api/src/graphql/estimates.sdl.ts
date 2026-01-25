@@ -16,9 +16,9 @@ export const schema = gql`
     jobState: String
     jobPostalCode: String
     jobCountry: String
-    subtotal: Float!
-    taxTotal: Float!
-    total: Float!
+    subtotal: Decimal!
+    taxTotal: Decimal!
+    total: Decimal!
     estimatedMinutesTotal: Int
     authorId: String!
     author: User!
@@ -58,9 +58,9 @@ export const schema = gql`
     jobState: String
     jobPostalCode: String
     jobCountry: String
-    subtotal: Float!
-    taxTotal: Float!
-    total: Float!
+    subtotal: Decimal!
+    taxTotal: Decimal!
+    total: Decimal!
     estimatedMinutesTotal: Int
     authorId: String!
     notes: String
@@ -80,13 +80,41 @@ export const schema = gql`
     jobState: String
     jobPostalCode: String
     jobCountry: String
-    subtotal: Float
-    taxTotal: Float
-    total: Float
+    subtotal: Decimal
+    taxTotal: Decimal
+    total: Decimal
     estimatedMinutesTotal: Int
     authorId: String
     notes: String
     entityId: Int
+  }
+
+  input ImportEstimateInput {
+    uuid: String!
+    title: String
+    status: EstimateStatus!
+    installerEntityId: Int
+    clientEntityId: Int
+    retailerEntityId: Int
+    jobAddressLine1: String
+    jobAddressLine2: String
+    jobCity: String
+    jobState: String
+    jobPostalCode: String
+    jobCountry: String
+    subtotal: Decimal!
+    taxTotal: Decimal!
+    total: Decimal!
+    estimatedMinutesTotal: Int
+    notes: String
+    entityId: Int
+  }
+
+  type ImportResult {
+    success: Boolean!
+    message: String!
+    errors: [String!]
+    count: Int!
   }
 
   type Mutation {
@@ -94,5 +122,6 @@ export const schema = gql`
     updateEstimate(id: Int!, input: UpdateEstimateInput!): Estimate!
       @requireAuth
     deleteEstimate(id: Int!): Estimate! @requireAuth
+    importEstimates(data: [ImportEstimateInput!]!): ImportResult! @requireAuth
   }
 `
