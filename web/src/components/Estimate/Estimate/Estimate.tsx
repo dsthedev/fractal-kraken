@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { gql } from '@apollo/client'
 import type {
   DeleteEstimateMutation,
   DeleteEstimateMutationVariables,
@@ -11,6 +12,7 @@ import { useMutation } from '@cedarjs/web'
 import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
+import SendEstimateEmail from 'src/components/SendEstimateEmail/SendEstimateEmail'
 import { Badge } from 'src/components/ui/badge'
 import { Button } from 'src/components/ui/button'
 import { Input } from 'src/components/ui/input'
@@ -293,6 +295,20 @@ const Estimate = ({ estimate }: Props) => {
             Estimate ID: <small>{estimate.uuid}</small>
           </div>
         </div>
+      </div>
+
+      {/* Send Estimate via Email Section */}
+      <div className="mx-auto max-w-4xl border-t px-8 py-4 print:hidden">
+        <SendEstimateEmail
+          estimateId={estimate.id}
+          entities={
+            [
+              estimate.installerEntity,
+              estimate.retailerEntity,
+              estimate.clientEntity,
+            ].filter(Boolean) as (typeof estimate.installerEntity)[]
+          }
+        />
       </div>
 
       {/* Action Buttons - Hidden on Print */}

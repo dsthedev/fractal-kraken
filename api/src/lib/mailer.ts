@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer'
 
 import { Mailer } from '@cedarjs/mailer-core'
 import { NodemailerMailHandler } from '@cedarjs/mailer-handler-nodemailer'
+import { StudioMailHandler } from '@cedarjs/mailer-handler-studio'
 import { ReactEmailRenderer } from '@cedarjs/mailer-renderer-react-email'
 
 import { logger } from 'src/lib/logger'
@@ -33,10 +34,13 @@ export const nodemailerHandler = new NodemailerMailHandler({
   transport: nodemailerTransport,
 })
 
+export const studioHandler = new StudioMailHandler()
+
 export const mailer = new Mailer({
   handling: {
     handlers: {
       nodemailer: nodemailerHandler,
+      studio: studioHandler,
     },
     default: 'nodemailer',
   },
@@ -46,6 +50,11 @@ export const mailer = new Mailer({
       reactEmail: new ReactEmailRenderer(),
     },
     default: 'reactEmail',
+  },
+
+  development: {
+    when: process.env.NODE_ENV !== 'production',
+    handler: 'studio',
   },
 
   logger,

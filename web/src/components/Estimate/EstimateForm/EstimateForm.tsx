@@ -35,6 +35,7 @@ import { toast } from '@cedarjs/web/toast'
 
 import { useAuth } from 'src/auth'
 import BillableItemFormWrapper from 'src/components/BillableItem/BillableItemFormWrapper'
+import SendEstimateEmail from 'src/components/SendEstimateEmail/SendEstimateEmail'
 import { Alert, AlertTitle } from 'src/components/ui/alert'
 import { Button } from 'src/components/ui/button'
 import {
@@ -1495,6 +1496,23 @@ const EstimateForm = (props: EstimateFormProps) => {
           </div>
         </Form>
       </div>
+
+      {/* Send Estimate via Email Section */}
+      {props.estimate?.id && (
+        <div className="px-8 py-4 border-t">
+          <SendEstimateEmail
+            estimateId={props.estimate.id}
+            entities={
+              [
+                props.estimate.installerEntity,
+                props.estimate.retailerEntity,
+                props.estimate.clientEntity,
+              ].filter(Boolean) as Entity[]
+            }
+          />
+        </div>
+      )}
+
       {/* Edit Billable Item Dialog/Drawer moved outside the parent form to avoid nested form submission */}
       {isDesktop ? (
         <Dialog

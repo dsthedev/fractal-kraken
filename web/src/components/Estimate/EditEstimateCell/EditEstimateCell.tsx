@@ -55,6 +55,7 @@ export const QUERY: TypedDocumentNode<EditEstimateById> = gql`
         id
         type
         name
+        email
         nickname
         addressLine1
         addressLine2
@@ -67,6 +68,7 @@ export const QUERY: TypedDocumentNode<EditEstimateById> = gql`
         id
         type
         name
+        email
         nickname
         addressLine1
         addressLine2
@@ -79,6 +81,7 @@ export const QUERY: TypedDocumentNode<EditEstimateById> = gql`
         id
         type
         name
+        email
         nickname
         addressLine1
         addressLine2

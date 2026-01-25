@@ -22,6 +22,7 @@ export const QUERY: TypedDocumentNode<
       installerEntity {
         id
         name
+        email
         nickname
         contactName
         phone
@@ -36,6 +37,7 @@ export const QUERY: TypedDocumentNode<
       clientEntity {
         id
         name
+        email
         nickname
         contactName
         phone
@@ -50,6 +52,7 @@ export const QUERY: TypedDocumentNode<
       retailerEntity {
         id
         name
+        email
         nickname
         contactName
         phone

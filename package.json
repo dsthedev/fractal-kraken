@@ -9,6 +9,8 @@
     "@cedarjs/cli-storybook-vite": "2.4.0",
     "@cedarjs/core": "2.4.0",
     "@cedarjs/project-config": "2.4.0",
+    "@cedarjs/realtime": "2.4.0",
+    "@cedarjs/studio": "2",
     "@cedarjs/testing": "2.4.0"
   },
   "engines": {
