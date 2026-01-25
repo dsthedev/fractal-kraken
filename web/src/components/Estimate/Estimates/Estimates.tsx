@@ -23,12 +23,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from 'src/components/ui/drawer'
-import {
-  currencyDisplay,
-  formatEnum,
-  timeTagMDY,
-  truncate,
-} from 'src/lib/formatters.js'
+import { currencyDisplay, timeTagMDY, truncate } from 'src/lib/formatters.js'
 import { sortByField, toggleSort } from 'src/lib/sort'
 import { todayAsYYYYMMDD } from 'src/lib/utils'
 
@@ -104,7 +99,6 @@ const EstimatesList = ({ estimates }: FindEstimates) => {
               Total
               <SortIcon columnKey="total" />
             </th>
-            <th className="hidden sm:table-cell">Created at</th>
             <th className="hidden sm:table-cell">&nbsp;</th>
           </tr>
         </thead>
@@ -135,9 +129,6 @@ const EstimatesList = ({ estimates }: FindEstimates) => {
               </td>
               <td className="table-cell text-right">
                 {currencyDisplay(estimate.total)}
-              </td>
-              <td className="hidden sm:table-cell">
-                {timeTagMDY(estimate.createdAt)}
               </td>
               <td className="hidden sm:table-cell">
                 <nav className="rw-table-actions flex flex-wrap gap-1 sm:flex-nowrap">

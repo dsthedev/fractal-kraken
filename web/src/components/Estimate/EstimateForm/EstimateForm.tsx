@@ -100,6 +100,7 @@ const UPDATE_ENTITY_MUTATION: TypedDocumentNode<
       id
       type
       name
+      nickname
       contactName
       email
       phone

@@ -18,6 +18,7 @@ const FIND_ENTITIES_QUERY: TypedDocumentNode<FindEntities> = gql`
       id
       type
       name
+      nickname
       addressLine1
       addressLine2
       city
