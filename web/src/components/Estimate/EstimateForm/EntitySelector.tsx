@@ -61,7 +61,7 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
 
   const entityTypeFilters = {
     INSTALLER: ['INSTALLER', 'CONTRACTOR'],
-    CLIENT: ['CLIENT'],
+    CLIENT: ['CLIENT', 'RETAILER', 'CONTRACTOR'],
     RETAILER: ['RETAILER', 'CONTRACTOR'],
   }
 

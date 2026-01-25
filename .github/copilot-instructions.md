@@ -228,3 +228,4 @@ web/src/
 - **Relative imports**: Use `src/` path alias in TypeScript (configured in tsconfig)
 - **Testing**: Scenarios provide seeded test data; always import from `*.scenarios.ts`
 - **Environment**: Node 24 required; Yarn 4.12.0+ for workspaces
+- **Libraries**: Do not add new dependencies without approval; prefer existing libraries in the stack
