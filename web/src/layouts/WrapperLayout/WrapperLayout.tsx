@@ -1,5 +1,3 @@
-import { useState } from 'react'
-
 import { Wrench } from 'lucide-react'
 
 import { Link, navigate, routes } from '@cedarjs/router'
@@ -16,12 +14,15 @@ import {
 import Webtoolsheet from 'src/components/Webtoolsheet/Webtoolsheet'
 import Footer from 'src/layouts/footer'
 import Nav from 'src/layouts/nav'
+
+import { WebToolsProvider, useWebTools } from './WebToolsContext'
+
 type WrapperLayoutProps = {
   children?: React.ReactNode
 }
 
-const WrapperLayout = ({ children }: WrapperLayoutProps) => {
-  const [webToolsOpen, setWebToolsOpen] = useState(false)
+const WrapperLayoutContent = ({ children }: WrapperLayoutProps) => {
+  const { isOpen, setIsOpen } = useWebTools()
   const { isAuthenticated, currentUser } = useAuth()
 
   return (
@@ -64,7 +65,7 @@ const WrapperLayout = ({ children }: WrapperLayoutProps) => {
                   <Button
                     variant="outline"
                     size="icon"
-                    onClick={() => setWebToolsOpen(true)}
+                    onClick={() => setIsOpen(true)}
                     aria-label="Open Web Tools"
                     className="relative"
                   >
@@ -90,8 +91,16 @@ const WrapperLayout = ({ children }: WrapperLayoutProps) => {
       </main>
 
       <Footer />
-      <Webtoolsheet open={webToolsOpen} onOpenChange={setWebToolsOpen} />
+      <Webtoolsheet open={isOpen} onOpenChange={setIsOpen} />
     </div>
+  )
+}
+
+const WrapperLayout = ({ children }: WrapperLayoutProps) => {
+  return (
+    <WebToolsProvider>
+      <WrapperLayoutContent>{children}</WrapperLayoutContent>
+    </WebToolsProvider>
   )
 }
 
