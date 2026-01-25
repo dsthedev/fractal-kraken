@@ -229,3 +229,5 @@ web/src/
 - **Testing**: Scenarios provide seeded test data; always import from `*.scenarios.ts`
 - **Environment**: Node 24 required; Yarn 4.12.0+ for workspaces
 - **Libraries**: Do not add new dependencies without approval; prefer existing libraries in the stack
+- **web & api src/lib**: Follow existing code patterns for consistency; refer to similar components/services when implementing new features
+- **reusable code**: when creating functions in components or services, consider if they can be reused elsewhere in the project and place them in appropriate `lib/` folders

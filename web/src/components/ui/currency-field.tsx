@@ -47,10 +47,22 @@ export const CurrencyField = ({
   })
 
   const [displayValue, setDisplayValue] = React.useState(() => {
-    if (!field.value) return ''
+    if (field.value == null || field.value === '') return ''
     const num = parseFloat(String(field.value))
     return isNaN(num) ? '' : num.toFixed(2)
   })
+
+  const [isFocused, setIsFocused] = React.useState(false)
+
+  React.useEffect(() => {
+    if (isFocused) return
+    if (field.value == null || field.value === '') {
+      setDisplayValue('')
+      return
+    }
+    const num = parseFloat(String(field.value))
+    if (!isNaN(num)) setDisplayValue(num.toFixed(2))
+  }, [field.value, isFocused])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let raw = e.target.value.replace(/[$,]/g, '')
@@ -71,22 +83,32 @@ export const CurrencyField = ({
 
     setDisplayValue(raw)
 
-    // Only update form value if it's a valid number
-    const num = parseFloat(raw)
-    if (!isNaN(num)) {
-      field.onChange(num)
-    } else if (raw === '') {
+    // Do not update the form value while the user is editing.
+    // Only clear the form value immediately when the input is emptied.
+    if (raw === '') {
       field.onChange('')
     }
   }
 
   const handleBlur = () => {
+    setIsFocused(false)
     field.onBlur()
-    // Format on blur
-    const num = parseFloat(displayValue)
+    // Commit value and format on blur
+    const num = parseFloat(String(displayValue).replace(/[$,]/g, ''))
     if (!isNaN(num)) {
+      field.onChange(num)
       setDisplayValue(num.toFixed(2))
+    } else {
+      field.onChange('')
+      setDisplayValue('')
     }
+  }
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    setIsFocused(true)
+    requestAnimationFrame(() => {
+      e.target.select()
+    })
   }
 
   return (
@@ -111,6 +133,7 @@ export const CurrencyField = ({
           value={displayValue}
           onChange={handleChange}
           onBlur={handleBlur}
+          onFocus={handleFocus}
           readOnly={readOnly}
           className={`w-full pl-12 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${className} ${
             readOnly ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : ''
