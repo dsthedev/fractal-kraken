@@ -35,7 +35,7 @@ const WrapperLayoutContent = ({ children }: WrapperLayoutProps) => {
           <span className="flex-1 ml-4 text-muted-foreground">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button asChild size="sm" variant="ghost">
+                <Button asChild size="sm" variant="ghost" className="p-0">
                   <Link
                     to={isAuthenticated ? routes.dashboard() : routes.home()}
                   >
@@ -45,7 +45,10 @@ const WrapperLayoutContent = ({ children }: WrapperLayoutProps) => {
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{process.env.PROJECT_NAME}</p>
+                <span>
+                  Go to {process.env.PROJECT_NAME}{' '}
+                  {isAuthenticated ? 'Dashboard' : 'Home'}
+                </span>
               </TooltipContent>
             </Tooltip>
           </span>

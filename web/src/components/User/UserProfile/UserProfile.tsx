@@ -4,8 +4,6 @@ import { Eye, EyeOff } from 'lucide-react'
 
 import { useAuth } from 'src/auth'
 
-import ConnectedEntities from '../ConnectedEntities'
-
 const UserProfile = () => {
   const { currentUser } = useAuth()
   const [isIdVisible, setIsIdVisible] = useState(false)
@@ -62,8 +60,6 @@ const UserProfile = () => {
           </div>
         </div>
       </div>
-
-      <ConnectedEntities />
     </div>
   )
 }

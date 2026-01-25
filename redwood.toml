@@ -6,7 +6,7 @@
 # https://cedarjs.com/docs/app-configuration-redwood-toml
 
 [web]
-  title = "Fractal Kraken"
+  title = "${PROJECT_NAME:[Project Name]}"
   port = 8910
   apiUrl = "/.redwood/functions"
   includeEnvironmentVariables = [
@@ -20,3 +20,7 @@
   open = true
 [notifications]
   versionUpdates = ["latest"]
+
+[generate]
+tests = true
+stories = false
