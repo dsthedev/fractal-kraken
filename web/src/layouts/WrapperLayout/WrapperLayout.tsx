@@ -33,11 +33,21 @@ const WrapperLayoutContent = ({ children }: WrapperLayoutProps) => {
             <Nav />
           </div>
           <span className="flex-1 ml-4 text-muted-foreground">
-            <Button asChild size="sm" variant="ghost">
-              <Link to={isAuthenticated ? routes.dashboard() : routes.home()}>
-                {process.env.PROJECT_NAME}
-              </Link>
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button asChild size="sm" variant="ghost">
+                  <Link
+                    to={isAuthenticated ? routes.dashboard() : routes.home()}
+                  >
+                    <img src="/favicon.png" alt="Home" className="h-6 w-6" />
+                    <span className="sr-only">{process.env.PROJECT_NAME}</span>
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{process.env.PROJECT_NAME}</p>
+              </TooltipContent>
+            </Tooltip>
           </span>
           <div className="flex-shrink pr-2">
             <div className="flex flex-row gap-2 items-end">

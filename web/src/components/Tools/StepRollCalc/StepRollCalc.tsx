@@ -293,7 +293,7 @@ const StepRollCalc: React.FC = () => {
       </div>
 
       {/* Result Display */}
-      <div className="space-y-2 border-l-4 border-blue-500 bg-blue-50 p-4">
+      <div className="space-y-2 border-l-4 border-blue-500 bg-blue-100 dark:bg-blue-800 p-4">
         <div className="text-4xl font-mono font-bold">
           {displayFeet}
           {values.showFtIn ? ' ft' : "'"}, {displayInches}
