@@ -7,6 +7,7 @@
 ### Phased Development Approach
 
 The project follows a structured build order from low to high coupling:
+
 1. **Phase 0**: Foundation (Auth, ownership)
 2. **Phase 1**: Reference Data (MeasurementUnit, Service, Rate)
 3. **Phase 2**: Entities (Client, Retailer, Installer data)
@@ -26,19 +27,22 @@ This is a **CedarJS** (formerly Redwood) full-stack web application with monorep
 ## Project Architecture
 
 ### Monorepo Structure
+
 - **`/api`** - Backend GraphQL server (port 8911) using `@cedarjs/graphql-server`
 - **`/web`** - Frontend React app (port 8910) with Vite bundler
 - **`/scripts`** - Database seeding and utility scripts
 
 ### Key Tech Stack
+
 - **Backend**: GraphQL (Apollo), Prisma ORM, DbAuth (built-in auth), Nodemailer for email
- - **Backend**: GraphQL (Apollo), Prisma ORM, DbAuth (built-in auth), Nodemailer for email
- - **Mailer**: CedarJS mailer is used for transactional email (see https://cedarjs.com/docs/mailer)
+- **Backend**: GraphQL (Apollo), Prisma ORM, DbAuth (built-in auth), Nodemailer for email
+- **Mailer**: CedarJS mailer is used for transactional email (see https://cedarjs.com/docs/mailer)
 - **Frontend**: React 18, Tailwind CSS v4 (with @tailwindcss/vite), React Hook Form, Zod validation
 - **Database**: PostgreSQL with Prisma migrations
 - **UI**: Radix UI primitives (`@radix-ui/*`), ShadCN, custom scaffold components
 
 ### Data Flow
+
 1. **GraphQL SDL** (`api/src/graphql/*.sdl.ts`) defines schema with `@requireAuth` and `@skipAuth` directives
 2. **Services** (`api/src/services/{entity}/{entity}.ts`) implement resolvers using Prisma
 3. **Directives** (`api/src/directives/`) enforce auth rules on fields
@@ -62,22 +66,26 @@ Quick reference links for the main packages used in this project:
 ## Critical Development Workflows
 
 ### Setup & Dev Server
+
 ```bash
 yarn install
 yarn cedar dev  # Starts both API (8911) and web (8910) simultaneously
 ```
 
 ### Database
+
 - Edit schema: `api/db/schema.prisma`
 - Create migration: `yarn cedar prisma migrate dev --name <description>`
 - Reset database (dev only): `yarn cedar prisma migrate reset`
 - Seed database: `yarn cedar prisma db seed`
 
 ### Code Generation
+
 - CedarJS auto-generates GraphQL types in `api/types/graphql.d.ts` and `web/types/graphql.d.ts`
 - Always regenerate types after GraphQL SDL changes
 
 ### Testing
+
 ```bash
 yarn test                    # Run all tests
 yarn test --watch           # Watch mode
@@ -88,7 +96,9 @@ yarn test web               # Test web only
 ## Code Patterns & Conventions
 
 ### Backend Service Pattern
+
 Services directly work with Prisma (no separate repository layer):
+
 ```typescript
 // api/src/services/{entity}/{entity}.ts
 export const users = () => db.user.findMany()
@@ -96,12 +106,15 @@ export const createUser = ({ input }) => db.user.create({ data: input })
 ```
 
 ### GraphQL Directives (Auth Enforcement)
+
 - `@requireAuth(roles: [String])` - Requires authentication, optional role-based access
 - `@skipAuth` - Allows unauthenticated access
 - Implemented in `api/src/directives/` using `createValidatorDirective`
 
 ### Frontend Form Pattern (React Hook Form + Zod)
+
 Uses `@cedarjs/forms` wrapper around React Hook Form:
+
 ```typescript
 <Form<InputType> onSubmit={handler}>
   <TextField name="field" />
@@ -110,32 +123,40 @@ Uses `@cedarjs/forms` wrapper around React Hook Form:
 ```
 
 ### Layout Composition
+
 - `WrapperLayout` - Main wrapper with nav, footer, theme provider
 - `ScaffoldLayout` - Admin panel layout with sidebar, specific to resource CRUD pages
 - Route protection via `PrivateSet` in Routes.tsx (requires auth + role check)
 
 ### Database Schema Conventions
+
 - All tables have `id String @id @default(uuid())` (UUIDs, not auto-increment)
 - Timestamp fields: `createdAt DateTime @default(now())` and `updatedAt DateTime @updatedAt`
 - Auth fields: `hashedPassword`, `salt`, `resetToken`, `resetTokenExpiresAt`, `roles` (string enum)
 
 ### Email Handling
+
 - Configuration in `api/src/lib/mail.ts` (Nodemailer)
 - Password reset flow in `api/src/functions/auth.ts`: generates token hash, sends reset email
 - Email addresses sent in plain text only (no sensitive data in response)
 
 ### Testing Pattern
+
 Tests use `scenario()` helper (from `@cedarjs/testing`) for seeded test data:
+
 ```typescript
 scenario('returns all users', async (scenario: StandardScenario) => {
   const result = await users()
   expect(result.length).toEqual(Object.keys(scenario.user).length)
 })
 ```
+
 Scenarios defined in `*.scenarios.ts` files via Faker-generated data.
 
 ### Reference Data & Unit Conversions
+
 **Phase 1 reference data** includes foundational lookup tables like `MeasurementUnit`. Key patterns:
+
 - **Fixed vocabularies** use Prisma enums (e.g., `UnitDimension`, `UnitCategory`) to enforce data integrity
 - **Conversion logic** lives in component utilities (`web/src/lib/unitConversions.ts`), not in resolvers
 - **ConversionFactor** on MeasurementUnit enables calculators to normalize across units: `baseValue = rawValue × conversionFactor`
@@ -145,6 +166,7 @@ Scenarios defined in `*.scenarios.ts` files via Faker-generated data.
 ## File Organization
 
 ### Backend
+
 ```
 api/src/
   ├── directives/          # GraphQL validation directives
@@ -156,6 +178,7 @@ api/src/
 ```
 
 ### Frontend
+
 ```
 web/src/
   ├── components/          # Reusable UI (ui/, User/, mode-*, theme-*)
@@ -170,18 +193,21 @@ web/src/
 ## Important Implementation Details
 
 ### Auth System
+
 - **DbAuth** (built-in to CedarJS): username/password, session-based, token in HTTP-only cookie
 - **Web client**: `useAuth()` hook from `@cedarjs/auth-dbauth-web` provides `logIn`, `logOut`, `currentUser`
 - **API**: `requireAuth()` utility in `api/src/lib/auth.ts` checks session in directives
 - **Password reset**: Token generated in DB, sent via email, hashed before storage
 
 ### Styling
+
 - **Tailwind CSS v4** with `@tailwindcss/vite` plugin (fast HMR)
 - **Radix UI** for unstyled accessible components
 - **Theme switching**: `next-themes` with dark mode toggle (see `mode-cycle.tsx`)
 - **ShadCN** Custom UI components in `web/src/components/ui/` (Button, Badge, Dropdown, Tooltip)
 
 ### Error Handling
+
 - GraphQL errors via Apollo Client
 - Form validation via Zod + React Hook Form
 - Error display component: `FormError` from `@cedarjs/forms`
@@ -212,14 +238,14 @@ web/src/
 
 ## Key Commands
 
-| Command | Purpose |
-|---------|---------|
-| `yarn cedar dev` | Start dev servers (API + web) |
-| `yarn test` | Run all tests |
-| `yarn cedar prisma migrate dev --name <name>` | Create and run DB migration |
-| `yarn cedar prisma migrate reset` | Reset DB to clean state (dev only) |
-| `yarn cedar prisma studio` | Visual DB explorer |
-| `yarn build` | Production build |
+| Command                                       | Purpose                            |
+| --------------------------------------------- | ---------------------------------- |
+| `yarn cedar dev`                              | Start dev servers (API + web)      |
+| `yarn test`                                   | Run all tests                      |
+| `yarn cedar prisma migrate dev --name <name>` | Create and run DB migration        |
+| `yarn cedar prisma migrate reset`             | Reset DB to clean state (dev only) |
+| `yarn cedar prisma studio`                    | Visual DB explorer                 |
+| `yarn build`                                  | Production build                   |
 
 ## Notes for AI Agents
 
@@ -231,3 +257,14 @@ web/src/
 - **Libraries**: Do not add new dependencies without approval; prefer existing libraries in the stack
 - **web & api src/lib**: Follow existing code patterns for consistency; refer to similar components/services when implementing new features
 - **reusable code**: when creating functions in components or services, consider if they can be reused elsewhere in the project and place them in appropriate `lib/` folders
+- **refactoring**: refactor the estimate form considering:
+  - Remove duplicated or derived state
+  - Eliminate redundant or dead code
+  - Simplify and correct logic paths
+  - Clarify data flow and authority
+  - Reduce unnecessary side effects
+  - Extract pure, reusable business logic
+  - Preserve existing behavior and edge cases
+  - Keep changes minimal and idiomatic
+  - Lower cognitive load and improve readability
+  - provide a summary and ask for confirmation before making changes

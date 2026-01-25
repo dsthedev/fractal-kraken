@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 
 import { gql } from '@apollo/client'
 import { BookAlert, Pencil, Plus, Trash2Icon } from 'lucide-react'
@@ -67,6 +67,13 @@ import {
   PopoverContent,
 } from 'src/components/ui/popover'
 import { ToggleGroup, ToggleGroupItem } from 'src/components/ui/toggle-group'
+import {
+  formatMoney,
+  serviceLabel,
+  buildRateLabel,
+  buildRateSearchValue,
+  buildEntityUpdateInput,
+} from 'src/lib/estimateUtils'
 import { currencyDisplay } from 'src/lib/formatters.js'
 import { cn, getWeekNumber, buildTitle } from 'src/lib/utils'
 
@@ -375,10 +382,18 @@ const EstimateForm = (props: EstimateFormProps) => {
     setDeleteConfirmOpen(false)
   }
 
-  const weekNumber = getWeekNumber(new Date())
-
-  const hasEntityDefaults = Boolean(
-    currentUser?.defaultEntityId || currentUser?.defaultRetailerEntityId
+  // Memoized derived values
+  const weekNumber = useMemo(() => getWeekNumber(new Date()), [])
+  const hasEntityDefaults = useMemo(
+    () =>
+      Boolean(
+        currentUser?.defaultEntityId || currentUser?.defaultRetailerEntityId
+      ),
+    [currentUser?.defaultEntityId, currentUser?.defaultRetailerEntityId]
+  )
+  const isPersistedEstimate = useMemo(
+    () => Boolean(props.estimate?.id),
+    [props.estimate?.id]
   )
 
   useEffect(() => {
@@ -484,51 +499,27 @@ const EstimateForm = (props: EstimateFormProps) => {
     }
   }
 
-  const isPersistedEstimate = Boolean(props.estimate?.id)
-
-  const formatMoney = (value?: number | null) => Number(value ?? 0).toFixed(2)
-
-  const serviceLabel = (item: BillableItem) => {
-    const base = [item.action?.name, item.material?.name]
-      .filter(Boolean)
-      .join(' ')
-    return `${base}` || '—'
-  }
-
-  const buildRateLabel = (rate: FindRates['rates'][0]) => {
-    const serviceDisplay = [rate.action?.name, rate.material?.name]
-      .filter(Boolean)
-      .join(' ')
-    const context = rate.context ? ` (${rate.context})` : ''
-    const amount = pricingType === 'sub' ? rate.subAmount : rate.retailAmount
-    return `${serviceDisplay}${context} - ${rate.unit?.fullName} - $${Number(amount).toFixed(2)}`
-  }
-
-  const buildRateSearchValue = (rate: FindRates['rates'][0]) => {
-    return [
-      rate.action?.name,
-      rate.material?.name,
-      rate.context,
-      rate.unit?.shortName,
-      rate.unit?.fullName,
-      rate.currency,
-      String(rate.subAmount ?? ''),
-      String(rate.retailAmount ?? ''),
-      String(rate.id ?? ''),
-      String(rate.actionId ?? ''),
-      String(rate.materialId ?? ''),
-      String(rate.unitId ?? ''),
-    ]
-      .filter(Boolean)
-      .join(' ')
-  }
-
   // Quick-add state
   const [selectedQuickAddRate, setSelectedQuickAddRate] = useState<
     FindRates['rates'][0] | null
   >(null)
   const [quickAddQuantity, setQuickAddQuantity] = useState<number>(1)
   const [openQuickAddCombobox, setOpenQuickAddCombobox] = useState(false)
+
+  // Reusable entity update handler to avoid duplication
+  const handleEntityUpdate = useCallback(
+    async (entity: Partial<Entity>, setter: (e: Partial<Entity>) => void) => {
+      const updateInput = buildEntityUpdateInput(entity)
+      await updateEntity({
+        variables: {
+          id: entity.id as number,
+          input: updateInput,
+        },
+      })
+      setter(entity)
+    },
+    [updateEntity]
+  )
 
   const handleQuickAddFromRate = async (
     rate: FindRates['rates'][0] | null | undefined
@@ -540,7 +531,10 @@ const EstimateForm = (props: EstimateFormProps) => {
     }
 
     const unitPrice = pricingType === 'sub' ? rate.subAmount : rate.retailAmount
-    const input: CreateBillableItemInput = {
+    const input: Omit<
+      CreateBillableItemInput,
+      'authorId' | 'estimateId' | 'sortOrder'
+    > = {
       actionId: rate.actionId ?? undefined,
       materialId: rate.materialId ?? undefined,
       unitId: rate.unitId ?? undefined,
@@ -563,10 +557,11 @@ const EstimateForm = (props: EstimateFormProps) => {
     setOpenQuickAddCombobox(false)
   }
 
-  // Quick-add handler removed for now. Reintroduce after action+material quick-add mapping is defined.
-
   const handleCreateBillableItem = async (
-    input: CreateBillableItemInput
+    input: Omit<
+      CreateBillableItemInput,
+      'authorId' | 'estimateId' | 'sortOrder'
+    >
   ): Promise<void> => {
     if (!props.estimate?.id) {
       toast.error('Save the estimate before adding items')
@@ -633,24 +628,6 @@ const EstimateForm = (props: EstimateFormProps) => {
     toast.success('Line item updated')
   }
 
-  const _handleReorder = async (fromIndex: number, toIndex: number) => {
-    if (toIndex < 0 || toIndex >= billableItems.length) return
-
-    const next = billableItems.slice()
-    const [moved] = next.splice(fromIndex, 1)
-    next.splice(toIndex, 0, moved)
-    const normalized = next.map((item, idx) => ({ ...item, sortOrder: idx }))
-    setBillableItems(normalized)
-
-    await Promise.all(
-      normalized.map((item) =>
-        updateBillableItem({
-          variables: { id: item.id, input: { sortOrder: item.sortOrder } },
-        })
-      )
-    )
-  }
-
   const recalculateAll = async () => {
     if (billableItems.length === 0) {
       toast.success('No billable items to recalculate')
@@ -692,38 +669,46 @@ const EstimateForm = (props: EstimateFormProps) => {
     }
   }
 
-  const onSubmit = (data: FormEstimate) => {
-    // Exclude id, timestamps, and relations from the submission data
-    const {
-      id: _id,
-      createdAt: _createdAt,
-      updatedAt: _updatedAt,
-      billableItems: _billableItems,
-      installerEntity: _installerEntity,
-      clientEntity: _clientEntity,
-      retailerEntity: _retailerEntity,
-      ...restData
-    } = data
-
-    // Ensure required fields are set properly
-    const submitData = {
-      ...restData,
+  // Build submit data (used by both onSubmit and Save & Exit)
+  const buildSubmitData = useCallback(
+    (data?: Partial<FormEstimate>): UpdateEstimateInput => ({
+      ...data,
       title: titleValue,
       jobAddressLine1,
       jobAddressLine2,
       jobCity,
       jobState,
       jobPostalCode,
-      uuid: data.uuid || uuidv4(),
+      uuid: data?.uuid || props.estimate?.uuid || uuidv4(),
       status: selectedStatus,
       installerEntityId: selectedInstallerEntity?.id,
       clientEntityId: selectedClientEntity?.id,
       retailerEntityId: selectedRetailerEntity?.id,
-      authorId: currentUser?.id || data.authorId,
+      authorId: currentUser?.id || props.estimate?.authorId,
       jobCountry: 'United States',
       subtotal: itemsTotal,
       total: itemsTotal,
-    }
+    }),
+    [
+      titleValue,
+      jobAddressLine1,
+      jobAddressLine2,
+      jobCity,
+      jobState,
+      jobPostalCode,
+      props.estimate?.uuid,
+      props.estimate?.authorId,
+      selectedStatus,
+      selectedInstallerEntity?.id,
+      selectedClientEntity?.id,
+      selectedRetailerEntity?.id,
+      currentUser?.id,
+      itemsTotal,
+    ]
+  )
+
+  const onSubmit = (data: FormEstimate) => {
+    const submitData = buildSubmitData(data)
     props.onSave(submitData, props?.estimate?.id)
   }
 
@@ -989,29 +974,9 @@ const EstimateForm = (props: EstimateFormProps) => {
                   entities={props.entities}
                   selectedEntity={selectedInstallerEntity}
                   onEntitySelect={setSelectedInstallerEntity}
-                  onEntityUpdate={async (entity) => {
-                    const fields: (keyof Entity)[] = [
-                      'name',
-                      'addressLine1',
-                      'addressLine2',
-                      'city',
-                      'state',
-                      'postalCode',
-                    ]
-                    const updateInput = fields.reduce((acc, field) => {
-                      if (entity[field] !== undefined) {
-                        acc[field] = entity[field]
-                      }
-                      return acc
-                    }, {} as any)
-                    await updateEntity({
-                      variables: {
-                        id: entity.id,
-                        input: updateInput,
-                      },
-                    })
-                    setSelectedInstallerEntity(entity)
-                  }}
+                  onEntityUpdate={(entity) =>
+                    handleEntityUpdate(entity, setSelectedInstallerEntity)
+                  }
                   hiddenInputValue={
                     selectedInstallerEntity?.id ||
                     props.estimate?.installerEntityId ||
@@ -1029,29 +994,9 @@ const EstimateForm = (props: EstimateFormProps) => {
                   entities={props.entities}
                   selectedEntity={selectedClientEntity}
                   onEntitySelect={setSelectedClientEntity}
-                  onEntityUpdate={async (entity) => {
-                    const fields: (keyof Entity)[] = [
-                      'name',
-                      'addressLine1',
-                      'addressLine2',
-                      'city',
-                      'state',
-                      'postalCode',
-                    ]
-                    const updateInput = fields.reduce((acc, field) => {
-                      if (entity[field] !== undefined) {
-                        acc[field] = entity[field]
-                      }
-                      return acc
-                    }, {} as any)
-                    await updateEntity({
-                      variables: {
-                        id: entity.id,
-                        input: updateInput,
-                      },
-                    })
-                    setSelectedClientEntity(entity)
-                  }}
+                  onEntityUpdate={(entity) =>
+                    handleEntityUpdate(entity, setSelectedClientEntity)
+                  }
                   hiddenInputValue={
                     selectedClientEntity?.id ||
                     props.estimate?.clientEntityId ||
@@ -1069,29 +1014,9 @@ const EstimateForm = (props: EstimateFormProps) => {
                   entities={props.entities}
                   selectedEntity={selectedRetailerEntity}
                   onEntitySelect={setSelectedRetailerEntity}
-                  onEntityUpdate={async (entity) => {
-                    const fields: (keyof Entity)[] = [
-                      'name',
-                      'addressLine1',
-                      'addressLine2',
-                      'city',
-                      'state',
-                      'postalCode',
-                    ]
-                    const updateInput = fields.reduce((acc, field) => {
-                      if (entity[field] !== undefined) {
-                        acc[field] = entity[field]
-                      }
-                      return acc
-                    }, {} as any)
-                    await updateEntity({
-                      variables: {
-                        id: entity.id,
-                        input: updateInput,
-                      },
-                    })
-                    setSelectedRetailerEntity(entity)
-                  }}
+                  onEntityUpdate={(entity) =>
+                    handleEntityUpdate(entity, setSelectedRetailerEntity)
+                  }
                   hiddenInputValue={
                     selectedRetailerEntity?.id ||
                     props.estimate?.retailerEntityId ||
@@ -1339,7 +1264,10 @@ const EstimateForm = (props: EstimateFormProps) => {
                             disabled={!isPersistedEstimate || ratesLoading}
                           >
                             {selectedQuickAddRate
-                              ? buildRateLabel(selectedQuickAddRate)
+                              ? buildRateLabel(
+                                  selectedQuickAddRate,
+                                  pricingType
+                                )
                               : 'Select from Rates...'}
                           </Button>
                         </PopoverTrigger>
@@ -1371,7 +1299,7 @@ const EstimateForm = (props: EstimateFormProps) => {
                                         setOpenQuickAddCombobox(false)
                                       }}
                                     >
-                                      {buildRateLabel(rate)}
+                                      {buildRateLabel(rate, pricingType)}
                                     </CommandItem>
                                   ))}
                               </CommandGroup>
@@ -1558,25 +1486,8 @@ const EstimateForm = (props: EstimateFormProps) => {
               disabled={props.loading}
               variant="sky"
               onClick={() => {
-                const submitData = {
-                  title: titleValue,
-                  jobAddressLine1,
-                  jobAddressLine2,
-                  jobCity,
-                  jobState,
-                  jobPostalCode,
-                  uuid: props.estimate?.uuid || uuidv4(),
-                  status: selectedStatus,
-                  installerEntityId: selectedInstallerEntity?.id,
-                  clientEntityId: selectedClientEntity?.id,
-                  retailerEntityId: selectedRetailerEntity?.id,
-                  authorId: currentUser?.id || props.estimate?.authorId,
-                  jobCountry: 'United States',
-                  subtotal: itemsTotal,
-                  taxTotal: itemsTotal,
-                  total: itemsTotal,
-                }
-                props.onSaveAndExit?.(submitData as any, props?.estimate?.id)
+                const submitData = buildSubmitData()
+                props.onSaveAndExit?.(submitData, props?.estimate?.id)
               }}
             >
               Save & Exit
