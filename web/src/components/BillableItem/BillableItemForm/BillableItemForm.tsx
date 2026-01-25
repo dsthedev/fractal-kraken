@@ -28,17 +28,38 @@ import {
   calculateHourlyRate,
 } from 'src/lib/calculations.js'
 
-type FormBillableItem = NonNullable<EditBillableItemById['billableItem']>
+// Lightweight local type to accept billable item shapes from different queries
+type BillableItemLike = {
+  id?: number
+  actionId?: number
+  materialId?: number
+  unitId?: number
+  action?: { id: number }
+  material?: { id: number }
+  unit?: { id: number }
+  unitPrice?: number
+  pricingType?: any
+  quantity?: number
+  subtotal?: number | string
+  estimatedMinutesPerUnit?: number
+  notes?: string | null
+  authorId?: string
+  createdAt?: string
+  updatedAt?: string
+  author?: any
+  estimate?: any
+}
+
+type FormBillableItem = BillableItemLike
 type BillableItemInput = UpdateBillableItemInput | CreateBillableItemInput
 
 interface BillableItemFormProps {
-  billableItem?: EditBillableItemById['billableItem']
+  billableItem?: FormBillableItem
   onSave: (data: BillableItemInput, id?: FormBillableItem['id']) => void
   error: RWGqlError
   loading: boolean
   authorId?: string
-  serviceId?: number
-  unitId?: number
+  // no serviceId any more; unitId not required here — form reads from billableItem
   ActionDropdown: React.ComponentType<{
     value?: number
     onChange: (id: number) => void
@@ -86,20 +107,19 @@ const BillableItemForm = ({
   error,
   loading,
   authorId,
-  serviceId,
-  unitId,
+
   ActionDropdown,
   MaterialDropdown,
   UnitDropdown,
 }: BillableItemFormProps) => {
   const [selectedAction, setSelectedAction] = React.useState<
     number | undefined
-  >(serviceId ?? billableItem?.actionId)
+  >(billableItem?.actionId ?? billableItem?.action?.id)
   const [selectedMaterial, setSelectedMaterial] = React.useState<
     number | undefined
-  >(billableItem?.materialId ?? undefined)
+  >(billableItem?.materialId ?? billableItem?.material?.id ?? undefined)
   const [selectedUnit, setSelectedUnit] = React.useState<number | undefined>(
-    unitId ?? billableItem?.unitId
+    billableItem?.unitId ?? billableItem?.unit?.id
   )
   const [subtotal, setSubtotal] = React.useState(
     billableItem?.subtotal?.toString() || '0.00'
@@ -126,17 +146,19 @@ const BillableItemForm = ({
 
   // Keep selected IDs in sync if props change
   React.useEffect(() => {
-    if (serviceId !== undefined) setSelectedAction(serviceId)
-  }, [serviceId])
+    const aid = billableItem?.actionId ?? billableItem?.action?.id
+    if (aid !== undefined) setSelectedAction(aid)
+  }, [billableItem])
 
   React.useEffect(() => {
-    if (unitId !== undefined) setSelectedUnit(unitId)
-  }, [unitId])
+    const uid = billableItem?.unitId ?? billableItem?.unit?.id
+    if (uid !== undefined) setSelectedUnit(uid)
+  }, [billableItem])
 
   React.useEffect(() => {
-    if (billableItem?.materialId !== undefined)
-      setSelectedMaterial(billableItem.materialId)
-  }, [billableItem?.materialId])
+    const mid = billableItem?.materialId ?? billableItem?.material?.id
+    if (mid !== undefined) setSelectedMaterial(mid)
+  }, [billableItem])
 
   const handlePriceOrQuantityChange = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -242,7 +264,7 @@ const BillableItemForm = ({
         materialId: selectedMaterial,
         unitId: finalUnitId,
         authorId: finalAuthorId,
-      },
+      } as any,
       billableItem?.id
     )
   }

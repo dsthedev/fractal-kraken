@@ -32,7 +32,6 @@ const BillableItemFormWrapper = (props: BillableItemFormWrapperProps) => {
       error={props.error}
       loading={props.loading}
       authorId={currentUser?.id}
-      unitId={props.billableItem?.unitId}
       ActionDropdown={({ value, onChange }) => (
         <SelectActionCell onSelect={onChange} selectedId={value} />
       )}

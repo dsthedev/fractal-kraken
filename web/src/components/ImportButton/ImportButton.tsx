@@ -124,15 +124,13 @@ export const ImportButton = ({
           row[header] = values[index] || ''
         })
 
-        // Parse and validate required integer fields (support actionId/materialId and legacy serviceId)
-        const serviceId = row.serviceId ? parseInt(row.serviceId) : NaN
+        // Parse and validate required integer fields (actionId/materialId)
         const actionId = row.actionId ? parseInt(row.actionId) : NaN
         const materialId = row.materialId ? parseInt(row.materialId) : NaN
         const unitId = row.unitId ? parseInt(row.unitId) : NaN
 
-        // Only include rows with valid required fields: must have unitId, amounts, and at least one of actionId/materialId/serviceId
-        const hasServiceKey =
-          !isNaN(actionId) || !isNaN(materialId) || !isNaN(serviceId)
+        // Only include rows with valid required fields: must have unitId, amounts, and at least one of actionId/materialId
+        const hasServiceKey = !isNaN(actionId) || !isNaN(materialId)
         if (
           hasServiceKey &&
           !isNaN(unitId) &&
@@ -191,13 +189,7 @@ export const ImportButton = ({
           data.push(rateData)
         } else {
           skippedCount++
-          console.log('Skipped row:', {
-            actionId,
-            materialId,
-            serviceId,
-            unitId,
-            row,
-          })
+          console.log('Skipped row:', { actionId, materialId, unitId, row })
         }
       }
 

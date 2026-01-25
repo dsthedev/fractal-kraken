@@ -107,10 +107,7 @@ const BillableItemsList = ({ billableItems }: FindBillableItems) => {
         const toFloat = (v: string | undefined) =>
           v && v.length ? parseFloat(v) : undefined
 
-        const serviceId =
-          toInt(row.serviceId) ?? toInt(row['service.id']) ?? undefined
-        const actionId =
-          toInt(row.actionId) ?? toInt(row['action.id']) ?? serviceId
+        const actionId = toInt(row.actionId) ?? toInt(row['action.id'])
         const unitId = toInt(row.unitId) ?? toInt(row['unit.id']) ?? undefined
         const unitPrice =
           toFloat(row.unitPrice) ?? toFloat(row['unitPrice']) ?? undefined
