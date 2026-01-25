@@ -10,6 +10,7 @@ import {
   Wrench,
   LogIn,
   LogOut,
+  Compass,
 } from 'lucide-react'
 
 import { navigate, routes } from '@cedarjs/router'
@@ -38,39 +39,44 @@ const Nav = () => {
     {
       label: 'Home',
       route: routes.home,
-      icon: <Home className="mr-2 h-4 w-4" />,
+      icon: <Home className="mr-2 h-6 w-6" />,
     },
-    // { label: 'Contact', route: routes.contact, icon: <Mail className="mr-2 h-4 w-4" /> },
+    // { label: 'Contact', route: routes.contact, icon: <Mail className="mr-2 h-6 w-6" /> },
   ]
 
   const [webToolsOpen, setWebToolsOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const adminMenuItems: MenuItem[] = [
-    // { label: 'Services', route: routes.services, icon: <Package className="mr-2 h-4 w-4" /> },
+    // { label: 'Services', route: routes.services, icon: <Package className="mr-2 h-6 w-6" /> },
     {
       label: 'Dashboard',
       route: routes.dashboard,
-      icon: <LayoutDashboard className="mr-2 h-4 w-4" />,
+      icon: <LayoutDashboard className="mr-2 h-6 w-6" />,
+    },
+    {
+      label: 'Getting Started',
+      route: routes.gettingStarted,
+      icon: <Compass className="mr-2 h-6 w-6" />,
     },
     {
       label: 'Estimates',
       route: routes.estimates,
-      icon: <FileText className="mr-2 h-4 w-4" />,
+      icon: <FileText className="mr-2 h-6 w-6" />,
     },
     {
       label: 'Sevice Rates',
       route: routes.rates,
-      icon: <BadgeDollarSign className="mr-2 h-4 w-4" />,
+      icon: <BadgeDollarSign className="mr-2 h-6 w-6" />,
     },
     {
       label: 'Entities',
       route: routes.entities,
-      icon: <Building2 className="mr-2 h-4 w-4" />,
+      icon: <Building2 className="mr-2 h-6 w-6" />,
     },
     {
       label: 'Web Tools',
       route: null,
-      icon: <Wrench className="mr-2 h-4 w-4" />,
+      icon: <Wrench className="mr-2 h-6 w-6" />,
     },
   ]
 
@@ -93,7 +99,7 @@ const Nav = () => {
                   <Button
                     key={item.label}
                     variant="ghost"
-                    className="justify-start text-lg"
+                    className="justify-start text-xl"
                     onClick={() => {
                       navigate(item.route())
                       setMenuOpen(false)
@@ -105,13 +111,13 @@ const Nav = () => {
                 ))}
                 <Button
                   variant="ghost"
-                  className="justify-start text-lg"
+                  className="justify-start text-xl"
                   onClick={() => {
                     window.location.href = '/login'
                     setMenuOpen(false)
                   }}
                 >
-                  <LogIn className="mr-2 h-4 w-4" />
+                  <LogIn className="mr-2 h-6 w-6" />
                   Login
                 </Button>
               </>
@@ -122,7 +128,7 @@ const Nav = () => {
                     <Button
                       key={item.label}
                       variant="ghost"
-                      className="justify-start text-lg"
+                      className="justify-start text-xl"
                       onClick={() => {
                         setMenuOpen(false)
                         setWebToolsOpen(true)
@@ -135,7 +141,7 @@ const Nav = () => {
                     <Button
                       key={item.label}
                       variant="ghost"
-                      className="justify-start text-lg"
+                      className="justify-start text-xl"
                       onClick={() => {
                         navigate(item.route())
                         setMenuOpen(false)
@@ -148,17 +154,22 @@ const Nav = () => {
                 )}
                 <Button
                   variant="ghost"
-                  className="justify-start text-lg"
+                  className="justify-start text-xl"
                   onClick={() => {
                     logOut()
                     setMenuOpen(false)
                   }}
                 >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout ({currentUser?.email})
+                  <LogOut className="mr-2 h-6 w-6" />
+                  Logout
                 </Button>
               </>
             )}
+            <div className="block my-4 p-4">
+              <small className="text-muted-foreground">Logged in as:</small>
+              <br />
+              {currentUser?.email}
+            </div>
           </div>
         </SheetContent>
       </Sheet>
