@@ -129,7 +129,7 @@ const EntityForm = (props: EntityFormProps) => {
               className="rw-label"
               errorClassName="rw-label rw-label-error"
             >
-              Nickname
+              Display Name
             </Label>
 
             <TextField

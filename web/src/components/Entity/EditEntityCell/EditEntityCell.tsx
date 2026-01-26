@@ -97,7 +97,7 @@ export const Success = ({ entity }: CellSuccessProps<EditEntityById>) => {
     <div className="rw-segment">
       <header className="rw-segment-header">
         <h2 className="rw-heading rw-heading-secondary">
-          Edit Entity {entity?.id}
+          Editing {entity?.contactName || entity?.name || entity?.nickname}
         </h2>
       </header>
       <div className="rw-segment-main">
