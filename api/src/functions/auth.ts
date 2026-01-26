@@ -8,6 +8,7 @@ import type { DbAuthHandlerOptions, UserType } from '@cedarjs/auth-dbauth-api'
 import { cookieName } from 'src/lib/auth'
 import { db } from 'src/lib/db'
 import { sendResetPasswordEmail } from 'src/lib/mailer'
+import { assertEmailValid } from 'src/lib/validation'
 
 export const handler = async (
   event: APIGatewayProxyEvent,
@@ -155,6 +156,8 @@ export const handler = async (
       salt,
       userAttributes: _userAttributes,
     }) => {
+      assertEmailValid(username)
+
       return db.user.create({
         data: {
           email: username,

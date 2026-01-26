@@ -1,5 +1,5 @@
 /**
- * Email format validation pattern
+ * Email format validation pattern (keep in sync with api/src/lib/validation.ts)
  * Matches standard email format: user@domain.extension
  */
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -22,6 +22,9 @@ export const validateEmail = (email: string): boolean | string => {
  * Can be spread into the validation prop: validation={{ ...EMAIL_VALIDATION }}
  */
 export const EMAIL_VALIDATION = {
-  required: true,
+  required: {
+    value: true,
+    message: 'Email is required',
+  },
   validate: validateEmail,
 }

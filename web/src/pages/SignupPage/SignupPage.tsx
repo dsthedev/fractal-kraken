@@ -13,6 +13,7 @@ import { Metadata } from '@cedarjs/web'
 import { toast, Toaster } from '@cedarjs/web/toast'
 
 import { useAuth } from 'src/auth'
+import { EMAIL_VALIDATION } from 'src/lib/validation'
 
 const SignupPage = () => {
   const { isAuthenticated, signUp } = useAuth()
@@ -72,12 +73,7 @@ const SignupPage = () => {
                     className="rw-input"
                     errorClassName="rw-input rw-input-error"
                     ref={emailRef}
-                    validation={{
-                      required: {
-                        value: true,
-                        message: 'Email is required',
-                      },
-                    }}
+                    validation={EMAIL_VALIDATION}
                   />
                   <FieldError name="email" className="rw-field-error" />
 
