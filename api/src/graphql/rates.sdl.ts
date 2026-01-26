@@ -44,6 +44,7 @@ export const schema = gql`
   input CreateRateInput {
     actionId: Int
     materialId: Int
+    authorId: String!
     unitId: Int!
     subAmount: Decimal!
     retailAmount: Decimal!

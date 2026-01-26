@@ -164,6 +164,13 @@ const EstimatesList = ({ estimates }: FindEstimates) => {
         <thead>
           <tr>
             <th
+              onClick={() => handleSort('status')}
+              className="table-cell text-left cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              Status
+              <SortIcon columnKey="status" />
+            </th>
+            <th
               onClick={() => handleSort('title')}
               className="table-cell text-left cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
             >
@@ -183,6 +190,9 @@ const EstimatesList = ({ estimates }: FindEstimates) => {
         <tbody>
           {sortedEstimates.map((estimate) => (
             <tr key={estimate.id}>
+              <td>
+                <Badge variant="outline">{estimate.status}</Badge>
+              </td>
               <td>
                 <button
                   type="button"
