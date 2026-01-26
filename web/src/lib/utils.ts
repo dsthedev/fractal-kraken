@@ -116,3 +116,12 @@ export const buildTitle = (
   if (clientName) parts.push(clientName)
   return parts.join(' - ')
 }
+
+export const selectedEstimatesTotal = (
+  estimates: Array<{ total?: number | null }>
+): number => {
+  return estimates.reduce((sum, estimate) => {
+    const total = parseFloat(String(estimate.total ?? 0))
+    return sum + (isNaN(total) ? 0 : total)
+  }, 0)
+}

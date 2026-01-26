@@ -332,14 +332,14 @@ const EstimateForm = (props: EstimateFormProps) => {
   >(props.estimate?.status || 'DRAFT')
   const [pricingType, setPricingType] = useState<'sub' | 'retail'>('retail')
   const [selectedRetailerEntity, setSelectedRetailerEntity] = useState<
-    Partial<Entity>
-  >((props.estimate?.retailerEntity as Partial<Entity> | undefined) || {})
+    Partial<Entity> | null | undefined
+  >(props.estimate?.retailerEntity as Partial<Entity> | undefined)
   const [selectedClientEntity, setSelectedClientEntity] = useState<
-    Partial<Entity>
-  >((props.estimate?.clientEntity as Partial<Entity> | undefined) || {})
+    Partial<Entity> | null | undefined
+  >(props.estimate?.clientEntity as Partial<Entity> | undefined)
   const [selectedInstallerEntity, setSelectedInstallerEntity] = useState<
-    Partial<Entity>
-  >((props.estimate?.installerEntity as Partial<Entity> | undefined) || {})
+    Partial<Entity> | null | undefined
+  >(props.estimate?.installerEntity as Partial<Entity> | undefined)
   const [titleValue, setTitleValue] = useState(
     props.estimate?.title ||
       buildTitle(
@@ -715,6 +715,19 @@ const EstimateForm = (props: EstimateFormProps) => {
     props.onSave(submitData, props?.estimate?.id)
   }
 
+  const installerHiddenValue =
+    selectedInstallerEntity === null
+      ? ''
+      : (selectedInstallerEntity?.id ?? props.estimate?.installerEntityId ?? '')
+  const clientHiddenValue =
+    selectedClientEntity === null
+      ? ''
+      : (selectedClientEntity?.id ?? props.estimate?.clientEntityId ?? '')
+  const retailerHiddenValue =
+    selectedRetailerEntity === null
+      ? ''
+      : (selectedRetailerEntity?.id ?? props.estimate?.retailerEntityId ?? '')
+
   return (
     <>
       <div className="rw-form-wrapper">
@@ -980,11 +993,7 @@ const EstimateForm = (props: EstimateFormProps) => {
                   onEntityUpdate={(entity) =>
                     handleEntityUpdate(entity, setSelectedInstallerEntity)
                   }
-                  hiddenInputValue={
-                    selectedInstallerEntity?.id ||
-                    props.estimate?.installerEntityId ||
-                    ''
-                  }
+                  hiddenInputValue={installerHiddenValue}
                 />
               </div>
 
@@ -1000,11 +1009,7 @@ const EstimateForm = (props: EstimateFormProps) => {
                   onEntityUpdate={(entity) =>
                     handleEntityUpdate(entity, setSelectedClientEntity)
                   }
-                  hiddenInputValue={
-                    selectedClientEntity?.id ||
-                    props.estimate?.clientEntityId ||
-                    ''
-                  }
+                  hiddenInputValue={clientHiddenValue}
                 />
               </div>
 
@@ -1020,11 +1025,7 @@ const EstimateForm = (props: EstimateFormProps) => {
                   onEntityUpdate={(entity) =>
                     handleEntityUpdate(entity, setSelectedRetailerEntity)
                   }
-                  hiddenInputValue={
-                    selectedRetailerEntity?.id ||
-                    props.estimate?.retailerEntityId ||
-                    ''
-                  }
+                  hiddenInputValue={retailerHiddenValue}
                 />
               </div>
             </fieldset>

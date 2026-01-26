@@ -36,7 +36,7 @@ interface EntitySelectorProps {
   entityType: 'INSTALLER' | 'CLIENT' | 'RETAILER' | 'CONTRACTOR'
   entities?: Entity[]
   selectedEntity?: Partial<Entity> | null
-  onEntitySelect: (entity: Entity) => void
+  onEntitySelect: (entity: Entity | null) => void
   onEntityCreate?: (entity: Entity) => void
   onEntityUpdate?: (entity: Entity) => void
   hiddenInputValue: string | number
@@ -58,6 +58,12 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
   const [openNewDialog, setOpenNewDialog] = useState(false)
   const [openEditDialog, setOpenEditDialog] = useState(false)
   const [editDraft, setEditDraft] = useState<Partial<Entity>>({})
+
+  const displayLabel = selectedEntity
+    ? selectedEntity.name
+    : selectedEntity === null
+      ? 'N/A'
+      : placeholder
 
   const entityTypeFilters = {
     INSTALLER: ['INSTALLER', 'CONTRACTOR'],
@@ -109,7 +115,7 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
               )}
             >
               <span className="truncate">
-                {selectedEntity?.name || placeholder}
+                {displayLabel}
               </span>
               <svg
                 className="ml-2 h-4 w-4 shrink-0 opacity-50"
@@ -131,6 +137,16 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
               <CommandEmpty>No {label.toLowerCase()} found.</CommandEmpty>
               <CommandList>
                 <CommandGroup>
+                  <CommandItem
+                    key="none"
+                    value="none"
+                    onSelect={() => {
+                      onEntitySelect(null)
+                      setOpenCombobox(false)
+                    }}
+                  >
+                    N/A
+                  </CommandItem>
                   {filteredEntities.map((entity) => (
                     <CommandItem
                       key={entity.id}
