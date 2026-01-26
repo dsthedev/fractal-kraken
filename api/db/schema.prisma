@@ -27,13 +27,13 @@ model User {
   defaultRetailerEntityId Int?
   defaultRetailerEntity   Entity? @relation("defaultRetailerEntity", fields: [defaultRetailerEntityId], references: [id])
 
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  rates         Rate[]
-  billableItems BillableItem[]
-  estimates     Estimate[]
-  entities           Entity[] @relation("entityUsers")
-  authoredEntities   Entity[] @relation("entityAuthor")
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  rates            Rate[]
+  billableItems    BillableItem[]
+  estimates        Estimate[]
+  entities         Entity[]       @relation("entityUsers")
+  authoredEntities Entity[]       @relation("entityAuthor")
 }
 
 // enum UnitDimension {
@@ -209,7 +209,7 @@ model Entity {
   estimatesAsClient    Estimate[] @relation("clientEntity")
   estimatesAsRetailer  Estimate[] @relation("retailerEntity")
   estimates            Estimate[]
-  users                User[] @relation("entityUsers")
+  users                User[]     @relation("entityUsers")
 
   @@index([authorId])
 }
