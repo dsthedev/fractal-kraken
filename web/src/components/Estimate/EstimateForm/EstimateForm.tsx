@@ -1081,67 +1081,65 @@ const EstimateForm = (props: EstimateFormProps) => {
               <div className="space-y-2">
                 {/* Mobile Card View */}
                 <div className="md:hidden space-y-2">
-                  {billableItems.map((item, _idx) => (
+                  {billableItems.map((item) => (
                     <div
                       key={item.id}
-                      className="rounded-md border p-3 space-y-2"
+                      className="rounded-md border p-2 flex items-center justify-between gap-2"
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="font-medium">
-                            {item.quantity} ×{' '}
+                      {/* Left: clickable details */}
+                      <div
+                        className="flex-1 cursor-pointer"
+                        onClick={() => setEditingBillableItem(item)}
+                      >
+                        <div className="font-medium">
+                          <strong className="text-xl">{item.quantity}</strong> ×{' '}
+                          <span className="text-muted-foreground">
                             {item.unit?.shortName ||
                               item.unit?.fullName ||
                               item.unitId}{' '}
-                            - {serviceLabel(item)}
+                          </span>
+                          <strong className="text-lg">
+                            {serviceLabel(item)}
+                          </strong>
+                        </div>
+                        {item.notes && (
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {item.notes}
                           </div>
-                          {item.notes && (
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {item.notes}
-                            </div>
-                          )}
+                        )}
+
+                        <div className="flex justify-between items-center mt-1">
+                          <div>
+                            <span className="text-xs text-muted-foreground">
+                              @{' '}
+                            </span>
+                            <span className="text-lime-600">$</span>
+                            <span className="text-lg">
+                              {formatMoney(item.unitPrice as number)}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-lime-600">$</span>
+                            <span className="text-xl">
+                              {formatMoney(item.subtotal as number)}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between pt-2 border-t">
-                        <div>
-                          <div className="text-xs text-muted-foreground">
-                            Unit Price
-                          </div>
-                          <div>${formatMoney(item.unitPrice as number)}</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs text-muted-foreground">
-                            Subtotal
-                          </div>
-                          <div className="font-semibold">
-                            ${formatMoney(item.subtotal as number)}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex gap-2 pt-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          title="Edit"
-                          onClick={() => setEditingBillableItem(item)}
-                        >
-                          <Pencil className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          title="Remove"
-                          onClick={() => openDeleteConfirm(item.id)}
-                        >
-                          <Trash2Icon className="h-4 w-4 mr-1" />
-                          Delete
-                        </Button>
-                      </div>
+
+                      {/* Right: delete button */}
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon-sm"
+                        title="Delete"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          openDeleteConfirm(item.id)
+                        }}
+                      >
+                        <Trash2Icon className="h-4 w-4" />
+                      </Button>
                     </div>
                   ))}
                 </div>
