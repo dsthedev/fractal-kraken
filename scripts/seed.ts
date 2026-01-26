@@ -90,23 +90,23 @@ const seedMaterials = async () => {
   return records.length
 }
 
-const seedServices = async () => {
-  const records = readCsv('20260121-services.csv')
-  for (const row of records) {
-    await db.service.upsert({
-      where: { id: parseInt(row.id) },
-      update: {},
-      create: {
-        // id will be auto-generated if record doesn't exist
-        action: row.action as any,
-        material: row.material || '',
-        context: row.context || null,
-        description: row.description || null,
-      },
-    })
-  }
-  return records.length
-}
+// const seedServices = async () => {
+//   const records = readCsv('20260121-services.csv')
+//   for (const row of records) {
+//     await db.service.upsert({
+//       where: { id: parseInt(row.id) },
+//       update: {},
+//       create: {
+//         // id will be auto-generated if record doesn't exist
+//         action: row.action as any,
+//         material: row.material || '',
+//         context: row.context || null,
+//         description: row.description || null,
+//       },
+//     })
+//   }
+//   return records.length
+// }
 
 // Seed simple actions list (separate CSV) — can be run manually later
 export const seedActions = async () => {
@@ -268,42 +268,42 @@ const modelSeeds = [
   //   clean: async () => db.user.deleteMany({}),
   //   seed: seedUsers,
   // },
-  // {
-  //   key: 'measurementUnits',
-  //   sequenceName: 'MeasurementUnit',
-  //   clean: async () => db.measurementUnit.deleteMany({}),
-  //   seed: seedMeasurementUnits,
-  // },
+  {
+    key: 'measurementUnits',
+    sequenceName: 'MeasurementUnit',
+    clean: async () => db.measurementUnit.deleteMany({}),
+    seed: seedMeasurementUnits,
+  },
   // {
   //   key: 'services',
   //   sequenceName: 'Service',
   //   clean: async () => db.service.deleteMany({}),
   //   seed: seedServices,
   // },
-  // {
-  //   key: 'materials',
-  //   sequenceName: 'Material',
-  //   clean: async () => db.material.deleteMany({}),
-  //   seed: seedMaterials,
-  // },
-  // {
-  //   key: 'actions',
-  //   sequenceName: 'Action',
-  //   clean: async () => db.action.deleteMany({}),
-  //   seed: seedActions,
-  // },
+  {
+    key: 'materials',
+    sequenceName: 'Material',
+    clean: async () => db.material.deleteMany({}),
+    seed: seedMaterials,
+  },
+  {
+    key: 'actions',
+    sequenceName: 'Action',
+    clean: async () => db.action.deleteMany({}),
+    seed: seedActions,
+  },
   // {
   //   key: 'rates',
   //   sequenceName: 'Rate',
   //   clean: async () => db.rate.deleteMany({}),
   //   seed: seedRates,
   // },
-  {
-    key: 'entities',
-    sequenceName: 'Entity',
-    clean: async () => db.entity.deleteMany({}),
-    seed: seedEntities,
-  },
+  // {
+  //   key: 'entities',
+  //   sequenceName: 'Entity',
+  //   clean: async () => db.entity.deleteMany({}),
+  //   seed: seedEntities,
+  // },
   // {
   //   key: 'estimates',
   //   sequenceName: 'Estimate',

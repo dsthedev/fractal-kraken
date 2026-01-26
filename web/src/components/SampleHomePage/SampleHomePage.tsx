@@ -117,7 +117,7 @@ const content = {
 
 export default function SampleHomePage() {
   return (
-    <main className="flex flex-col gap-24 px-6 py-16 md:px-12 lg:px-24 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+    <main className="flex flex-col gap-24 px-6 py-16 md:px-12 lg:px-24">
       {/* Hero */}
       <section className="max-w-5xl mx-auto text-center flex flex-col gap-6">
         <img src="/favicon.png" alt="Home" className="h-32 w-32 mx-auto mb-6" />

@@ -165,11 +165,13 @@ const Nav = () => {
                 </Button>
               </>
             )}
-            <div className="block my-4 p-4">
-              <small className="text-muted-foreground">Logged in as:</small>
-              <br />
-              {currentUser?.email}
-            </div>
+            {currentUser && (
+              <div className="block my-4 p-4">
+                <small className="text-muted-foreground">Logged in as:</small>
+                <br />
+                {currentUser?.email}
+              </div>
+            )}
           </div>
         </SheetContent>
       </Sheet>

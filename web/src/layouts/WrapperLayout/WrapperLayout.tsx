@@ -66,7 +66,7 @@ const WrapperLayoutContent = ({ children }: WrapperLayoutProps) => {
                   <Button
                     size="lg"
                     variant="lime"
-                    disabled
+                    disabled={false}
                     onClick={() => navigate(routes.signup())}
                   >
                     Sign Up

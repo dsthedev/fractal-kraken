@@ -208,6 +208,7 @@ model Entity {
   estimatesAsClient    Estimate[] @relation("clientEntity")
   estimatesAsRetailer  Estimate[] @relation("retailerEntity")
   estimates            Estimate[]
+  users                User[]
 
   @@index([authorId])
 }
