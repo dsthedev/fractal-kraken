@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { Pencil } from 'lucide-react'
 import type {
   FindEntitiesForDashboard,
   FindRatesForDashboard,
@@ -136,7 +137,14 @@ const DashboardPage = () => {
             <ConnectedEntities />
           </TabsContent>
 
-          <TabsContent value="profile" className="mt-6">
+          <TabsContent value="profile" className="mt-6 relative">
+            {!isEditing && (
+              <div className="absolute top-4 right-4 mb-4 flex justify-end">
+                <Button onClick={() => setIsEditing(true)}>
+                  <Pencil />
+                </Button>
+              </div>
+            )}
             {isEditing ? (
               <EditUserProfile onDone={() => setIsEditing(false)} />
             ) : (
