@@ -32,7 +32,8 @@ model User {
   rates         Rate[]
   billableItems BillableItem[]
   estimates     Estimate[]
-  entities      Entity[]
+  entities           Entity[] @relation("entityUsers")
+  authoredEntities   Entity[] @relation("entityAuthor")
 }
 
 // enum UnitDimension {
@@ -198,7 +199,7 @@ model Entity {
   updatedAt DateTime @updatedAt
 
   authorId String?
-  author   User?   @relation(fields: [authorId], references: [id])
+  author   User?   @relation("entityAuthor", fields: [authorId], references: [id])
 
   usersDefault  User[] @relation("defaultEntity")
   usersRetailer User[] @relation("defaultRetailerEntity")
@@ -208,7 +209,7 @@ model Entity {
   estimatesAsClient    Estimate[] @relation("clientEntity")
   estimatesAsRetailer  Estimate[] @relation("retailerEntity")
   estimates            Estimate[]
-  users                User[]
+  users                User[] @relation("entityUsers")
 
   @@index([authorId])
 }
