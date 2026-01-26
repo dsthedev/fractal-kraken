@@ -264,7 +264,6 @@ const RateForm = ({
     const finalActionId = selectedAction
     const finalMaterialId = selectedMaterial
     const finalUnitId = selectedUnit
-    const finalAuthorId = authorId ?? String(data.authorId)
     const minutesValue =
       data.estimatedMinutesPerUnit === undefined ||
       data.estimatedMinutesPerUnit === null
@@ -276,9 +275,6 @@ const RateForm = ({
         'Action, Material and Unit must be selected before saving'
       )
     }
-    if (!finalAuthorId) {
-      throw new Error('Author ID is required')
-    }
 
     const {
       id: _id,
@@ -287,6 +283,7 @@ const RateForm = ({
       action: _action,
       material: _material,
       unit: _unit,
+      authorId: _authorId,
       ...restData
     } = data
 
@@ -296,7 +293,6 @@ const RateForm = ({
         actionId: finalActionId,
         materialId: finalMaterialId,
         unitId: finalUnitId,
-        authorId: finalAuthorId,
         subAmount: data.subAmount,
         retailAmount: data.retailAmount,
         estimatedMinutesPerUnit: minutesValue,
@@ -314,13 +310,6 @@ const RateForm = ({
           wrapperClassName="rw-form-error-wrapper"
           titleClassName="rw-form-error-title"
           listClassName="rw-form-error-list"
-        />
-
-        <HiddenField
-          name="authorId"
-          value={authorId ?? rate?.authorId}
-          required
-          asNumber={false}
         />
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">

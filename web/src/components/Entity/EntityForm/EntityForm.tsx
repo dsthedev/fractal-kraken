@@ -109,7 +109,7 @@ const EntityForm = (props: EntityFormProps) => {
               className="rw-label"
               errorClassName="rw-label rw-label-error"
             >
-              Name
+              Company
             </Label>
 
             <TextField
@@ -149,7 +149,7 @@ const EntityForm = (props: EntityFormProps) => {
               className="rw-label"
               errorClassName="rw-label rw-label-error"
             >
-              Contact name
+              Contact
             </Label>
 
             <TextField
@@ -262,6 +262,7 @@ const EntityForm = (props: EntityFormProps) => {
             <TextField
               name="city"
               defaultValue={initial.city}
+              placeholder=""
               className="rw-input"
               errorClassName="rw-input rw-input-error"
             />
@@ -283,7 +284,7 @@ const EntityForm = (props: EntityFormProps) => {
               defaultValue={initial.state}
               className="rw-input"
               errorClassName="rw-input rw-input-error"
-              placeholder="TX"
+              placeholder="WI"
             />
 
             <FieldError name="state" className="rw-field-error" />
@@ -310,7 +311,7 @@ const EntityForm = (props: EntityFormProps) => {
         </div>
 
         {/* Country */}
-        <div>
+        {/* <div>
           <Label
             name="country"
             className="rw-label"
@@ -328,7 +329,7 @@ const EntityForm = (props: EntityFormProps) => {
           />
 
           <FieldError name="country" className="rw-field-error" />
-        </div>
+        </div> */}
 
         {/* Notes */}
         <div>

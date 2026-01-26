@@ -40,8 +40,24 @@ export const rate: QueryResolvers['rate'] = ({ id }) => {
 }
 
 export const createRate: MutationResolvers['createRate'] = ({ input }) => {
+  const authorId = context.currentUser?.id
+  if (!authorId) {
+    throw new Error('User not authenticated')
+  }
+
   return db.rate.create({
-    data: input,
+    data: {
+      actionId: input.actionId,
+      materialId: input.materialId,
+      unitId: input.unitId,
+      subAmount: input.subAmount,
+      retailAmount: input.retailAmount,
+      currency: input.currency,
+      context: input.context,
+      estimatedMinutesPerUnit: input.estimatedMinutesPerUnit,
+      description: input.description,
+      authorId,
+    },
   })
 }
 
