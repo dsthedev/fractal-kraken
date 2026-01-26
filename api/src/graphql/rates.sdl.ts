@@ -48,7 +48,6 @@ export const schema = gql`
     subAmount: Decimal!
     retailAmount: Decimal!
     currency: String!
-    authorId: String!
     estimatedMinutesPerUnit: Int
     description: String
     context: String
@@ -61,7 +60,6 @@ export const schema = gql`
     subAmount: Decimal
     retailAmount: Decimal
     currency: String
-    authorId: String
     estimatedMinutesPerUnit: Int
     description: String
     context: String

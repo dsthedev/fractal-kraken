@@ -208,6 +208,8 @@ model Entity {
   estimatesAsClient    Estimate[] @relation("clientEntity")
   estimatesAsRetailer  Estimate[] @relation("retailerEntity")
   estimates            Estimate[]
+
+  @@index([authorId])
 }
 
 enum EstimateStatus {

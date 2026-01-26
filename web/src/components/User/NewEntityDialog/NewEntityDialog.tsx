@@ -30,6 +30,7 @@ const CREATE_ENTITY_MUTATION: TypedDocumentNode<
       postalCode
       country
       notes
+      authorId
     }
   }
 `
@@ -40,7 +41,11 @@ type NewEntityDialogProps = {
   defaultType?: CreateEntityInput['type']
 }
 
-const NewEntityDialog = ({ onClose, onCreated, defaultType }: NewEntityDialogProps) => {
+const NewEntityDialog = ({
+  onClose,
+  onCreated,
+  defaultType,
+}: NewEntityDialogProps) => {
   const [createEntity, { loading, error }] = useMutation(
     CREATE_ENTITY_MUTATION,
     {

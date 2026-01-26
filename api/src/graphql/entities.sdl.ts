@@ -14,6 +14,8 @@ export const schema = gql`
     postalCode: String
     country: String
     notes: String
+    authorId: String
+    author: User
     createdAt: DateTime!
     updatedAt: DateTime!
     usersDefault: [User]!

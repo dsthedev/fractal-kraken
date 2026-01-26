@@ -18,6 +18,11 @@ const CREATE_ENTITY_MUTATION: TypedDocumentNode<
   mutation CreateEntityMutation($input: CreateEntityInput!) {
     createEntity(input: $input) {
       id
+      authorId
+      author {
+        id
+        email
+      }
     }
   }
 `

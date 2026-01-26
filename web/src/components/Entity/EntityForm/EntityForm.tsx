@@ -31,6 +31,7 @@ const entityValidationSchema = z.object({
   postalCode: z.string().optional(),
   country: z.string().optional(),
   notes: z.string().optional(),
+  authorId: z.string().optional(),
 })
 
 interface EntityFormProps {
@@ -45,11 +46,15 @@ const EntityForm = (props: EntityFormProps) => {
   const initial = { ...props.entity, ...props.initialValues }
 
   const onSubmit = (data: FormEntity) => {
-    // Exclude id and timestamps from the submission data
+    // Exclude id, timestamps, and authorId from the submission data
     const {
       id: _id,
       createdAt: _createdAt,
       updatedAt: _updatedAt,
+      authorId: _authorId,
+      author: _author,
+      usersDefault: _usersDefault,
+      usersRetailer: _usersRetailer,
       ...inputData
     } = data
     props.onSave(inputData, props?.entity?.id)
@@ -345,6 +350,11 @@ const EntityForm = (props: EntityFormProps) => {
 
           <FieldError name="notes" className="rw-field-error" />
         </div>
+
+        {/* Hidden readonly authorId field for existing entities */}
+        {props.entity?.authorId && (
+          <input type="hidden" name="authorId" value={props.entity.authorId} />
+        )}
 
         <div className="rw-button-group">
           <Submit disabled={props.loading} className="rw-button rw-button-blue">
