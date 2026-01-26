@@ -255,7 +255,7 @@ const RatesList = ({ rates }: FindRates) => {
                     className="rw-button rw-button-small rw-button-blue"
                   >
                     <Pencil className="h-4 w-4" />
-                    <span className="text-white pl-4">Edit</span>
+                    <span className="pl-4">Edit</span>
                   </Link>
                   <button
                     type="button"

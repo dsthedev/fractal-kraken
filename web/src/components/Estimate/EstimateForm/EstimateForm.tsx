@@ -211,6 +211,7 @@ const GET_RATES_QUERY: TypedDocumentNode<FindRates> = gql`
       retailAmount
       currency
       context
+      description
       estimatedMinutesPerUnit
       action {
         id
