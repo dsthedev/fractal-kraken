@@ -302,7 +302,7 @@ const EntitiesList = ({ entities }: FindEntities) => {
                     className="rw-button rw-button-small rw-button-blue flex-1"
                   >
                     <Pencil className="h-4 w-4" />
-                    <span className="text-white pl-4">Edit</span>
+                    <span className="pl-4">Edit</span>
                   </Link>
                   <button
                     type="button"

@@ -41,6 +41,7 @@ import {
   currencyDisplay,
   fullServiceDisplay,
 } from 'src/lib/formatters.js'
+import { buildRateSentence } from 'src/lib/rateSentence'
 import { sortByField, toggleSort } from 'src/lib/sort'
 import { todayAsYYYYMMDD } from 'src/lib/utils'
 
@@ -285,26 +286,42 @@ const RatesList = ({ rates }: FindRates) => {
               return (
                 <>
                   <DrawerHeader>
-                    <DrawerTitle>
+                    <DrawerTitle className="text-xl font-semibold border-b-1 pb-4 my-4">
                       {fullServiceDisplay(
                         rate.action?.name,
                         rate.material?.name,
                         ''
                       )}{' '}
-                      <span className="text-sm text-muted-foreground"></span>
                     </DrawerTitle>
+                    <span className="text-sm text-muted-foreground border-b-1 pb-4">
+                      {buildRateSentence(
+                        rate.action?.name,
+                        rate.material?.name,
+                        rate.context,
+                        rate.subAmount,
+                        rate.retailAmount,
+                        rate.unit?.shortName || rate.unit?.fullName,
+                        rate.currency
+                      )}
+                    </span>
                   </DrawerHeader>
-                  <div className="px-4 pb-6 space-y-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground">
-                        Measurement Unit
-                      </p>
-                      <p className="text-sm font-medium">
-                        {rate.unit?.fullName || '...'}
-                      </p>
-                    </div>
-                    <div className="flex py-4">
-                      <div className="flex-1">
+                  <div className="px-4 pb-6">
+                    <div className="grid grid-cols-2 gap-4 py-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Unit</p>
+                        <p className="text-sm font-medium">
+                          {rate.unit?.shortName || '...'}
+                        </p>
+                      </div>
+                      {rate.estimatedMinutesPerUnit && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">eMpU</p>
+                          <p className="text-sm font-medium">
+                            {truncate(rate.estimatedMinutesPerUnit)}
+                          </p>
+                        </div>
+                      )}
+                      <div>
                         <p className="text-xs text-muted-foreground">
                           Sub Rate
                         </p>
@@ -312,7 +329,7 @@ const RatesList = ({ rates }: FindRates) => {
                           {currencyDisplay(rate.subAmount)}
                         </p>
                       </div>
-                      <div className="flex-1">
+                      <div>
                         <p className="text-xs text-muted-foreground">
                           Retail Rate
                         </p>
@@ -321,14 +338,7 @@ const RatesList = ({ rates }: FindRates) => {
                         </p>
                       </div>
                     </div>
-                    {rate.estimatedMinutesPerUnit && (
-                      <div>
-                        <p className="text-xs text-muted-foreground">eMpU</p>
-                        <p className="text-sm font-medium">
-                          {truncate(rate.estimatedMinutesPerUnit)}
-                        </p>
-                      </div>
-                    )}
+
                     <nav className="flex flex-row gap-2 mt-4">
                       <Link
                         to={routes.editRate({ id: rate.id })}

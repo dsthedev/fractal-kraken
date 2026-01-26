@@ -23,6 +23,7 @@ import type { TypedDocumentNode } from '@cedarjs/web'
 import { useAuth } from 'src/auth'
 import { Button } from 'src/components/ui/button'
 import { CurrencyField } from 'src/components/ui/currency-field'
+import { buildRateSentence } from 'src/lib/rateSentence'
 import formatRatePerHour from 'src/lib/utils'
 
 // Query and mutation for MeasurementUnit
@@ -38,6 +39,24 @@ const UNIT_QUERY: TypedDocumentNode<EditMeasurementUnitCellById> = gql`
       description
       createdAt
       updatedAt
+    }
+  }
+`
+
+const ACTION_QUERY = gql`
+  query RateFormActionById($id: Int!) {
+    action: action(id: $id) {
+      id
+      name
+    }
+  }
+`
+
+const MATERIAL_QUERY = gql`
+  query RateFormMaterialById($id: Int!) {
+    material: material(id: $id) {
+      id
+      name
     }
   }
 `
@@ -87,7 +106,7 @@ interface RateFormProps {
   }>
 }
 
-const HiddenField = ({
+const _HiddenField = ({
   name,
   value,
   required = false,
@@ -123,6 +142,7 @@ interface LabeledFieldProps {
   type?: 'text' | 'number'
   textarea?: boolean
   rows?: number
+  placeholder?: string
   className?: string
 }
 
@@ -135,6 +155,7 @@ const LabeledField = ({
   type = 'text',
   textarea = false,
   rows,
+  placeholder,
   className = '',
 }: LabeledFieldProps) => (
   <>
@@ -150,6 +171,7 @@ const LabeledField = ({
         name={name}
         defaultValue={defaultValue}
         rows={rows ?? 3}
+        placeholder={placeholder}
         className={`rw-input resize-none ${className}`}
         errorClassName="rw-input rw-input-error"
       />
@@ -157,6 +179,7 @@ const LabeledField = ({
       <TextField
         name={name}
         defaultValue={defaultValue}
+        placeholder={placeholder}
         className={`rw-input ${className} ${
           readOnly ? 'bg-gray-100 cursor-not-allowed' : ''
         }`}
@@ -222,6 +245,82 @@ const ComputedRateDisplay = ({
   return (
     <span className="text-lg text-muted-foreground mt-2 block">{text}</span>
   )
+}
+
+const RateSentenceDisplay = ({
+  rate,
+  selectedAction,
+  selectedMaterial,
+  selectedUnit,
+}: {
+  rate?: EditRateById['rate']
+  selectedAction?: number
+  selectedMaterial?: number
+  selectedUnit?: number
+}) => {
+  const { control } = useFormContext()
+
+  const context = useWatch({
+    control,
+    name: 'context' as const,
+    defaultValue: (rate as any)?.context,
+  }) as string | undefined
+
+  const subAmount = useWatch({
+    control,
+    name: 'subAmount' as const,
+    defaultValue: rate?.subAmount,
+  }) as number | undefined
+
+  const retailAmount = useWatch({
+    control,
+    name: 'retailAmount' as const,
+    defaultValue: rate?.retailAmount,
+  }) as number | undefined
+
+  const currency = useWatch({
+    control,
+    name: 'currency' as const,
+    defaultValue: rate?.currency ?? 'USD',
+  }) as string | undefined
+
+  const actionId = selectedAction ?? rate?.actionId
+  const materialId = selectedMaterial ?? rate?.materialId
+  const unitId = selectedUnit ?? rate?.unitId
+
+  const { data: actionData } = useQuery(ACTION_QUERY, {
+    variables: { id: actionId as number },
+    skip: !actionId,
+  })
+
+  const { data: materialData } = useQuery(MATERIAL_QUERY, {
+    variables: { id: materialId as number },
+    skip: !materialId,
+  })
+
+  const { data: unitData } = useQuery<EditMeasurementUnitCellById>(UNIT_QUERY, {
+    variables: { id: unitId as number },
+    skip: !unitId,
+  })
+
+  const actionName =
+    (actionData && actionData.action?.name) || rate?.action?.name
+  const materialName =
+    (materialData && materialData.material?.name) || rate?.material?.name
+  const unit = (unitData && unitData.measurementUnit) || rate?.unit
+  const unitName = unit?.shortName || unit?.fullName
+
+  const sentence = buildRateSentence(
+    actionName,
+    materialName,
+    context,
+    subAmount,
+    retailAmount,
+    unitName,
+    currency
+  )
+
+  return <p className="text-sm text-muted-foreground">{sentence}</p>
 }
 
 const RateForm = ({
@@ -297,6 +396,7 @@ const RateForm = ({
         retailAmount: data.retailAmount,
         estimatedMinutesPerUnit: minutesValue,
         currency: data.currency || 'USD',
+        authorId: authorId ?? currentUser.id,
       },
       rate?.id
     )
@@ -312,7 +412,16 @@ const RateForm = ({
           listClassName="rw-form-error-list"
         />
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+        <div className="flex items-center justify-center mb-6 text-center">
+          <RateSentenceDisplay
+            rate={rate}
+            selectedAction={selectedAction}
+            selectedMaterial={selectedMaterial}
+            selectedUnit={selectedUnit}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
           <div className="flex gap-2 items-end">
             {currentUser.roles.includes('superadmin') && (
               <Button
@@ -335,6 +444,9 @@ const RateForm = ({
                 value={selectedAction}
                 onChange={setSelectedAction}
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                What type of work is this rate for?
+              </p>
             </div>
           </div>
 
@@ -360,6 +472,9 @@ const RateForm = ({
                 value={selectedMaterial}
                 onChange={setSelectedMaterial}
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                What material/resource is this rate for?
+              </p>
             </div>
           </div>
 
@@ -367,8 +482,12 @@ const RateForm = ({
             <LabeledField
               name="context"
               label="Context"
+              placeholder="pattern, size, complexity..."
               defaultValue={(rate as any)?.context}
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Modifier to distinguish similar rates
+            </p>
           </div>
 
           <div className="flex gap-2 items-end">
@@ -390,34 +509,41 @@ const RateForm = ({
               </Button>
             )}
           </div>
-        </div>
 
-        <div className="flex gap-4 mt-4 items-end">
           <div className="flex-1">
             <CurrencyField
               name="subAmount"
               label="Sub amount"
               defaultValue={rate?.subAmount}
+              currency={rate?.currency ?? 'USD'}
               required
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              The rate charged when subcontracting, a lower cost basis.
+            </p>
           </div>
+
           <div className="flex-1">
             <CurrencyField
               name="retailAmount"
               label="Retail amount"
               defaultValue={rate?.retailAmount}
+              currency={rate?.currency ?? 'USD'}
               required
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              The rate charged when selling to customers, a higher cost basis.
+            </p>
           </div>
-          <div className="w-24">
-            <LabeledField
-              name="currency"
-              label="Currency"
-              defaultValue={rate?.currency ?? 'USD'}
-              readOnly
-              className="text-center"
-            />
-          </div>
+        </div>
+
+        <div className="sr-only">
+          <LabeledField
+            name="currency"
+            label="Currency"
+            defaultValue={rate?.currency ?? 'USD'}
+            readOnly
+          />
         </div>
 
         <div className="mt-4">

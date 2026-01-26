@@ -11,6 +11,7 @@ interface CurrencyFieldProps {
   required?: boolean
   readOnly?: boolean
   className?: string
+  currency?: string
 }
 
 /**
@@ -25,6 +26,7 @@ export const CurrencyField = ({
   required = false,
   readOnly = false,
   className = '',
+  currency = 'USD',
 }: CurrencyFieldProps) => {
   const { control } = useFormContext()
   const {
@@ -122,6 +124,7 @@ export const CurrencyField = ({
         {label ?? name}
       </Label>
       <div className="relative">
+        {/* input wall */}
         <span className="absolute left-0 top-0 bottom-0 flex items-center justify-center w-10 bg-gray-100 dark:bg-gray-800 border-r border-gray-300 dark:border-gray-600 rounded-l text-gray-600 dark:text-gray-400 font-medium">
           $
         </span>
@@ -139,6 +142,9 @@ export const CurrencyField = ({
             readOnly ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : ''
           } ${error ? 'border-red-500 focus:ring-red-500' : ''}`}
         />
+        <span className="text-xs absolute right-0 top-0 bottom-0 flex items-center justify-center w-10 bg-gray-100 dark:bg-gray-800 border-l border-gray-300 dark:border-gray-600 rounded-r text-gray-600 dark:text-gray-400 font-medium">
+          {currency}
+        </span>
       </div>
       <FieldError name={name} className="rw-field-error" />
     </div>
