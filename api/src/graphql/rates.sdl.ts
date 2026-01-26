@@ -45,6 +45,7 @@ export const schema = gql`
     actionId: Int
     materialId: Int
     unitId: Int!
+    authorId: String!
     subAmount: Decimal!
     retailAmount: Decimal!
     currency: String!
@@ -57,6 +58,7 @@ export const schema = gql`
     actionId: Int
     materialId: Int
     unitId: Int
+    authorId: String!
     subAmount: Decimal
     retailAmount: Decimal
     currency: String

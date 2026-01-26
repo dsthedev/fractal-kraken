@@ -48,7 +48,8 @@ const todayAsYYYYMMDD = () => {
 
 const formatCurrency = (amount: number | null | undefined) => {
   if (amount === null || amount === undefined) return '$0.00'
-  return `$${amount.toFixed(2)}`
+  const numAmount = Number(amount)
+  return isNaN(numAmount) ? '$0.00' : `$${numAmount.toFixed(2)}`
 }
 
 const formatAddress = (entity: any) => {

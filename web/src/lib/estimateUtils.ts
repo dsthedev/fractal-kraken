@@ -62,11 +62,17 @@ export const buildRateSearchValue = (rate: FindRates['rates'][0]): string => {
 export const buildEntityUpdateInput = (entity: Partial<Entity>) => {
   const fields: (keyof Entity)[] = [
     'name',
+    'nickname',
+    'contactName',
+    'email',
+    'phone',
     'addressLine1',
     'addressLine2',
     'city',
     'state',
     'postalCode',
+    'country',
+    'notes',
   ]
   return fields.reduce((acc, field) => {
     if (entity[field] !== undefined) {

@@ -190,70 +190,163 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
               <Pencil className="h-4 w-4" />
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit {label}</DialogTitle>
             </DialogHeader>
             {selectedEntity ? (
-              <div className="space-y-2">
+              <div className="space-y-4">
+                {/* Name and Nickname row */}
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <label
+                      className="rw-label"
+                      htmlFor={`edit-${fieldName}-name`}
+                    >
+                      Name
+                    </label>
+                    <input
+                      id={`edit-${fieldName}-name`}
+                      className="rw-input"
+                      value={editDraft.name ?? ''}
+                      onChange={(e) =>
+                        setEditDraft((d) => ({ ...d, name: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label
+                      className="rw-label"
+                      htmlFor={`edit-${fieldName}-nickname`}
+                    >
+                      Nickname
+                    </label>
+                    <input
+                      id={`edit-${fieldName}-nickname`}
+                      className="rw-input"
+                      value={editDraft.nickname ?? ''}
+                      onChange={(e) =>
+                        setEditDraft((d) => ({
+                          ...d,
+                          nickname: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                {/* Contact Name row */}
                 <div>
                   <label
                     className="rw-label"
-                    htmlFor={`edit-${fieldName}-name`}
+                    htmlFor={`edit-${fieldName}-contactName`}
                   >
-                    Name
+                    Contact Name
                   </label>
                   <input
-                    id={`edit-${fieldName}-name`}
+                    id={`edit-${fieldName}-contactName`}
                     className="rw-input"
-                    value={editDraft.name ?? ''}
+                    value={editDraft.contactName ?? ''}
                     onChange={(e) =>
-                      setEditDraft((d) => ({ ...d, name: e.target.value }))
+                      setEditDraft((d) => ({
+                        ...d,
+                        contactName: e.target.value,
+                      }))
                     }
                   />
                 </div>
-                <div className="flex gap-2">
-                  <div className="flex-1">
+
+                {/* Email and Phone row */}
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
                     <label
                       className="rw-label"
-                      htmlFor={`edit-${fieldName}-address1`}
+                      htmlFor={`edit-${fieldName}-email`}
                     >
-                      Address Line 1
+                      Email
                     </label>
                     <input
-                      id={`edit-${fieldName}-address1`}
+                      id={`edit-${fieldName}-email`}
+                      type="email"
                       className="rw-input"
-                      value={editDraft.addressLine1 ?? ''}
+                      value={editDraft.email ?? ''}
                       onChange={(e) =>
                         setEditDraft((d) => ({
                           ...d,
-                          addressLine1: e.target.value,
+                          email: e.target.value,
                         }))
                       }
                     />
                   </div>
-                  <div className="flex-1">
+                  <div>
                     <label
                       className="rw-label"
-                      htmlFor={`edit-${fieldName}-address2`}
+                      htmlFor={`edit-${fieldName}-phone`}
                     >
-                      Address Line 2
+                      Phone
                     </label>
                     <input
-                      id={`edit-${fieldName}-address2`}
+                      id={`edit-${fieldName}-phone`}
                       className="rw-input"
-                      value={editDraft.addressLine2 ?? ''}
+                      value={editDraft.phone ?? ''}
                       onChange={(e) =>
                         setEditDraft((d) => ({
                           ...d,
-                          addressLine2: e.target.value,
+                          phone: e.target.value,
                         }))
                       }
+                      placeholder="(XXX) XXX-XXXX"
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-6 gap-2">
-                  <div className="col-span-3">
+
+                {/* Address Line 1 */}
+                <div>
+                  <label
+                    className="rw-label"
+                    htmlFor={`edit-${fieldName}-address1`}
+                  >
+                    Address Line 1
+                  </label>
+                  <input
+                    id={`edit-${fieldName}-address1`}
+                    className="rw-input"
+                    value={editDraft.addressLine1 ?? ''}
+                    onChange={(e) =>
+                      setEditDraft((d) => ({
+                        ...d,
+                        addressLine1: e.target.value,
+                      }))
+                    }
+                    placeholder="Street address"
+                  />
+                </div>
+
+                {/* Address Line 2 */}
+                <div>
+                  <label
+                    className="rw-label"
+                    htmlFor={`edit-${fieldName}-address2`}
+                  >
+                    Address Line 2
+                  </label>
+                  <input
+                    id={`edit-${fieldName}-address2`}
+                    className="rw-input"
+                    value={editDraft.addressLine2 ?? ''}
+                    onChange={(e) =>
+                      setEditDraft((d) => ({
+                        ...d,
+                        addressLine2: e.target.value,
+                      }))
+                    }
+                    placeholder="Apartment, suite, etc."
+                  />
+                </div>
+
+                {/* City, State, Postal Code row */}
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div>
                     <label
                       className="rw-label"
                       htmlFor={`edit-${fieldName}-city`}
@@ -272,7 +365,7 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
                       }
                     />
                   </div>
-                  <div className="col-span-1">
+                  <div>
                     <label
                       className="rw-label"
                       htmlFor={`edit-${fieldName}-state`}
@@ -289,9 +382,10 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
                           state: e.target.value,
                         }))
                       }
+                      placeholder="TX"
                     />
                   </div>
-                  <div className="col-span-2">
+                  <div>
                     <label
                       className="rw-label"
                       htmlFor={`edit-${fieldName}-postal`}
@@ -311,7 +405,52 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
                     />
                   </div>
                 </div>
-                <div className="flex justify-end gap-2 pt-2">
+
+                {/* Country */}
+                <div>
+                  <label
+                    className="rw-label"
+                    htmlFor={`edit-${fieldName}-country`}
+                  >
+                    Country
+                  </label>
+                  <input
+                    id={`edit-${fieldName}-country`}
+                    className="rw-input"
+                    value={editDraft.country ?? ''}
+                    onChange={(e) =>
+                      setEditDraft((d) => ({
+                        ...d,
+                        country: e.target.value,
+                      }))
+                    }
+                    placeholder="US"
+                  />
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label
+                    className="rw-label"
+                    htmlFor={`edit-${fieldName}-notes`}
+                  >
+                    Notes
+                  </label>
+                  <textarea
+                    id={`edit-${fieldName}-notes`}
+                    className="rw-input"
+                    value={editDraft.notes ?? ''}
+                    onChange={(e) =>
+                      setEditDraft((d) => ({
+                        ...d,
+                        notes: e.target.value,
+                      }))
+                    }
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4">
                   <Button
                     type="button"
                     variant="secondary"
