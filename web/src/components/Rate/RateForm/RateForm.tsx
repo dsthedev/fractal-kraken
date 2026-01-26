@@ -421,8 +421,8 @@ const RateForm = ({
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-          <div className="flex gap-2 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+          <div className="flex gap-2 items-start max-w-sm w-full mx-auto">
             {currentUser.roles.includes('superadmin') && (
               <Button
                 variant="outline"
@@ -450,7 +450,7 @@ const RateForm = ({
             </div>
           </div>
 
-          <div className="flex gap-2 items-end">
+          <div className="flex gap-2 items-start max-w-sm w-full mx-auto">
             {currentUser.roles.includes('superadmin') && (
               <Button
                 variant="outline"
@@ -478,7 +478,7 @@ const RateForm = ({
             </div>
           </div>
 
-          <div className="flex flex-col">
+          <div className="block gap-2 items-start max-w-sm w-full mx-auto">
             <LabeledField
               name="context"
               label="Context"
@@ -490,7 +490,7 @@ const RateForm = ({
             </p>
           </div>
 
-          <div className="flex gap-2 items-end">
+          <div className="flex gap-2 items-start max-w-sm w-full mx-auto">
             <div className="flex-1">
               <UnitDropdown value={selectedUnit} onChange={setSelectedUnit} />
             </div>
@@ -510,7 +510,7 @@ const RateForm = ({
             )}
           </div>
 
-          <div className="flex-1">
+          <div className="block gap-2 items-start max-w-sm w-full mx-auto">
             <CurrencyField
               name="subAmount"
               label="Sub amount"
@@ -523,7 +523,7 @@ const RateForm = ({
             </p>
           </div>
 
-          <div className="flex-1">
+          <div className="block gap-2 items-start max-w-sm w-full mx-auto">
             <CurrencyField
               name="retailAmount"
               label="Retail amount"
@@ -546,8 +546,7 @@ const RateForm = ({
           />
         </div>
 
-        <div className="mt-4">
-          <hr className="my-4" />
+        <div className="block gap-2 items-start max-w-sm w-full mx-auto my-8">
           <LabeledField
             name="description"
             label="Description"
