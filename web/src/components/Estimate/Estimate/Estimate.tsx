@@ -82,7 +82,7 @@ const formatService = (obj: any) => {
 
 const Estimate = ({ estimate }: Props) => {
   const [documentType, setDocumentType] = useState<'Estimate' | 'Invoice'>(
-    'Estimate'
+    'Invoice'
   )
 
   const toggleDocumentType = () => {
@@ -112,7 +112,7 @@ const Estimate = ({ estimate }: Props) => {
 
   return (
     <>
-      <div className="mx-auto max-w-4xl space-y-8 p-8 print:p-4">
+      <div className="mx-auto max-w-4xl space-y-8 p-8 print:p-4 print:text-xs">
         {/* Top Half */}
         <div className="space-y-6">
           {/* Title Row */}
@@ -137,10 +137,11 @@ const Estimate = ({ estimate }: Props) => {
             <div className="text-right">
               <span className="font-semibold">No.</span>{' '}
               <Badge variant="outline">
-                {createEstimateRefNo(
+                {estimate.title || '...'}
+                {/* {createEstimateRefNo(
                   estimate.retailerEntity?.name,
                   estimate.clientEntity?.name
-                )}
+                )} */}
               </Badge>
             </div>
           </div>
@@ -164,7 +165,7 @@ const Estimate = ({ estimate }: Props) => {
                   </span>
                 )}
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-xs text-muted-foreground">
                 {formatAddress(estimate.installerEntity)}
               </div>
             </div>
@@ -186,7 +187,7 @@ const Estimate = ({ estimate }: Props) => {
                   </span>
                 )}
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-xs text-muted-foreground">
                 {formatAddress(estimate.retailerEntity)}
               </div>
             </div>
@@ -208,8 +209,10 @@ const Estimate = ({ estimate }: Props) => {
                   </span>
                 )}
               </div>
-              <div className="text-sm text-muted-foreground">
-                {formatAddress(estimate.clientEntity)}
+              <div className="text-xs text-muted-foreground">
+                {estimate.jobAddressLine1}
+                {estimate.jobAddressLine2}
+                {estimate.jobCity + estimate.jobState + estimate.jobPostalCode}
               </div>
             </div>
           </div>
@@ -220,7 +223,7 @@ const Estimate = ({ estimate }: Props) => {
           {/* Billable Items Table */}
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="print:text-xs">
                 <TableHead className="w-20 text-right">Qty</TableHead>
                 <TableHead className="w-16">U/M</TableHead>
                 <TableHead>Service / Material</TableHead>
@@ -241,21 +244,21 @@ const Estimate = ({ estimate }: Props) => {
                 </TableRow>
               ) : (
                 sortedItems.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="text-right text-lg">
+                  <TableRow key={item.id} className="text-xs">
+                    <TableCell className="text-right text-lg p-1">
                       {item.quantity}
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
+                    <TableCell className="text-muted-foreground p-1">
                       {item.unit?.shortName || '...'}
                     </TableCell>
                     <TableCell>{formatService(item)}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="text-muted-foreground p-1">
                       {item.notes || '—'}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right p-1">
                       {formatCurrency(item.unitPrice)}
                     </TableCell>
-                    <TableCell className="text-right font-semibold text-lg">
+                    <TableCell className="text-right font-semibold p-1">
                       {formatCurrency(item.subtotal)}
                     </TableCell>
                   </TableRow>
