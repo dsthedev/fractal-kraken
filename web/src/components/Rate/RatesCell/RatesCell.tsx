@@ -7,6 +7,7 @@ import type {
   TypedDocumentNode,
 } from '@cedarjs/web'
 
+import { RateDescription } from 'src/components/Dashboard/ResourceDescriptions'
 import { ImportButton } from 'src/components/ImportButton/ImportButton'
 import Rates from 'src/components/Rate/Rates'
 import { Button } from 'src/components/ui/button'
@@ -16,6 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from 'src/components/ui/card'
+import { Skeleton } from 'src/components/ui/skeleton'
 import { useSearch } from 'src/contexts/SearchContext'
 import { currencyDisplay } from 'src/lib/formatters'
 
@@ -77,7 +79,20 @@ const buildSentence = ({
     retailAmount
   )} / ${unitShort} as an independent contractor.`
 
-export const Loading = () => <div>Loading...</div>
+export const Loading = () => (
+  <>
+    <div className="flex w-full flex-col gap-2 my-10">
+      <h2 className="text-xl mx-auto my-4">Loading Rates...</h2>
+      {Array.from({ length: 10 }).map((_, index) => (
+        <div className="flex gap-4" key={index}>
+          <Skeleton className="h-4 flex-1" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-20" />
+        </div>
+      ))}
+    </div>
+  </>
+)
 
 export const Empty = () => {
   const sentence = buildSentence(exampleRate)
@@ -175,5 +190,9 @@ export const Success = ({
     return searchable.includes(searchQuery.toLowerCase())
   })
 
-  return <Rates rates={filtered} />
+  return (
+    <>
+      <Rates rates={filtered} />
+    </>
+  )
 }

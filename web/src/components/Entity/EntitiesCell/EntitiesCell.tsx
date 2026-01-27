@@ -7,6 +7,7 @@ import type {
   TypedDocumentNode,
 } from '@cedarjs/web'
 
+import { EntityDescription } from 'src/components/Dashboard/ResourceDescriptions'
 import Entities from 'src/components/Entity/Entities'
 import { ImportEntitiesButton } from 'src/components/ImportEntitiesButton/ImportEntitiesButton'
 import { Button } from 'src/components/ui/button'
@@ -16,6 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from 'src/components/ui/card'
+import { Skeleton } from 'src/components/ui/skeleton'
 import { useSearch } from 'src/contexts/SearchContext'
 
 export const QUERY: TypedDocumentNode<FindEntities, FindEntitiesVariables> =
@@ -42,7 +44,20 @@ export const QUERY: TypedDocumentNode<FindEntities, FindEntitiesVariables> =
     }
   `
 
-export const Loading = () => <div>Loading...</div>
+export const Loading = () => (
+  <>
+    <div className="flex w-full flex-col gap-2 my-10">
+      <h2 className="text-xl mx-auto my-4">Loading Contacts...</h2>
+      {Array.from({ length: 10 }).map((_, index) => (
+        <div className="flex gap-4" key={index}>
+          <Skeleton className="h-4 flex-1" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-20" />
+        </div>
+      ))}
+    </div>
+  </>
+)
 
 export const Empty = () => {
   return (
@@ -50,14 +65,14 @@ export const Empty = () => {
       <Card className="w-full max-w-md text-center">
         <CardHeader>
           <CardTitle>
-            <h2 className="text-4xl">No Entities... Yet!</h2>
+            <h2 className="text-4xl">No Contacts... Yet!</h2>
           </CardTitle>
         </CardHeader>
 
         <CardContent className="space-y-6">
           <div className="space-y-3 text-sm text-muted-foreground">
             <p>
-              An entity represents any person or business involved in your
+              Contact entities represent any person or business involved in your
               flooring work. Each entity can have a specific role.
             </p>
 
@@ -85,11 +100,14 @@ export const Empty = () => {
           </div>
 
           <Button asChild variant="lime" size="lg" className="w-full">
-            <Link to={routes.newEntity()}>Create an Entity</Link>
+            <Link to={routes.newEntity()}>Create Contact Entity</Link>
           </Button>
 
           <hr className="my-6" />
-          <ImportEntitiesButton label="Import Entities" refetchQuery={QUERY} />
+          <ImportEntitiesButton
+            label="Import Contact Entities"
+            refetchQuery={QUERY}
+          />
         </CardContent>
       </Card>
     </div>
@@ -119,5 +137,11 @@ export const Success = ({
       )
     }) || []
 
-  return <Entities entities={filteredEntities} />
+  return (
+    <>
+      <Entities entities={filteredEntities} />
+      <hr className="my-10" />
+      <EntityDescription />
+    </>
+  )
 }

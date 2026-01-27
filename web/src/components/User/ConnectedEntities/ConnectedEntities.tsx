@@ -26,23 +26,23 @@ const ConnectedEntities = () => {
       <div className="space-y-6">
         {/* Default Entity Selector */}
         <EntitySelector
-          label="Default Entity"
-          description="Select your default entity for new estimates and invoices"
+          label="My Contact Entity"
+          description="Which contact entity represents you or your business. This entity will be used as the default for installer on estimates and invoices."
           fieldName="defaultEntityId"
         />
 
         {/* Default Retailer Entity Selector */}
         <EntitySelector
-          label="Default Retailer Entity"
-          description="Select your default retailer entity for retail pricing"
+          label="Default Retailer"
+          description="Select which contact entity you typically purchase materials from. This entity will be used as the default retailer on estimates and invoices."
           fieldName="defaultRetailerEntityId"
         />
       </div>
       <hr className="my-4" />
       <p className="text-sm mb-4 max-w-lg text-muted-foreground">
-        If the entity you are looking for is not listed, you can add a new one
-        here. After adding it, you can assign it from either of the selectors
-        above.
+        If the contact entity you are looking for is not listed, you can add a
+        new one here. After adding it, you can assign it from either of the
+        selectors above.
       </p>
       <Dialog
         open={isNewEntityDialogOpen}
@@ -51,7 +51,7 @@ const ConnectedEntities = () => {
         <DialogTrigger asChild>
           <Button variant="outline" size="sm">
             <PlusCircle className="mr-2 h-4 w-4" />
-            Add Entity
+            Add Contact / Entity
           </Button>
         </DialogTrigger>
         <DialogContent className="max-w-2xl">

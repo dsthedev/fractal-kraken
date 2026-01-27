@@ -64,12 +64,12 @@ const Nav = () => {
       icon: <FileText className="mr-2 h-6 w-6" />,
     },
     {
-      label: 'Sevice Rates',
+      label: 'Rates',
       route: routes.rates,
       icon: <BadgeDollarSign className="mr-2 h-6 w-6" />,
     },
     {
-      label: 'Entities',
+      label: 'Contacts',
       route: routes.entities,
       icon: <Building2 className="mr-2 h-6 w-6" />,
     },

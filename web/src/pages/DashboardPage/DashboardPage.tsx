@@ -12,6 +12,11 @@ import type { TypedDocumentNode } from '@cedarjs/web'
 import { useQuery, Metadata } from '@cedarjs/web'
 
 import BasicMetrics from 'src/components/Dashboard/BasicMetrics'
+import {
+  EntityDescription,
+  EstimateDescription,
+  RateDescription,
+} from 'src/components/Dashboard/ResourceDescriptions'
 import { Button } from 'src/components/ui/button'
 import {
   Tabs,
@@ -80,7 +85,7 @@ const DashboardPage = () => {
         <Tabs defaultValue="metrics" className="w-full">
           <TabsList>
             <TabsTrigger value="metrics">Metrics</TabsTrigger>
-            <TabsTrigger value="entities">Entities</TabsTrigger>
+            <TabsTrigger value="entities">Contacts</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
           </TabsList>
 
@@ -95,41 +100,9 @@ const DashboardPage = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="rounded-lg border bg-card p-6">
-                <h3 className="mb-3 text-xl font-semibold">
-                  <Link to={routes.entities()}>Entities</Link>
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Entities are the people and organizations you work with. This
-                  includes your clients (who you bid jobs to), retailers
-                  (material suppliers), and installers (who help with jobs). You
-                  can also define your own contractor information here.
-                </p>
-              </div>
-
-              <div className="rounded-lg border bg-card p-6">
-                <h3 className="mb-3 text-xl font-semibold">
-                  <Link to={routes.rates()}>Rates</Link>
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Rates define the pricing for actions and materials. Each rate
-                  includes a measurement unit, sub amount (cost), retail amount
-                  (pricing), and optional estimated time per unit. Rates enable
-                  quick, consistent pricing across estimates.
-                </p>
-              </div>
-
-              <div className="rounded-lg border bg-card p-6">
-                <h3 className="mb-3 text-xl font-semibold">
-                  <Link to={routes.estimates()}>Estimates</Link>
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Estimates are editable job proposals that combine entities,
-                  billable items, and rates to calculate total cost and time.
-                  Track status from draft through invoiced. Once accepted,
-                  estimates become the basis for invoicing and payment tracking.
-                </p>
-              </div>
+              <EntityDescription />
+              <RateDescription />
+              <EstimateDescription />
             </div>
           </TabsContent>
 
