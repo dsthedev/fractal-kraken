@@ -51,6 +51,7 @@ const CREATE_ACTION_MUTATION: TypedDocumentNode<any, any> = gql`
 `
 
 type SortState = 'none' | 'asc' | 'desc'
+type SortField = 'name' | 'usedIn'
 
 const ActionsList = ({ actions }: FindActions) => {
   const [deleteAction] = useMutation(DELETE_ACTION_MUTATION, {
@@ -74,28 +75,47 @@ const ActionsList = ({ actions }: FindActions) => {
   }
 
   const [nameSort, setNameSort] = useState<SortState>('none')
-  const originalRef = useRef(actions)
-
-  // Keep originalRef in sync when actions prop changes (e.g., search filter)
-  if (originalRef.current !== actions) {
-    originalRef.current = actions
-  }
+  const [usedInSort, setUsedInSort] = useState<SortState>('none')
 
   const sortedActions = useMemo(() => {
-    if (nameSort === 'none') return originalRef.current
-    const copy = [...originalRef.current]
+    if (nameSort === 'none' && usedInSort === 'none') return actions
+    const copy = [...actions]
     copy.sort((a, b) => {
-      const na = (a.name || '').toLowerCase()
-      const nb = (b.name || '').toLowerCase()
-      if (na < nb) return nameSort === 'asc' ? -1 : 1
-      if (na > nb) return nameSort === 'asc' ? 1 : -1
+      if (nameSort !== 'none') {
+        const na = (a.name || '').toLowerCase()
+        const nb = (b.name || '').toLowerCase()
+        if (na < nb) return nameSort === 'asc' ? -1 : 1
+        if (na > nb) return nameSort === 'asc' ? 1 : -1
+      }
+      if (usedInSort !== 'none') {
+        const ua = a.billableItems.length
+        const ub = b.billableItems.length
+        if (ua < ub) return usedInSort === 'asc' ? -1 : 1
+        if (ua > ub) return usedInSort === 'asc' ? 1 : -1
+      }
       return 0
     })
     return copy
-  }, [nameSort, actions])
+  }, [nameSort, usedInSort, actions])
 
   const cycleNameSort = () => {
     setNameSort((s) => (s === 'none' ? 'asc' : s === 'asc' ? 'desc' : 'none'))
+    setUsedInSort('none')
+  }
+
+  const cycleUsedInSort = () => {
+    setUsedInSort((s) => (s === 'none' ? 'asc' : s === 'asc' ? 'desc' : 'none'))
+    setNameSort('none')
+  }
+
+  const NameSortIcon = () => {
+    if (nameSort === 'none') return null
+    return nameSort === 'asc' ? ' ↑' : ' ↓'
+  }
+
+  const UsedInSortIcon = () => {
+    if (usedInSort === 'none') return null
+    return usedInSort === 'asc' ? ' ↑' : ' ↓'
   }
 
   // Export / Import / Delete All controls
@@ -165,7 +185,7 @@ const ActionsList = ({ actions }: FindActions) => {
     <div className="rw-segment rw-table-wrapper-responsive">
       <table className="rw-table">
         <thead>
-          <tr className="text-left text-xs text-muted">
+          <tr className="text-left">
             {/* <th>Id</th> */}
             <th
               role="button"
@@ -174,15 +194,18 @@ const ActionsList = ({ actions }: FindActions) => {
               title="Sort by name: cycle asc → desc → default"
             >
               Name
-              {nameSort !== 'none' && (
-                <span className="ml-2 text-muted">
-                  {nameSort === 'asc' ? '▲' : '▼'}
-                </span>
-              )}
+              <NameSortIcon />
             </th>
             <th className="hidden md:flex">Description</th>
-            {/* <th>Created at</th>
-            <th>Updated at</th> */}
+            <th
+              role="button"
+              onClick={cycleUsedInSort}
+              className="cursor-pointer select-none"
+              title="Sort by usage: cycle asc → desc → default"
+            >
+              Used In
+              <UsedInSortIcon />
+            </th>
             <th>&nbsp;</th>
           </tr>
         </thead>
@@ -203,8 +226,13 @@ const ActionsList = ({ actions }: FindActions) => {
               <td className="hidden md:flex text-muted-foreground">
                 {truncate(action.description)}
               </td>
-              {/* <td>{timeTag(action.createdAt)}</td>
-              <td>{timeTag(action.updatedAt)}</td> */}
+              <td>
+                {action.billableItems.length > 0 ? (
+                  <span className="text-xl">{action.billableItems.length}</span>
+                ) : (
+                  <span className="text-xs text-gray-500">None</span>
+                )}
+              </td>
               <td>
                 <nav className="rw-table-actions">
                   <Link
@@ -232,7 +260,7 @@ const ActionsList = ({ actions }: FindActions) => {
       <div className="flex flex-col md:flex-row gap-2">
         <ExportButton
           label="Export All Actions"
-          data={originalRef.current}
+          data={sortedActions}
           filename={`${todayAsYYYYMMDD()}-actions.csv`}
         />
         <input

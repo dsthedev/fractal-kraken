@@ -167,7 +167,7 @@ const MeasurementUnitsList = ({ measurementUnits }: FindMeasurementUnits) => {
     <div className="rw-segment rw-table-wrapper-responsive">
       <table className="rw-table">
         <thead>
-          <tr>
+          <tr className="text-left">
             {/* <th>Id</th> */}
             <th>Full name</th>
             <th>Plural name</th>

@@ -10,7 +10,7 @@ import MaterialCombobox from '../MaterialCombobox'
 
 export const QUERY: TypedDocumentNode<FindMaterials, FindMaterialsVariables> =
   gql`
-    query FindMaterials {
+    query FindMaterialsForSelect {
       materials {
         id
         name

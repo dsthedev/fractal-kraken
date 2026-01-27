@@ -39,7 +39,7 @@
   @apply bg-zinc-400 bg-clip-content border-[3px] border-solid border-transparent rounded-full;
 }
 .rw-segment-header {
-  @apply py-3 px-4 text-center;
+  @apply py-3 px-4;
 }
 /* .rw-segment-main {
   @apply p-4;

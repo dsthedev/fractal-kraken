@@ -19,6 +19,9 @@ export const QUERY: TypedDocumentNode<FindMaterials, FindMaterialsVariables> =
         description
         createdAt
         updatedAt
+        billableItems {
+          id
+        }
       }
     }
   `
@@ -46,7 +49,10 @@ export const Success = ({
   const { searchQuery } = useSearch()
 
   const filtered = materials.filter((m) => {
-    const searchable = [m.name, m.description || ''].join(' ').toLowerCase()
+    const searchable = [m.name, m.description]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
     return searchable.includes(searchQuery.toLowerCase())
   })
 

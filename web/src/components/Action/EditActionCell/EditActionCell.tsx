@@ -14,6 +14,7 @@ import { useMutation } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
 import ActionForm from 'src/components/Action/ActionForm'
+import { BillableItemsList } from 'src/components/BillableItems/BillableItemsList'
 
 export const QUERY: TypedDocumentNode<EditActionById> = gql`
   query EditActionById($id: Int!) {
@@ -23,6 +24,13 @@ export const QUERY: TypedDocumentNode<EditActionById> = gql`
       description
       createdAt
       updatedAt
+      billableItems {
+        id
+        notes
+        quantity
+        unitPrice
+        pricingType
+      }
     }
   }
 `
@@ -73,7 +81,7 @@ export const Success = ({ action }: CellSuccessProps<EditActionById>) => {
     <div className="rw-segment">
       <header className="rw-segment-header">
         <h2 className="rw-heading rw-heading-secondary">
-          Edit Action {action?.id}
+          Editing: {action?.name}
         </h2>
       </header>
       <div className="rw-segment-main">
@@ -83,6 +91,10 @@ export const Success = ({ action }: CellSuccessProps<EditActionById>) => {
           error={error}
           loading={loading}
         />
+
+        {action?.billableItems && (
+          <BillableItemsList items={action.billableItems} displayCount={true} />
+        )}
       </div>
     </div>
   )

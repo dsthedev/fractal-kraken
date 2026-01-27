@@ -18,6 +18,9 @@ export const QUERY: TypedDocumentNode<FindActions, FindActionsVariables> = gql`
       description
       createdAt
       updatedAt
+      billableItems {
+        id
+      }
     }
   }
 `
@@ -45,7 +48,10 @@ export const Success = ({
   const { searchQuery } = useSearch()
 
   const filtered = actions.filter((a) => {
-    const searchable = [a.name, a.description || ''].join(' ').toLowerCase()
+    const searchable = [a.name, a.description]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
     return searchable.includes(searchQuery.toLowerCase())
   })
 

@@ -26,7 +26,6 @@ import {
   AlertDialogTrigger,
 } from 'src/components/ui/alert-dialog'
 import { Button } from 'src/components/ui/button'
-import { useSearch } from 'src/contexts/SearchContext'
 import { parseCSV } from 'src/lib/csvParse'
 import { truncate } from 'src/lib/formatters'
 import { todayAsYYYYMMDD } from 'src/lib/utils'
@@ -63,15 +62,9 @@ const DELETE_ALL_MATERIALS_MUTATION: TypedDocumentNode<any, any> = gql`
 `
 
 type SortState = 'none' | 'asc' | 'desc'
+type SortField = 'name' | 'usedIn'
 
 const MaterialsList = ({ materials }: FindMaterials) => {
-  const { searchQuery } = useSearch()
-
-  const filtered = materials.filter((m) => {
-    const searchable = [m.name, m.description || ''].join(' ').toLowerCase()
-    return searchable.includes(searchQuery.toLowerCase())
-  })
-
   const [deleteMaterial] = useMutation(DELETE_MATERIAL_MUTATION, {
     onCompleted: () => {
       toast.success('Material deleted')
@@ -118,25 +111,48 @@ const MaterialsList = ({ materials }: FindMaterials) => {
   }
 
   const [nameSort, setNameSort] = useState<SortState>('none')
-  const originalRef = useRef(filtered)
-
-  if (originalRef.current !== filtered) originalRef.current = filtered
+  const [usedInSort, setUsedInSort] = useState<SortState>('none')
 
   const sortedMaterials = useMemo(() => {
-    if (nameSort === 'none') return originalRef.current
-    const copy = [...originalRef.current]
+    if (nameSort === 'none' && usedInSort === 'none') return materials
+    const copy = [...materials]
     copy.sort((a, b) => {
-      const na = (a.name || '').toLowerCase()
-      const nb = (b.name || '').toLowerCase()
-      if (na < nb) return nameSort === 'asc' ? -1 : 1
-      if (na > nb) return nameSort === 'asc' ? 1 : -1
+      if (nameSort !== 'none') {
+        const na = (a.name || '').toLowerCase()
+        const nb = (b.name || '').toLowerCase()
+        if (na < nb) return nameSort === 'asc' ? -1 : 1
+        if (na > nb) return nameSort === 'asc' ? 1 : -1
+      }
+      if (usedInSort !== 'none') {
+        const ua = a.billableItems.length
+        const ub = b.billableItems.length
+        if (ua < ub) return usedInSort === 'asc' ? -1 : 1
+        if (ua > ub) return usedInSort === 'asc' ? 1 : -1
+      }
       return 0
     })
     return copy
-  }, [nameSort, filtered])
+  }, [nameSort, usedInSort, materials])
 
-  const cycleNameSort = () =>
+  const cycleNameSort = () => {
     setNameSort((s) => (s === 'none' ? 'asc' : s === 'asc' ? 'desc' : 'none'))
+    setUsedInSort('none')
+  }
+
+  const cycleUsedInSort = () => {
+    setUsedInSort((s) => (s === 'none' ? 'asc' : s === 'asc' ? 'desc' : 'none'))
+    setNameSort('none')
+  }
+
+  const NameSortIcon = () => {
+    if (nameSort === 'none') return null
+    return nameSort === 'asc' ? ' ↑' : ' ↓'
+  }
+
+  const UsedInSortIcon = () => {
+    if (usedInSort === 'none') return null
+    return usedInSort === 'asc' ? ' ↑' : ' ↓'
+  }
 
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
@@ -181,20 +197,24 @@ const MaterialsList = ({ materials }: FindMaterials) => {
     <div className="rw-segment rw-table-wrapper-responsive">
       <table className="rw-table">
         <thead>
-          <tr>
+          <tr className="text-left">
             <th
               role="button"
               onClick={cycleNameSort}
               className="cursor-pointer select-none"
             >
-              Name{' '}
-              {nameSort !== 'none' && (
-                <span className="ml-2 text-muted">
-                  {nameSort === 'asc' ? '▲' : '▼'}
-                </span>
-              )}
+              Name
+              <NameSortIcon />
             </th>
             <th className="hidden md:flex">Description</th>
+            <th
+              role="button"
+              onClick={cycleUsedInSort}
+              className="cursor-pointer select-none"
+            >
+              Used In
+              <UsedInSortIcon />
+            </th>
             <th>&nbsp;</th>
           </tr>
         </thead>
@@ -213,6 +233,15 @@ const MaterialsList = ({ materials }: FindMaterials) => {
               </td>
               <td className="hidden md:flex text-muted-foreground">
                 {truncate(material.description)}
+              </td>
+              <td>
+                {material.billableItems.length > 0 ? (
+                  <span className="text-xl">
+                    {material.billableItems.length}
+                  </span>
+                ) : (
+                  <span className="text-xs text-gray-500">None</span>
+                )}
               </td>
               <td>
                 <nav className="rw-table-actions">
@@ -241,7 +270,7 @@ const MaterialsList = ({ materials }: FindMaterials) => {
       <div className="flex flex-col md:flex-row gap-2">
         <ExportButton
           label="Export All Materials"
-          data={originalRef.current}
+          data={sortedMaterials}
           filename={`${todayAsYYYYMMDD()}-materials.csv`}
         />
         <input

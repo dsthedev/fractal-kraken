@@ -9,7 +9,7 @@ import type {
 import ActionCombobox from '../ActionCombobox'
 
 export const QUERY: TypedDocumentNode<FindActions, FindActionsVariables> = gql`
-  query FindActions {
+  query FindActionsForSelect {
     actions {
       id
       name
