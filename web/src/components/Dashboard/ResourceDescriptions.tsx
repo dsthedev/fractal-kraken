@@ -6,10 +6,10 @@ export const EntityDescription = () => (
       <Link to={routes.entities()}>Contacts</Link>
     </h3>
     <p className="text-sm text-muted-foreground leading-relaxed">
-      Contacts are entities, as in the people and organizations you work with.
-      This includes your clients (who you bid jobs to), retailers (material
-      suppliers), and installers (who complete the labor necessary for jobs).
-      You can also define your own contractor information here.
+      Contacts are the people and organizations you work with. This includes
+      your clients (who you bid jobs to), retailers (material suppliers), and
+      installers (who complete the labor necessary for jobs). You can also
+      define your own contractor information here.
     </p>
   </div>
 )

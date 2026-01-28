@@ -41,9 +41,9 @@ const EntityCombobox = ({
   value,
   onSelect,
   label,
-  placeholder = 'Select entity...',
-  searchPlaceholder = 'Search entities...',
-  emptyText = 'No entity found.',
+  placeholder = 'Select contact...',
+  searchPlaceholder = 'Search contacts...',
+  emptyText = 'No contact found.',
 }: EntityComboboxProps) => {
   const [open, setOpen] = useState(false)
 

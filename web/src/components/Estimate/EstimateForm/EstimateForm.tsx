@@ -300,7 +300,7 @@ const EstimateForm = (props: EstimateFormProps) => {
     useQuery<FindRates>(GET_RATES_QUERY)
   const [updateEntity] = useMutation(UPDATE_ENTITY_MUTATION, {
     onCompleted: () => {
-      toast.success('Entity updated')
+      toast.success('Contact updated')
     },
     onError: (error) => {
       toast.error(error.message)
@@ -968,7 +968,7 @@ const EstimateForm = (props: EstimateFormProps) => {
 
             <fieldset className="space-y-3 md:w-1/2 order-1">
               <legend>
-                <span className="text-sm font-medium">Entities</span>
+                <span className="text-sm font-medium">Contacts</span>
                 <Button
                   type="button"
                   size="sm"

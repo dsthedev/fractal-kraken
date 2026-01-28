@@ -39,12 +39,12 @@ const Routes = () => {
           <Route path="/estimates" page={EstimateEstimatesPage} name="estimates" />
         </Set>
         <Route path="/dashboard" page={DashboardPage} name="dashboard" />
-        <Set wrap={AdminScaffoldLayout} title="Entities" titleTo="entities" buttonLabel="New" buttonTo="newEntity">
+        <Set wrap={AdminScaffoldLayout} title="Contacts" titleTo="entities" buttonLabel="New" buttonTo="newEntity">
           <Route path="/entities/new" page={EntityNewEntityPage} name="newEntity" />
           <Route path="/entities/{id:Int}/edit" page={EntityEditEntityPage} name="editEntity" />
           <Route path="/entities/{id:Int}" page={EntityEntityPage} name="entity" />
         </Set>
-        <Set wrap={AdminScaffoldLayout} title="Entities" titleTo="entities" buttonLabel="New" buttonTo="newEntity" showSearch={true}>
+        <Set wrap={AdminScaffoldLayout} title="Contacts" titleTo="entities" buttonLabel="New" buttonTo="newEntity" showSearch={true}>
           <Route path="/entities" page={EntityEntitiesPage} name="entities" />
         </Set>
         <Set wrap={AdminScaffoldLayout} title="BillableItems" titleTo="billableItems" buttonLabel="New" buttonTo="newBillableItem">
