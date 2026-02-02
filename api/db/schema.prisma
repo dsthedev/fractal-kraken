@@ -34,18 +34,8 @@ model User {
   estimates        Estimate[]
   entities         Entity[]       @relation("entityUsers")
   authoredEntities Entity[]       @relation("entityAuthor")
+  invoices         Invoice[]
 }
-
-// enum UnitDimension {
-//   LINEAR
-//   SQUARE
-//   CUBIC
-//   VOLUME
-//   TEMPORAL
-//   COUNT
-//   AREA
-//   CUSTOM
-// }
 
 model MeasurementUnit {
   id Int @id @default(autoincrement())
@@ -161,6 +151,8 @@ model BillableItem {
 
   estimate   Estimate? @relation(fields: [estimateId], references: [id])
   estimateId Int?
+  invoice    Invoice?  @relation(fields: [invoiceId], references: [id])
+  invoiceId  Int?
 
   @@index([estimateId, sortOrder])
 }
@@ -273,20 +265,86 @@ model Estimate {
   @@index([status])
 }
 
-// model Stub {
-//   id   Int     @id @default(autoincrement())
-//   uuid String? @default(uuid())
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  ARCHIVED
+}
 
-//   payor     String // who paid
-//   checkNum  String? // payor's check id #
-//   jobsPaid  String? // future list of jobs w/ paid each
-//   totalPaid Int // total paid for this check
+enum InvoicePaymentStatus {
+  UNPAID
+  OUTSTANDING // partial payment
+  PAID
+}
 
-//   paidAt DateTime @default(now()) // date check issued, not cashed
+model Invoice {
+  // id   Int    @id @default(autoincrement()) // only needed at scale or if complex joining is required
+  uuid String @id @default(uuid())
 
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-//   author   User? @relation(fields: [authorId], references: [id])
-//   authorId Int?
-// }
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  // title String? //
+  invoiceNumber String @unique
+
+  status    InvoiceStatus        @default(DRAFT)
+  payStatus InvoicePaymentStatus @default(UNPAID)
+
+  jobStartedAt  DateTime?
+  jobFinishedAt DateTime?
+  dueAt         DateTime?
+  paidAt        DateTime?
+
+  // Invoices don't need complex entity roles like estimates, just payor/payee
+  // Default payee will be the installer, payor is client or retailer (retail vs subcontractor)
+  payorEntityId Int
+  payorEntity   Entity @relation("invoicePayor", fields: [payorEntityId], references: [id])
+  payeeEntityId Int
+  payeeEntity   Entity @relation("invoicePayee", fields: [payeeEntityId], references: [id])
+
+  // Referential source id's, shouldn't be needed for anything other than tracking origin
+  sourceEstimateId        Int?
+  sourceEstimate          Estimate? @relation(fields: [sourceEstimateId], references: [id])
+  sourceInstallerEntityId Int?
+  sourceInstallerEntity   Entity?   @relation("installerEntity", fields: [sourceInstallerEntityId], references: [id])
+  sourceClientEntityId    Int?
+  sourceClientEntity      Entity?   @relation("clientEntity", fields: [sourceClientEntityId], references: [id])
+  sourceRetailerEntityId  Int?
+  sourceRetailerEntity    Entity?   @relation("retailerEntity", fields: [sourceRetailerEntityId], references: [id])
+
+  // Snapshot payee/payor/job location (for historical records)
+  payeeAddressLine1 String?
+  payeeAddressLine2 String?
+  payeeCity         String?
+  payeeState        String?
+  payeePostalCode   String?
+  payeeCountry      String? @default("US")
+
+  payorAddressLine1 String?
+  payorAddressLine2 String?
+  payorCity         String?
+  payorState        String?
+  payorPostalCode   String?
+  payorCountry      String? @default("US")
+
+  jobAddressLine1 String?
+  jobAddressLine2 String?
+  jobCity         String?
+  jobState        String?
+  jobPostalCode   String?
+  jobCountry      String? @default("US")
+
+  billableItems BillableItem[]
+
+  subtotal Decimal @db.Decimal(12, 2)
+  taxTotal Decimal @default(0) @db.Decimal(12, 2)
+  total    Decimal @db.Decimal(12, 2)
+
+  notes String?
+
+  @@index([authorId])
+  @@index([status])
+}

@@ -249,6 +249,7 @@ web/src/
 
 ## Notes for AI Agents
 
+- **keep it simple**: consider simple solutions first, avoid over-engineering, ask for confirmation if unsure
 - **Monorepo workspace**: Ensure `api/` and `web/` workspaces are both updated when adding shared types or utilities
 - **Type safety**: GraphQL types are auto-generated; never edit `types/graphql.d.ts` manually
 - **Relative imports**: Use `src/` path alias in TypeScript (configured in tsconfig)

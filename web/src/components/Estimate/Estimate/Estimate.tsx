@@ -82,7 +82,7 @@ const formatService = (obj: any) => {
 
 const Estimate = ({ estimate }: Props) => {
   const [documentType, setDocumentType] = useState<'Estimate' | 'Invoice'>(
-    'Invoice'
+    'Estimate'
   )
 
   const toggleDocumentType = () => {
