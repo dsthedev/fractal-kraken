@@ -20,6 +20,7 @@ const AdminNav = () => {
   const { isAuthenticated, currentUser } = useAuth()
 
   const adminMenuItems: AdminMenuItem[] = [
+    { label: 'Invoices', route: routes.invoices },
     { label: 'Estimates', route: routes.estimates },
     { label: 'Billable Items', route: routes.billableItems },
     { label: 'Rates', route: routes.rates },

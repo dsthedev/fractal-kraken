@@ -9,13 +9,15 @@ import { useAuth } from './auth.js'
 const Routes = () => {
   return (
     <Router useAuth={useAuth}>
-      <Set wrap={ScaffoldLayout} title="Invoices" titleTo="invoices" buttonLabel="New Invoice" buttonTo="newInvoice">
-        <Route path="/invoices/new" page={InvoiceNewInvoicePage} name="newInvoice" />
-        <Route path="/invoices/{uuid}/edit" page={InvoiceEditInvoicePage} name="editInvoice" />
-        <Route path="/invoices/{uuid}" page={InvoiceInvoicePage} name="invoice" />
-        <Route path="/invoices" page={InvoiceInvoicesPage} name="invoices" />
-      </Set>
       <PrivateSet wrap={WrapperLayout as any} unauthenticated="login" roles={['guest', 'admin']}>
+        <Set wrap={AdminScaffoldLayout} title="Invoices" titleTo="invoices" buttonLabel="New Invoice" buttonTo="newInvoice">
+          <Route path="/invoices/new" page={InvoiceNewInvoicePage} name="newInvoice" />
+          <Route path="/invoices/{uuid}/edit" page={InvoiceEditInvoicePage} name="editInvoice" />
+          <Route path="/invoices/{uuid}" page={InvoiceInvoicePage} name="invoice" />
+        </Set>
+        <Set wrap={AdminScaffoldLayout} title="Invoices" titleTo="invoices" buttonLabel="New Invoice" buttonTo="newInvoice">
+          <Route path="/invoices" page={InvoiceInvoicesPage} name="invoices" />
+        </Set>
         <Set wrap={AdminScaffoldLayout} title="Materials" titleTo="materials" buttonLabel="New" buttonTo="newMaterial">
           <Route path="/materials/new" page={MaterialNewMaterialPage} name="newMaterial" />
           <Route path="/materials/{id:Int}/edit" page={MaterialEditMaterialPage} name="editMaterial" />
