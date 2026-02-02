@@ -149,10 +149,10 @@ model BillableItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  estimate   Estimate? @relation(fields: [estimateId], references: [id])
-  estimateId Int?
-  invoice    Invoice?  @relation(fields: [invoiceId], references: [id])
-  invoiceId  Int?
+  estimate    Estimate? @relation(fields: [estimateId], references: [id])
+  estimateId  Int?
+  invoice     Invoice?  @relation(fields: [invoiceUuid], references: [uuid])
+  invoiceUuid String?
 
   @@index([estimateId, sortOrder])
 }
@@ -202,6 +202,16 @@ model Entity {
   estimatesAsRetailer  Estimate[] @relation("retailerEntity")
   estimates            Estimate[]
   users                User[]     @relation("entityUsers")
+
+  // Invoice relations (explicitly named for payee/payor roles)
+  invoicesAsPayor Invoice[] @relation("invoicePayor")
+  invoicesAsPayee Invoice[] @relation("invoicePayee")
+
+  // Invoice source relations (optional historical tracking)
+  invoicesAsSourceInstaller Invoice[] @relation("installerEntity")
+  invoicesAsSourceClient    Invoice[] @relation("clientEntity")
+  invoicesAsSourceRetailer  Invoice[] @relation("retailerEntity")
+  invoices                  Invoice[]
 
   @@index([authorId])
 }
@@ -256,10 +266,11 @@ model Estimate {
 
   notes String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  entity    Entity?  @relation(fields: [entityId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  entity    Entity?   @relation(fields: [entityId], references: [id])
   entityId  Int?
+  invoices  Invoice[]
 
   @@index([authorId])
   @@index([status])
@@ -343,7 +354,9 @@ model Invoice {
   taxTotal Decimal @default(0) @db.Decimal(12, 2)
   total    Decimal @db.Decimal(12, 2)
 
-  notes String?
+  notes    String?
+  entity   Entity? @relation(fields: [entityId], references: [id])
+  entityId Int?
 
   @@index([authorId])
   @@index([status])
