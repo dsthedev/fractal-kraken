@@ -1,23 +1,59 @@
-import type { EditInvoiceByUuid, UpdateInvoiceInput } from 'types/graphql'
+import { useMemo, useState } from 'react'
+
+import { Plus } from 'lucide-react'
+import type {
+  EditInvoiceByUuid,
+  UpdateInvoiceInput,
+  Entity,
+} from 'types/graphql'
+import { v4 as uuidv4 } from 'uuid'
 
 import type { RWGqlError } from '@cedarjs/forms'
 import {
   Form,
   FormError,
-  FieldError,
   Label,
+  FieldError,
   TextField,
-  RadioField,
-  DatetimeLocalField,
   NumberField,
   Submit,
 } from '@cedarjs/forms'
+import { Link, routes } from '@cedarjs/router'
+import type { TypedDocumentNode } from '@cedarjs/web'
+import { useQuery } from '@cedarjs/web'
 
-const formatDatetime = (value) => {
-  if (value) {
-    return value.replace(/:\d{2}\.\d{3}\w/, '')
-  }
-}
+import { useAuth } from 'src/auth'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from 'src/components/ui/alert-dialog'
+import { Button } from 'src/components/ui/button'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from 'src/components/ui/command'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from 'src/components/ui/dialog'
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from 'src/components/ui/popover'
+import { cn, getWeekNumber, buildTitle } from 'src/lib/utils'
 
 type FormInvoice = NonNullable<EditInvoiceByUuid['invoice']>
 
@@ -26,11 +62,149 @@ interface InvoiceFormProps {
   onSave: (data: UpdateInvoiceInput, uuid?: FormInvoice['uuid']) => void
   error: RWGqlError
   loading: boolean
+  entities?: Entity[]
 }
 
+const FIND_ENTITIES_QUERY: TypedDocumentNode<{ entities: Entity[] }> = gql`
+  query FindEntitiesForInvoiceForm {
+    entities {
+      id
+      type
+      name
+      nickname
+      addressLine1
+      addressLine2
+      city
+      state
+      postalCode
+      country
+      contactName
+      email
+      phone
+      createdAt
+      updatedAt
+    }
+  }
+`
+
 const InvoiceForm = (props: InvoiceFormProps) => {
+  const { currentUser } = useAuth()
+
+  // Fetch entities from database
+  const { data: entitiesData } = useQuery(FIND_ENTITIES_QUERY)
+  const entities = entitiesData?.entities || props.entities || []
+
+  // Generate UUID for new invoices
+  const invoiceUuid = useMemo(
+    () => props.invoice?.uuid || uuidv4(),
+    [props.invoice?.uuid]
+  )
+
+  // Invoice header state
+  const weekNumber = useMemo(() => getWeekNumber(new Date()), [])
+  const [invoiceNumber, setInvoiceNumber] = useState(
+    props.invoice?.invoiceNumber || buildTitle(weekNumber, '', '')
+  )
+  const [selectedStatus, setSelectedStatus] = useState<
+    UpdateInvoiceInput['status']
+  >(props.invoice?.status || 'DRAFT')
+  const [selectedPayStatus, setSelectedPayStatus] = useState<
+    UpdateInvoiceInput['payStatus']
+  >(props.invoice?.payStatus || 'UNPAID')
+  const [openStatus, setOpenStatus] = useState(false)
+  const [openPayStatus, setOpenPayStatus] = useState(false)
+  const [openSourceDialog, setOpenSourceDialog] = useState(false)
+  const [openPayorCombobox, setOpenPayorCombobox] = useState(false)
+  const [openPayeeCombobox, setOpenPayeeCombobox] = useState(false)
+  const [openPayorCopyConfirm, setOpenPayorCopyConfirm] = useState(false)
+  const [openPayeeCopyConfirm, setOpenPayeeCopyConfirm] = useState(false)
+
+  // Billing parties state
+  const [payorEntityId, setPayorEntityId] = useState<number | undefined>(
+    props.invoice?.payorEntityId || undefined
+  )
+  const [payorAddressLine1, setPayorAddressLine1] = useState(
+    props.invoice?.payorAddressLine1 || ''
+  )
+  const [payorAddressLine2, setPayorAddressLine2] = useState(
+    props.invoice?.payorAddressLine2 || ''
+  )
+  const [payorCity, setPayorCity] = useState(props.invoice?.payorCity || '')
+  const [payorState, setPayorState] = useState(props.invoice?.payorState || '')
+  const [payorPostalCode, setPayorPostalCode] = useState(
+    props.invoice?.payorPostalCode || ''
+  )
+
+  const [payeeEntityId, setPayeeEntityId] = useState<number | undefined>(
+    props.invoice?.payeeEntityId || undefined
+  )
+  const [payeeAddressLine1, setPayeeAddressLine1] = useState(
+    props.invoice?.payeeAddressLine1 || ''
+  )
+  const [payeeAddressLine2, setPayeeAddressLine2] = useState(
+    props.invoice?.payeeAddressLine2 || ''
+  )
+  const [payeeCity, setPayeeCity] = useState(props.invoice?.payeeCity || '')
+  const [payeeState, setPayeeState] = useState(props.invoice?.payeeState || '')
+  const [payeePostalCode, setPayeePostalCode] = useState(
+    props.invoice?.payeePostalCode || ''
+  )
+
+  // Job dates state
+  // Calculate default due date (today + 30 days) for new invoices
+  const getDefaultDueDate = () => {
+    if (props.invoice?.dueAt) return props.invoice.dueAt
+    const date = new Date()
+    date.setDate(date.getDate() + 30)
+    return date.toISOString().split('T')[0]
+  }
+
+  const [jobStartedAt, setJobStartedAt] = useState(
+    props.invoice?.jobStartedAt || ''
+  )
+  const [jobFinishedAt, setJobFinishedAt] = useState(
+    props.invoice?.jobFinishedAt || ''
+  )
+  const [dueAt, setDueAt] = useState(getDefaultDueDate())
+  const [paidAt, setPaidAt] = useState(props.invoice?.paidAt || '')
+
+  // Job location state
+  const [jobAddressLine1, setJobAddressLine1] = useState(
+    props.invoice?.jobAddressLine1 || ''
+  )
+  const [jobAddressLine2, setJobAddressLine2] = useState(
+    props.invoice?.jobAddressLine2 || ''
+  )
+  const [jobCity, setJobCity] = useState(props.invoice?.jobCity || '')
+  const [jobState, setJobState] = useState(props.invoice?.jobState || '')
+  const [jobPostalCode, setJobPostalCode] = useState(
+    props.invoice?.jobPostalCode || ''
+  )
+  const [jobCountry, setJobCountry] = useState(
+    props.invoice?.jobCountry || 'US'
+  )
+
+  // Check if invoice has any source references
+  const hasSourceReferences = useMemo(
+    () =>
+      Boolean(
+        props.invoice?.sourceEstimateId ||
+          props.invoice?.sourceInstallerEntityId ||
+          props.invoice?.sourceClientEntityId ||
+          props.invoice?.sourceRetailerEntityId
+      ),
+    [
+      props.invoice?.sourceEstimateId,
+      props.invoice?.sourceInstallerEntityId,
+      props.invoice?.sourceClientEntityId,
+      props.invoice?.sourceRetailerEntityId,
+    ]
+  )
+
   const onSubmit = (data: FormInvoice) => {
-    props.onSave(data, props?.invoice?.uuid)
+    const { uuid: _uuid, ...inputData } = data
+    const uuidToUse = props.invoice?.uuid || invoiceUuid
+    props.onSave(inputData as UpdateInvoiceInput, uuidToUse)
   }
 
   return (
@@ -43,709 +217,1054 @@ const InvoiceForm = (props: InvoiceFormProps) => {
           listClassName="rw-form-error-list"
         />
 
-        <Label
+        {/* Hidden System Fields */}
+
+        {/* UUID - Auto-generated for new invoices, persisted for existing */}
+        <TextField
+          name="uuid"
+          defaultValue={invoiceUuid}
+          className="hidden"
+          errorClassName="hidden"
+          validation={{ required: true }}
+        />
+
+        {/* Author ID - Auto-populated from current user */}
+        <TextField
           name="authorId"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Author id
-        </Label>
-
-        <TextField
-          name="authorId"
-          defaultValue={props.invoice?.authorId}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
+          defaultValue={currentUser?.id || props.invoice?.authorId || ''}
+          className="hidden"
+          errorClassName="hidden"
           validation={{ required: true }}
         />
 
-        <FieldError name="authorId" className="rw-field-error" />
-
-        <Label
-          name="invoiceNumber"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Invoice number
-        </Label>
-
-        <TextField
-          name="invoiceNumber"
-          defaultValue={props.invoice?.invoiceNumber}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          validation={{ required: true }}
-        />
-
-        <FieldError name="invoiceNumber" className="rw-field-error" />
-
-        <Label
-          name="status"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Status
-        </Label>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            uuid="invoice-status-0"
-            name="status"
-            defaultValue="DRAFT"
-            defaultChecked={props.invoice?.status?.includes('DRAFT')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Draft</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            uuid="invoice-status-1"
-            name="status"
-            defaultValue="SENT"
-            defaultChecked={props.invoice?.status?.includes('SENT')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Sent</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            uuid="invoice-status-2"
-            name="status"
-            defaultValue="ARCHIVED"
-            defaultChecked={props.invoice?.status?.includes('ARCHIVED')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Archived</div>
-        </div>
-
-        <FieldError name="status" className="rw-field-error" />
-
-        <Label
-          name="payStatus"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Pay status
-        </Label>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            uuid="invoice-payStatus-0"
-            name="payStatus"
-            defaultValue="UNPAID"
-            defaultChecked={props.invoice?.payStatus?.includes('UNPAID')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Unpaid</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            uuid="invoice-payStatus-1"
-            name="payStatus"
-            defaultValue="OUTSTANDING"
-            defaultChecked={props.invoice?.payStatus?.includes('OUTSTANDING')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Outstanding</div>
-        </div>
-
-        <div className="rw-check-radio-items">
-          <RadioField
-            uuid="invoice-payStatus-2"
-            name="payStatus"
-            defaultValue="PAID"
-            defaultChecked={props.invoice?.payStatus?.includes('PAID')}
-            className="rw-input"
-            errorClassName="rw-input rw-input-error"
-          />
-          <div>Paid</div>
-        </div>
-
-        <FieldError name="payStatus" className="rw-field-error" />
-
-        <Label
-          name="jobStartedAt"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Job started at
-        </Label>
-
-        <DatetimeLocalField
-          name="jobStartedAt"
-          defaultValue={formatDatetime(props.invoice?.jobStartedAt)}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="jobStartedAt" className="rw-field-error" />
-
-        <Label
-          name="jobFinishedAt"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Job finished at
-        </Label>
-
-        <DatetimeLocalField
-          name="jobFinishedAt"
-          defaultValue={formatDatetime(props.invoice?.jobFinishedAt)}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="jobFinishedAt" className="rw-field-error" />
-
-        <Label
-          name="dueAt"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Due at
-        </Label>
-
-        <DatetimeLocalField
-          name="dueAt"
-          defaultValue={formatDatetime(props.invoice?.dueAt)}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="dueAt" className="rw-field-error" />
-
-        <Label
-          name="paidAt"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Paid at
-        </Label>
-
-        <DatetimeLocalField
-          name="paidAt"
-          defaultValue={formatDatetime(props.invoice?.paidAt)}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="paidAt" className="rw-field-error" />
-
-        <Label
-          name="payorEntityId"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Payor entity id
-        </Label>
-
+        {/* Tax Total - Hidden, defaults to 0 (future tax calculation feature) */}
         <NumberField
-          name="payorEntityId"
-          defaultValue={props.invoice?.payorEntityId}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          validation={{ required: true }}
-        />
-
-        <FieldError name="payorEntityId" className="rw-field-error" />
-
-        <Label
-          name="payeeEntityId"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Payee entity id
-        </Label>
-
-        <NumberField
-          name="payeeEntityId"
-          defaultValue={props.invoice?.payeeEntityId}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          validation={{ required: true }}
-        />
-
-        <FieldError name="payeeEntityId" className="rw-field-error" />
-
-        <Label
-          name="sourceEstimateId"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Source estimate id
-        </Label>
-
-        <NumberField
-          name="sourceEstimateId"
-          defaultValue={props.invoice?.sourceEstimateId}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          emptyAs={'undefined'}
-        />
-
-        <FieldError name="sourceEstimateId" className="rw-field-error" />
-
-        <Label
-          name="sourceInstallerEntityId"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Source installer entity id
-        </Label>
-
-        <NumberField
-          name="sourceInstallerEntityId"
-          defaultValue={props.invoice?.sourceInstallerEntityId}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          emptyAs={'undefined'}
-        />
-
-        <FieldError name="sourceInstallerEntityId" className="rw-field-error" />
-
-        <Label
-          name="sourceClientEntityId"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Source client entity id
-        </Label>
-
-        <NumberField
-          name="sourceClientEntityId"
-          defaultValue={props.invoice?.sourceClientEntityId}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          emptyAs={'undefined'}
-        />
-
-        <FieldError name="sourceClientEntityId" className="rw-field-error" />
-
-        <Label
-          name="sourceRetailerEntityId"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Source retailer entity id
-        </Label>
-
-        <NumberField
-          name="sourceRetailerEntityId"
-          defaultValue={props.invoice?.sourceRetailerEntityId}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          emptyAs={'undefined'}
-        />
-
-        <FieldError name="sourceRetailerEntityId" className="rw-field-error" />
-
-        <Label
-          name="payeeAddressLine1"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Payee address line1
-        </Label>
-
-        <TextField
-          name="payeeAddressLine1"
-          defaultValue={props.invoice?.payeeAddressLine1}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="payeeAddressLine1" className="rw-field-error" />
-
-        <Label
-          name="payeeAddressLine2"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Payee address line2
-        </Label>
-
-        <TextField
-          name="payeeAddressLine2"
-          defaultValue={props.invoice?.payeeAddressLine2}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="payeeAddressLine2" className="rw-field-error" />
-
-        <Label
-          name="payeeCity"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Payee city
-        </Label>
-
-        <TextField
-          name="payeeCity"
-          defaultValue={props.invoice?.payeeCity}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="payeeCity" className="rw-field-error" />
-
-        <Label
-          name="payeeState"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Payee state
-        </Label>
-
-        <TextField
-          name="payeeState"
-          defaultValue={props.invoice?.payeeState}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="payeeState" className="rw-field-error" />
-
-        <Label
-          name="payeePostalCode"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Payee postal code
-        </Label>
-
-        <TextField
-          name="payeePostalCode"
-          defaultValue={props.invoice?.payeePostalCode}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="payeePostalCode" className="rw-field-error" />
-
-        <Label
-          name="payeeCountry"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Payee country
-        </Label>
-
-        <TextField
-          name="payeeCountry"
-          defaultValue={props.invoice?.payeeCountry}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="payeeCountry" className="rw-field-error" />
-
-        <Label
-          name="payorAddressLine1"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Payor address line1
-        </Label>
-
-        <TextField
-          name="payorAddressLine1"
-          defaultValue={props.invoice?.payorAddressLine1}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="payorAddressLine1" className="rw-field-error" />
-
-        <Label
-          name="payorAddressLine2"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Payor address line2
-        </Label>
-
-        <TextField
-          name="payorAddressLine2"
-          defaultValue={props.invoice?.payorAddressLine2}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="payorAddressLine2" className="rw-field-error" />
-
-        <Label
-          name="payorCity"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Payor city
-        </Label>
-
-        <TextField
-          name="payorCity"
-          defaultValue={props.invoice?.payorCity}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="payorCity" className="rw-field-error" />
-
-        <Label
-          name="payorState"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Payor state
-        </Label>
-
-        <TextField
-          name="payorState"
-          defaultValue={props.invoice?.payorState}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="payorState" className="rw-field-error" />
-
-        <Label
-          name="payorPostalCode"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Payor postal code
-        </Label>
-
-        <TextField
-          name="payorPostalCode"
-          defaultValue={props.invoice?.payorPostalCode}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="payorPostalCode" className="rw-field-error" />
-
-        <Label
-          name="payorCountry"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Payor country
-        </Label>
-
-        <TextField
-          name="payorCountry"
-          defaultValue={props.invoice?.payorCountry}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="payorCountry" className="rw-field-error" />
-
-        <Label
-          name="jobAddressLine1"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Job address line1
-        </Label>
-
-        <TextField
-          name="jobAddressLine1"
-          defaultValue={props.invoice?.jobAddressLine1}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="jobAddressLine1" className="rw-field-error" />
-
-        <Label
-          name="jobAddressLine2"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Job address line2
-        </Label>
-
-        <TextField
-          name="jobAddressLine2"
-          defaultValue={props.invoice?.jobAddressLine2}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="jobAddressLine2" className="rw-field-error" />
-
-        <Label
-          name="jobCity"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Job city
-        </Label>
-
-        <TextField
-          name="jobCity"
-          defaultValue={props.invoice?.jobCity}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="jobCity" className="rw-field-error" />
-
-        <Label
-          name="jobState"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Job state
-        </Label>
-
-        <TextField
-          name="jobState"
-          defaultValue={props.invoice?.jobState}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="jobState" className="rw-field-error" />
-
-        <Label
-          name="jobPostalCode"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Job postal code
-        </Label>
-
-        <TextField
-          name="jobPostalCode"
-          defaultValue={props.invoice?.jobPostalCode}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="jobPostalCode" className="rw-field-error" />
-
-        <Label
-          name="jobCountry"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Job country
-        </Label>
-
-        <TextField
-          name="jobCountry"
-          defaultValue={props.invoice?.jobCountry}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="jobCountry" className="rw-field-error" />
-
-        <Label
-          name="subtotal"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Subtotal
-        </Label>
-
-        <TextField
-          name="subtotal"
-          defaultValue={props.invoice?.subtotal}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          validation={{ valueAsNumber: true, required: true }}
-        />
-
-        <FieldError name="subtotal" className="rw-field-error" />
-
-        <Label
           name="taxTotal"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Tax total
-        </Label>
-
-        <TextField
-          name="taxTotal"
-          defaultValue={props.invoice?.taxTotal}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
+          defaultValue={props.invoice?.taxTotal || 0}
+          className="hidden"
+          errorClassName="hidden"
           validation={{ valueAsNumber: true, required: true }}
         />
 
-        <FieldError name="taxTotal" className="rw-field-error" />
+        {/* Invoice Header Section */}
+        <div className="flex flex-col gap-4 pb-4 border-b border-border">
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+            {/* Invoice Number with Generate Button */}
+            <div className="flex-1 space-y-2">
+              <Label
+                name="invoiceNumber"
+                className="rw-label"
+                errorClassName="rw-label rw-label-error"
+              >
+                Invoice Number
+              </Label>
 
-        <Label
-          name="total"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Total
-        </Label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  name="invoiceNumber"
+                  type="text"
+                  value={invoiceNumber}
+                  placeholder="Week # - Retailer - Client"
+                  onChange={(e) => setInvoiceNumber(e.target.value)}
+                  className="rw-input flex-1 w-full"
+                />
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="w-full sm:w-auto justify-start sm:justify-center p-0 sm:px-3 sm:py-2"
+                  onClick={() => {
+                    const newNumber = buildTitle(weekNumber, '', '')
+                    setInvoiceNumber(newNumber)
+                  }}
+                >
+                  Generate
+                </Button>
+              </div>
 
-        <TextField
-          name="total"
-          defaultValue={props.invoice?.total}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          validation={{ valueAsNumber: true, required: true }}
-        />
+              <FieldError name="invoiceNumber" className="rw-field-error" />
+            </div>
 
-        <FieldError name="total" className="rw-field-error" />
+            {/* Status Selector */}
+            <div className="w-full sm:w-48">
+              <Label
+                name="status"
+                className="rw-label"
+                errorClassName="rw-label rw-label-error"
+              >
+                Status
+              </Label>
 
-        <Label
-          name="notes"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Notes
-        </Label>
+              <Popover open={openStatus} onOpenChange={setOpenStatus}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openStatus}
+                    className={cn(
+                      'justify-between w-full',
+                      !selectedStatus && 'text-muted-foreground'
+                    )}
+                  >
+                    {selectedStatus || 'Draft'}
+                    <svg
+                      className="ml-2 h-4 w-4 shrink-0 opacity-50"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M7 10l5 5 5-5H7z" />
+                    </svg>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 w-fit">
+                  <Command>
+                    <CommandInput placeholder="Search status..." />
+                    <CommandEmpty>No status found.</CommandEmpty>
+                    <CommandList>
+                      <CommandGroup>
+                        {['DRAFT', 'SENT', 'ARCHIVED'].map((status) => (
+                          <CommandItem
+                            key={status}
+                            value={status}
+                            onSelect={(value) => {
+                              setSelectedStatus(
+                                value.toUpperCase() as UpdateInvoiceInput['status']
+                              )
+                              setOpenStatus(false)
+                            }}
+                          >
+                            {status}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
 
-        <TextField
-          name="notes"
-          defaultValue={props.invoice?.notes}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
+              <input type="hidden" name="status" value={selectedStatus} />
+              <FieldError name="status" className="rw-field-error" />
+            </div>
+          </div>
 
-        <FieldError name="notes" className="rw-field-error" />
+          {/* Payment Status - Only visible if status is not DRAFT */}
+          {selectedStatus !== 'DRAFT' && (
+            <div className="w-full sm:w-48">
+              <Label
+                name="payStatus"
+                className="rw-label"
+                errorClassName="rw-label rw-label-error"
+              >
+                Payment Status
+              </Label>
 
-        <Label
-          name="entityId"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Entity id
-        </Label>
+              <Popover open={openPayStatus} onOpenChange={setOpenPayStatus}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openPayStatus}
+                    className={cn(
+                      'justify-between w-full',
+                      !selectedPayStatus && 'text-muted-foreground'
+                    )}
+                  >
+                    {selectedPayStatus || 'Unpaid'}
+                    <svg
+                      className="ml-2 h-4 w-4 shrink-0 opacity-50"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M7 10l5 5 5-5H7z" />
+                    </svg>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 w-fit">
+                  <Command>
+                    <CommandInput placeholder="Search payment status..." />
+                    <CommandEmpty>No status found.</CommandEmpty>
+                    <CommandList>
+                      <CommandGroup>
+                        {['UNPAID', 'OUTSTANDING', 'PAID'].map((status) => (
+                          <CommandItem
+                            key={status}
+                            value={status}
+                            onSelect={(value) => {
+                              setSelectedPayStatus(
+                                value.toUpperCase() as UpdateInvoiceInput['payStatus']
+                              )
+                              setOpenPayStatus(false)
+                            }}
+                          >
+                            {status}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
 
-        <NumberField
-          name="entityId"
-          defaultValue={props.invoice?.entityId}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          emptyAs={'undefined'}
-        />
+              <input type="hidden" name="payStatus" value={selectedPayStatus} />
+              <FieldError name="payStatus" className="rw-field-error" />
+            </div>
+          )}
 
-        <FieldError name="entityId" className="rw-field-error" />
+          {/* Source Reference Button - Only visible on edit form, disabled if no sources */}
+          {props.invoice?.uuid && (
+            <div className="mt-2">
+              <Dialog
+                open={openSourceDialog}
+                onOpenChange={setOpenSourceDialog}
+              >
+                <DialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={!hasSourceReferences}
+                  >
+                    View Source
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Source Information</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    {/* Source Estimate */}
+                    {props.invoice?.sourceEstimateId && (
+                      <div>
+                        <h3 className="font-semibold mb-2">Source Estimate</h3>
+                        <div className="space-y-1 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">ID: </span>
+                            <Link
+                              to={routes.estimate({
+                                id: props.invoice.sourceEstimateId,
+                              })}
+                              className="text-blue-600 hover:underline"
+                            >
+                              {props.invoice.sourceEstimateId}
+                            </Link>
+                          </div>
+                          {props.invoice.sourceEstimate?.title && (
+                            <div>
+                              <span className="text-muted-foreground">
+                                Title:{' '}
+                              </span>
+                              {props.invoice.sourceEstimate.title}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Source Installer Entity */}
+                    {props.invoice?.sourceInstallerEntity && (
+                      <div>
+                        <h3 className="font-semibold mb-2">
+                          Source Installer Entity
+                        </h3>
+                        <div className="space-y-1 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">
+                              Name:{' '}
+                            </span>
+                            {props.invoice.sourceInstallerEntity.nickname ||
+                              props.invoice.sourceInstallerEntity.name}
+                          </div>
+                          {props.invoice.sourceInstallerEntity.email && (
+                            <div>
+                              <span className="text-muted-foreground">
+                                Email:{' '}
+                              </span>
+                              {props.invoice.sourceInstallerEntity.email}
+                            </div>
+                          )}
+                          {props.invoice.sourceInstallerEntity.phone && (
+                            <div>
+                              <span className="text-muted-foreground">
+                                Phone:{' '}
+                              </span>
+                              {props.invoice.sourceInstallerEntity.phone}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Source Client Entity */}
+                    {props.invoice?.sourceClientEntity && (
+                      <div>
+                        <h3 className="font-semibold mb-2">
+                          Source Client Entity
+                        </h3>
+                        <div className="space-y-1 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">
+                              Name:{' '}
+                            </span>
+                            {props.invoice.sourceClientEntity.nickname ||
+                              props.invoice.sourceClientEntity.name}
+                          </div>
+                          {props.invoice.sourceClientEntity.email && (
+                            <div>
+                              <span className="text-muted-foreground">
+                                Email:{' '}
+                              </span>
+                              {props.invoice.sourceClientEntity.email}
+                            </div>
+                          )}
+                          {props.invoice.sourceClientEntity.phone && (
+                            <div>
+                              <span className="text-muted-foreground">
+                                Phone:{' '}
+                              </span>
+                              {props.invoice.sourceClientEntity.phone}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Source Retailer Entity */}
+                    {props.invoice?.sourceRetailerEntity && (
+                      <div>
+                        <h3 className="font-semibold mb-2">
+                          Source Retailer Entity
+                        </h3>
+                        <div className="space-y-1 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">
+                              Name:{' '}
+                            </span>
+                            {props.invoice.sourceRetailerEntity.nickname ||
+                              props.invoice.sourceRetailerEntity.name}
+                          </div>
+                          {props.invoice.sourceRetailerEntity.email && (
+                            <div>
+                              <span className="text-muted-foreground">
+                                Email:{' '}
+                              </span>
+                              {props.invoice.sourceRetailerEntity.email}
+                            </div>
+                          )}
+                          {props.invoice.sourceRetailerEntity.phone && (
+                            <div>
+                              <span className="text-muted-foreground">
+                                Phone:{' '}
+                              </span>
+                              {props.invoice.sourceRetailerEntity.phone}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* No source info message */}
+                    {!props.invoice?.sourceEstimateId &&
+                      !props.invoice?.sourceInstallerEntity &&
+                      !props.invoice?.sourceClientEntity &&
+                      !props.invoice?.sourceRetailerEntity && (
+                        <p className="text-sm text-muted-foreground">
+                          No source information available.
+                        </p>
+                      )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          )}
+        </div>
+
+        {/* Billing Parties Section */}
+        <div className="mt-6 space-y-6 border-b border-border pb-6">
+          {/* Payor Entity */}
+          <fieldset className="space-y-3">
+            <legend className="text-sm font-semibold">
+              Payor (Who is paying)
+            </legend>
+
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <Label
+                  name="payorEntityId"
+                  className="rw-label"
+                  errorClassName="rw-label rw-label-error"
+                >
+                  Entity
+                </Label>
+                <Popover
+                  open={openPayorCombobox}
+                  onOpenChange={setOpenPayorCombobox}
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openPayorCombobox}
+                      className={cn(
+                        'justify-between w-full',
+                        !payorEntityId && 'text-muted-foreground'
+                      )}
+                    >
+                      {payorEntityId
+                        ? entities?.find((e) => e.id === payorEntityId)?.name ||
+                          `ID: ${payorEntityId}`
+                        : 'Select entity...'}
+                      <svg
+                        className="ml-2 h-4 w-4 shrink-0 opacity-50"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M7 10l5 5 5-5H7z" />
+                      </svg>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="p-0 w-fit">
+                    <Command>
+                      <CommandInput placeholder="Search entities..." />
+                      <CommandEmpty>No entities found.</CommandEmpty>
+                      <CommandList>
+                        <CommandGroup>
+                          {props.entities?.map((entity) => (
+                            <CommandItem
+                              key={entity.id}
+                              value={entity.id.toString()}
+                              onSelect={(value) => {
+                                setPayorEntityId(parseInt(value))
+                                setOpenPayorCombobox(false)
+                              }}
+                            >
+                              {entity.nickname || entity.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <FieldError name="payorEntityId" className="rw-field-error" />
+              </div>
+              <Button type="button" variant="outline" size="sm">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Copy Address Button - shown if payor entity is selected */}
+            {payorEntityId && (
+              <AlertDialog
+                open={openPayorCopyConfirm}
+                onOpenChange={setOpenPayorCopyConfirm}
+              >
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setOpenPayorCopyConfirm(true)}
+                >
+                  Use Payor Info
+                </Button>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Fill Payor Address?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will populate the payor address fields with the
+                      selected entity&apos;s address. This action cannot be
+                      undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <div className="flex gap-4 justify-end">
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => {
+                        const selectedEntity = entities?.find(
+                          (e) => e.id === payorEntityId
+                        )
+                        if (selectedEntity) {
+                          setPayorAddressLine1(
+                            selectedEntity.addressLine1 || ''
+                          )
+                          setPayorAddressLine2(
+                            selectedEntity.addressLine2 || ''
+                          )
+                          setPayorCity(selectedEntity.city || '')
+                          setPayorState(selectedEntity.state || '')
+                          setPayorPostalCode(selectedEntity.postalCode || '')
+                        }
+                        setOpenPayorCopyConfirm(false)
+                      }}
+                    >
+                      Fill Address
+                    </AlertDialogAction>
+                  </div>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label
+                  name="payorAddressLine1"
+                  className="rw-label"
+                  errorClassName="rw-label rw-label-error"
+                >
+                  Address Line 1
+                </Label>
+                <input
+                  type="text"
+                  name="payorAddressLine1"
+                  value={payorAddressLine1}
+                  onChange={(e) => setPayorAddressLine1(e.target.value)}
+                  className="rw-input"
+                />
+                <FieldError
+                  name="payorAddressLine1"
+                  className="rw-field-error"
+                />
+              </div>
+
+              <div>
+                <Label
+                  name="payorAddressLine2"
+                  className="rw-label"
+                  errorClassName="rw-label rw-label-error"
+                >
+                  Address Line 2
+                </Label>
+                <input
+                  type="text"
+                  name="payorAddressLine2"
+                  value={payorAddressLine2}
+                  onChange={(e) => setPayorAddressLine2(e.target.value)}
+                  className="rw-input"
+                />
+                <FieldError
+                  name="payorAddressLine2"
+                  className="rw-field-error"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <div>
+                <Label
+                  name="payorCity"
+                  className="rw-label"
+                  errorClassName="rw-label rw-label-error"
+                >
+                  City
+                </Label>
+                <input
+                  type="text"
+                  name="payorCity"
+                  value={payorCity}
+                  onChange={(e) => setPayorCity(e.target.value)}
+                  className="rw-input"
+                />
+                <FieldError name="payorCity" className="rw-field-error" />
+              </div>
+
+              <div>
+                <Label
+                  name="payorState"
+                  className="rw-label"
+                  errorClassName="rw-label rw-label-error"
+                >
+                  State
+                </Label>
+                <input
+                  type="text"
+                  name="payorState"
+                  value={payorState}
+                  onChange={(e) => setPayorState(e.target.value)}
+                  className="rw-input"
+                />
+                <FieldError name="payorState" className="rw-field-error" />
+              </div>
+
+              <div>
+                <Label
+                  name="payorPostalCode"
+                  className="rw-label"
+                  errorClassName="rw-label rw-label-error"
+                >
+                  Postal Code
+                </Label>
+                <input
+                  type="text"
+                  name="payorPostalCode"
+                  value={payorPostalCode}
+                  onChange={(e) => setPayorPostalCode(e.target.value)}
+                  className="rw-input"
+                />
+                <FieldError name="payorPostalCode" className="rw-field-error" />
+              </div>
+
+              <div>
+                <input type="hidden" name="payorCountry" value="US" disabled />
+              </div>
+            </div>
+          </fieldset>
+
+          {/* Payee Entity */}
+          <fieldset className="space-y-3">
+            <legend className="text-sm font-semibold">
+              Payee (Who is being paid)
+            </legend>
+
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <Label
+                  name="payeeEntityId"
+                  className="rw-label"
+                  errorClassName="rw-label rw-label-error"
+                >
+                  Entity
+                </Label>
+                <Popover
+                  open={openPayeeCombobox}
+                  onOpenChange={setOpenPayeeCombobox}
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openPayeeCombobox}
+                      className={cn(
+                        'justify-between w-full',
+                        !payeeEntityId && 'text-muted-foreground'
+                      )}
+                    >
+                      {payeeEntityId
+                        ? entities?.find((e) => e.id === payeeEntityId)?.name ||
+                          `ID: ${payeeEntityId}`
+                        : 'Select entity...'}
+                      <svg
+                        className="ml-2 h-4 w-4 shrink-0 opacity-50"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M7 10l5 5 5-5H7z" />
+                      </svg>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="p-0 w-fit">
+                    <Command>
+                      <CommandInput placeholder="Search entities..." />
+                      <CommandEmpty>No entities found.</CommandEmpty>
+                      <CommandList>
+                        <CommandGroup>
+                          {entities?.map((entity) => (
+                            <CommandItem
+                              key={entity.id}
+                              value={entity.id.toString()}
+                              onSelect={(value) => {
+                                setPayeeEntityId(parseInt(value))
+                                setOpenPayeeCombobox(false)
+                              }}
+                            >
+                              {entity.nickname || entity.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <FieldError name="payeeEntityId" className="rw-field-error" />
+              </div>
+              <Button type="button" variant="outline" size="sm">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Copy Address Button - shown if payee entity is selected */}
+            {payeeEntityId && (
+              <AlertDialog
+                open={openPayeeCopyConfirm}
+                onOpenChange={setOpenPayeeCopyConfirm}
+              >
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setOpenPayeeCopyConfirm(true)}
+                >
+                  Use Payee Info
+                </Button>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Fill Payee Address?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will populate the payee address fields with the
+                      selected entity&apos;s address. This action cannot be
+                      undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <div className="flex gap-4 justify-end">
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => {
+                        const selectedEntity = entities?.find(
+                          (e) => e.id === payeeEntityId
+                        )
+                        if (selectedEntity) {
+                          setPayeeAddressLine1(
+                            selectedEntity.addressLine1 || ''
+                          )
+                          setPayeeAddressLine2(
+                            selectedEntity.addressLine2 || ''
+                          )
+                          setPayeeCity(selectedEntity.city || '')
+                          setPayeeState(selectedEntity.state || '')
+                          setPayeePostalCode(selectedEntity.postalCode || '')
+                        }
+                        setOpenPayeeCopyConfirm(false)
+                      }}
+                    >
+                      Fill Address
+                    </AlertDialogAction>
+                  </div>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label
+                  name="payeeAddressLine1"
+                  className="rw-label"
+                  errorClassName="rw-label rw-label-error"
+                >
+                  Address Line 1
+                </Label>
+                <input
+                  type="text"
+                  name="payeeAddressLine1"
+                  value={payeeAddressLine1}
+                  onChange={(e) => setPayeeAddressLine1(e.target.value)}
+                  className="rw-input"
+                />
+                <FieldError
+                  name="payeeAddressLine1"
+                  className="rw-field-error"
+                />
+              </div>
+
+              <div>
+                <Label
+                  name="payeeAddressLine2"
+                  className="rw-label"
+                  errorClassName="rw-label rw-label-error"
+                >
+                  Address Line 2
+                </Label>
+                <input
+                  type="text"
+                  name="payeeAddressLine2"
+                  value={payeeAddressLine2}
+                  onChange={(e) => setPayeeAddressLine2(e.target.value)}
+                  className="rw-input"
+                />
+                <FieldError
+                  name="payeeAddressLine2"
+                  className="rw-field-error"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <div>
+                <Label
+                  name="payeeCity"
+                  className="rw-label"
+                  errorClassName="rw-label rw-label-error"
+                >
+                  City
+                </Label>
+                <input
+                  type="text"
+                  name="payeeCity"
+                  value={payeeCity}
+                  onChange={(e) => setPayeeCity(e.target.value)}
+                  className="rw-input"
+                />
+                <FieldError name="payeeCity" className="rw-field-error" />
+              </div>
+
+              <div>
+                <Label
+                  name="payeeState"
+                  className="rw-label"
+                  errorClassName="rw-label rw-label-error"
+                >
+                  State
+                </Label>
+                <input
+                  type="text"
+                  name="payeeState"
+                  value={payeeState}
+                  onChange={(e) => setPayeeState(e.target.value)}
+                  className="rw-input"
+                />
+                <FieldError name="payeeState" className="rw-field-error" />
+              </div>
+
+              <div>
+                <Label
+                  name="payeePostalCode"
+                  className="rw-label"
+                  errorClassName="rw-label rw-label-error"
+                >
+                  Postal Code
+                </Label>
+                <input
+                  type="text"
+                  name="payeePostalCode"
+                  value={payeePostalCode}
+                  onChange={(e) => setPayeePostalCode(e.target.value)}
+                  className="rw-input"
+                />
+                <FieldError name="payeePostalCode" className="rw-field-error" />
+              </div>
+
+              <div>
+                <input type="hidden" name="payeeCountry" value="US" disabled />
+              </div>
+            </div>
+          </fieldset>
+        </div>
+
+        {/* Job Dates Section */}
+        <div className="mt-6 space-y-4 border-b border-border pb-6">
+          <h3 className="text-sm font-semibold">Job Dates</h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label
+                name="jobStartedAt"
+                className="rw-label"
+                errorClassName="rw-label rw-label-error"
+              >
+                Job Started At
+              </Label>
+              <input
+                type="datetime-local"
+                name="jobStartedAt"
+                value={jobStartedAt}
+                onChange={(e) => setJobStartedAt(e.target.value)}
+                className="rw-input"
+              />
+              <FieldError name="jobStartedAt" className="rw-field-error" />
+            </div>
+
+            <div>
+              <Label
+                name="jobFinishedAt"
+                className="rw-label"
+                errorClassName="rw-label rw-label-error"
+              >
+                Job Finished At
+              </Label>
+              <input
+                type="datetime-local"
+                name="jobFinishedAt"
+                value={jobFinishedAt}
+                onChange={(e) => setJobFinishedAt(e.target.value)}
+                className="rw-input"
+              />
+              <FieldError name="jobFinishedAt" className="rw-field-error" />
+            </div>
+
+            <div>
+              <Label
+                name="dueAt"
+                className="rw-label"
+                errorClassName="rw-label rw-label-error"
+              >
+                Due At
+              </Label>
+              <input
+                type="date"
+                name="dueAt"
+                value={dueAt}
+                onChange={(e) => setDueAt(e.target.value)}
+                className="rw-input"
+              />
+              <FieldError name="dueAt" className="rw-field-error" />
+            </div>
+
+            <div>
+              <Label
+                name="paidAt"
+                className="rw-label"
+                errorClassName="rw-label rw-label-error"
+              >
+                Paid At
+              </Label>
+              <input
+                type="datetime-local"
+                name="paidAt"
+                value={paidAt}
+                onChange={(e) => setPaidAt(e.target.value)}
+                disabled={selectedPayStatus !== 'PAID'}
+                className="rw-input disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              <FieldError name="paidAt" className="rw-field-error" />
+            </div>
+          </div>
+        </div>
+
+        {/* Job Location Section */}
+        <div className="mt-6 space-y-4 border-b border-border pb-6">
+          <h3 className="text-sm font-semibold">Job Location</h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label
+                name="jobAddressLine1"
+                className="rw-label"
+                errorClassName="rw-label rw-label-error"
+              >
+                Address Line 1
+              </Label>
+              <input
+                type="text"
+                name="jobAddressLine1"
+                value={jobAddressLine1}
+                onChange={(e) => setJobAddressLine1(e.target.value)}
+                className="rw-input"
+              />
+              <FieldError name="jobAddressLine1" className="rw-field-error" />
+            </div>
+
+            <div>
+              <Label
+                name="jobAddressLine2"
+                className="rw-label"
+                errorClassName="rw-label rw-label-error"
+              >
+                Address Line 2
+              </Label>
+              <input
+                type="text"
+                name="jobAddressLine2"
+                value={jobAddressLine2}
+                onChange={(e) => setJobAddressLine2(e.target.value)}
+                className="rw-input"
+              />
+              <FieldError name="jobAddressLine2" className="rw-field-error" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div>
+              <Label
+                name="jobCity"
+                className="rw-label"
+                errorClassName="rw-label rw-label-error"
+              >
+                City
+              </Label>
+              <input
+                type="text"
+                name="jobCity"
+                value={jobCity}
+                onChange={(e) => setJobCity(e.target.value)}
+                className="rw-input"
+              />
+              <FieldError name="jobCity" className="rw-field-error" />
+            </div>
+
+            <div>
+              <Label
+                name="jobState"
+                className="rw-label"
+                errorClassName="rw-label rw-label-error"
+              >
+                State
+              </Label>
+              <input
+                type="text"
+                name="jobState"
+                value={jobState}
+                onChange={(e) => setJobState(e.target.value)}
+                className="rw-input"
+              />
+              <FieldError name="jobState" className="rw-field-error" />
+            </div>
+
+            <div>
+              <Label
+                name="jobPostalCode"
+                className="rw-label"
+                errorClassName="rw-label rw-label-error"
+              >
+                Postal Code
+              </Label>
+              <input
+                type="text"
+                name="jobPostalCode"
+                value={jobPostalCode}
+                onChange={(e) => setJobPostalCode(e.target.value)}
+                className="rw-input"
+              />
+              <FieldError name="jobPostalCode" className="rw-field-error" />
+            </div>
+
+            <div>
+              <Label
+                name="jobCountry"
+                className="rw-label"
+                errorClassName="rw-label rw-label-error"
+              >
+                Country
+              </Label>
+              <input
+                type="text"
+                name="jobCountry"
+                value={jobCountry}
+                onChange={(e) => setJobCountry(e.target.value)}
+                className="rw-input"
+              />
+              <FieldError name="jobCountry" className="rw-field-error" />
+            </div>
+          </div>
+        </div>
+
+        {/* TODO: Add remaining invoice form fields here */}
+        {/* - Source reference button */}
+        {/* - Billing parties (payor/payee) */}
+        {/* - Job dates */}
+        {/* - Job location */}
+        {/* - Billable items */}
+        {/* - Totals */}
+        {/* - Notes */}
 
         <div className="rw-button-group">
-          <Submit disabled={props.loading} className="rw-button rw-button-blue">
-            Save
-          </Submit>
+          <Submit disabled={props.loading}>Save</Submit>
         </div>
       </Form>
     </div>

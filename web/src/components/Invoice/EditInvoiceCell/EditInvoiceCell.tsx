@@ -32,9 +32,34 @@ export const QUERY: TypedDocumentNode<EditInvoiceByUuid> = gql`
       payorEntityId
       payeeEntityId
       sourceEstimateId
+      sourceEstimate {
+        id
+        title
+      }
       sourceInstallerEntityId
+      sourceInstallerEntity {
+        id
+        name
+        nickname
+        email
+        phone
+      }
       sourceClientEntityId
+      sourceClientEntity {
+        id
+        name
+        nickname
+        email
+        phone
+      }
       sourceRetailerEntityId
+      sourceRetailerEntity {
+        id
+        name
+        nickname
+        email
+        phone
+      }
       payeeAddressLine1
       payeeAddressLine2
       payeeCity
@@ -63,7 +88,7 @@ export const QUERY: TypedDocumentNode<EditInvoiceByUuid> = gql`
 `
 
 const UPDATE_INVOICE_MUTATION: TypedDocumentNode<
-  EditInvoiceById,
+  { updateInvoice: EditInvoiceByUuid['invoice'] },
   UpdateInvoiceMutationVariables
 > = gql`
   mutation UpdateInvoiceMutation($uuid: String!, $input: UpdateInvoiceInput!) {
@@ -134,9 +159,9 @@ export const Success = ({ invoice }: CellSuccessProps<EditInvoiceByUuid>) => {
 
   const onSave = (
     input: UpdateInvoiceInput,
-    id: EditInvoiceByUuid['invoice']['id']
+    uuid: EditInvoiceByUuid['invoice']['uuid']
   ) => {
-    updateInvoice({ variables: { id, input } })
+    updateInvoice({ variables: { uuid, input } })
   }
 
   return (
