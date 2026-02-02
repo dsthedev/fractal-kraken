@@ -28,7 +28,7 @@ import {
   NumberField,
   Submit,
 } from '@cedarjs/forms'
-import { Link, routes } from '@cedarjs/router'
+import { Link, navigate, routes } from '@cedarjs/router'
 import type { TypedDocumentNode } from '@cedarjs/web'
 import { useMutation, useQuery } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
@@ -200,6 +200,17 @@ const DELETE_BILLABLE_ITEM_MUTATION: TypedDocumentNode<
   }
 `
 
+const CREATE_INVOICE_FROM_ESTIMATE_MUTATION: TypedDocumentNode<
+  { createInvoiceFromEstimate: { uuid: string } },
+  { estimateId: number }
+> = gql`
+  mutation CreateInvoiceFromEstimate($estimateId: Int!) {
+    createInvoiceFromEstimate(estimateId: $estimateId) {
+      uuid
+    }
+  }
+`
+
 const GET_RATES_QUERY: TypedDocumentNode<FindRates> = gql`
   query GetRatesForQuickAdd {
     rates {
@@ -326,6 +337,16 @@ const EstimateForm = (props: EstimateFormProps) => {
     onError: (error) => toast.error(error.message),
   })
 
+  const [createInvoiceFromEstimate, { loading: createInvoiceLoading }] =
+    useMutation(CREATE_INVOICE_FROM_ESTIMATE_MUTATION, {
+      onCompleted: () => {
+        toast.success('Invoice created')
+        setSelectedStatus('INVOICED')
+        navigate(routes.estimates())
+      },
+      onError: (error) => toast.error(error.message),
+    })
+
   const [openStatus, setOpenStatus] = useState(false)
   const [selectedStatus, setSelectedStatus] = useState<
     UpdateEstimateInput['status']
@@ -385,6 +406,19 @@ const EstimateForm = (props: EstimateFormProps) => {
     setDeleteConfirmOpen(false)
   }
 
+  const handleCreateInvoice = async () => {
+    if (!props.estimate?.id) {
+      toast.error('Save the estimate before creating an invoice')
+      return
+    }
+
+    await createInvoiceFromEstimate({
+      variables: {
+        estimateId: props.estimate.id,
+      },
+    })
+  }
+
   // Memoized derived values
   const weekNumber = useMemo(() => getWeekNumber(new Date()), [])
   const hasEntityDefaults = useMemo(
@@ -398,6 +432,8 @@ const EstimateForm = (props: EstimateFormProps) => {
     () => Boolean(props.estimate?.id),
     [props.estimate?.id]
   )
+  const isInvoiced =
+    selectedStatus === 'INVOICED' || props.estimate?.status === 'INVOICED'
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -1479,6 +1515,18 @@ const EstimateForm = (props: EstimateFormProps) => {
                 <Link to={routes.estimate({ id: props.estimate.id })}>
                   View / Print
                 </Link>
+              </Button>
+            )}
+            {props.estimate?.id && (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={
+                  !isPersistedEstimate || isInvoiced || createInvoiceLoading
+                }
+                onClick={handleCreateInvoice}
+              >
+                Create Invoice
               </Button>
             )}
             <Button asChild variant="lime">

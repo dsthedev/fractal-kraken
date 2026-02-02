@@ -150,6 +150,7 @@ export const schema = gql`
 
   type Mutation {
     createInvoice(input: CreateInvoiceInput!): Invoice! @requireAuth
+    createInvoiceFromEstimate(estimateId: Int!): Invoice! @requireAuth
     updateInvoice(uuid: String!, input: UpdateInvoiceInput!): Invoice!
       @requireAuth
     deleteInvoice(uuid: String!): Invoice! @requireAuth

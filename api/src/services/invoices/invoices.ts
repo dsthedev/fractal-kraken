@@ -4,7 +4,10 @@ import type {
   InvoiceRelationResolvers,
 } from 'types/graphql'
 
+import { context } from '@cedarjs/graphql-server'
+
 import { db } from 'src/lib/db'
+import { buildTitle, getWeekNumber } from 'src/lib/estimateTitle'
 
 export const invoices: QueryResolvers['invoices'] = () => {
   return db.invoice.findMany()
@@ -23,6 +26,120 @@ export const createInvoice: MutationResolvers['createInvoice'] = ({
     data: input,
   })
 }
+
+export const createInvoiceFromEstimate: MutationResolvers['createInvoiceFromEstimate'] =
+  async ({ estimateId }) => {
+    const currentUserId = context.currentUser?.id
+    if (!currentUserId) {
+      throw new Error('User not authenticated')
+    }
+
+    const estimate = await db.estimate.findFirst({
+      where: {
+        id: estimateId,
+        authorId: currentUserId,
+      },
+      include: {
+        billableItems: true,
+        installerEntity: true,
+        clientEntity: true,
+        retailerEntity: true,
+      },
+    })
+
+    if (!estimate) {
+      throw new Error('Estimate not found')
+    }
+
+    if (!estimate.installerEntityId) {
+      throw new Error('Estimate is missing an installer entity')
+    }
+
+    const installer = estimate.installerEntity
+    const client = estimate.clientEntity
+    const retailer = estimate.retailerEntity
+    const payeeEntity = retailer ?? client ?? installer
+
+    if (!payeeEntity) {
+      throw new Error('Estimate is missing a payee entity')
+    }
+
+    const retailerName = retailer?.nickname || retailer?.name
+    const clientName = client?.nickname || client?.name
+    const invoiceNumber =
+      estimate.title?.trim() ||
+      buildTitle(
+        getWeekNumber(estimate.createdAt ?? new Date()),
+        retailerName,
+        clientName
+      )
+
+    const dueAt = new Date()
+    dueAt.setDate(dueAt.getDate() + 30)
+
+    const billableItemCreates = estimate.billableItems.map((item) => ({
+      actionId: item.actionId,
+      materialId: item.materialId,
+      unitId: item.unitId,
+      unitPrice: item.unitPrice,
+      pricingType: item.pricingType,
+      quantity: item.quantity,
+      subtotal: item.subtotal,
+      estimatedMinutesPerUnit: item.estimatedMinutesPerUnit,
+      notes: item.notes,
+      sortOrder: item.sortOrder,
+      authorId: currentUserId,
+    }))
+
+    const invoice = await db.invoice.create({
+      data: {
+        authorId: currentUserId,
+        invoiceNumber,
+        status: 'DRAFT',
+        payStatus: 'UNPAID',
+        dueAt,
+        payorEntityId: estimate.installerEntityId,
+        payeeEntityId: payeeEntity.id,
+        sourceEstimateId: estimate.id,
+        sourceInstallerEntityId: estimate.installerEntityId,
+        sourceClientEntityId: estimate.clientEntityId,
+        sourceRetailerEntityId: estimate.retailerEntityId,
+        payorAddressLine1: installer?.addressLine1,
+        payorAddressLine2: installer?.addressLine2,
+        payorCity: installer?.city,
+        payorState: installer?.state,
+        payorPostalCode: installer?.postalCode,
+        payorCountry: installer?.country,
+        payeeAddressLine1: payeeEntity.addressLine1,
+        payeeAddressLine2: payeeEntity.addressLine2,
+        payeeCity: payeeEntity.city,
+        payeeState: payeeEntity.state,
+        payeePostalCode: payeeEntity.postalCode,
+        payeeCountry: payeeEntity.country,
+        jobAddressLine1: estimate.jobAddressLine1,
+        jobAddressLine2: estimate.jobAddressLine2,
+        jobCity: estimate.jobCity,
+        jobState: estimate.jobState,
+        jobPostalCode: estimate.jobPostalCode,
+        jobCountry: estimate.jobCountry,
+        subtotal: estimate.subtotal,
+        taxTotal: estimate.taxTotal,
+        total: estimate.total,
+        notes: estimate.notes,
+        entityId: estimate.entityId,
+        billableItems: billableItemCreates.length
+          ? { create: billableItemCreates }
+          : undefined,
+      },
+    })
+
+    await db.estimate.update({
+      where: { id: estimate.id },
+      data: { status: 'INVOICED' },
+    })
+
+    return invoice
+  }
 
 export const updateInvoice: MutationResolvers['updateInvoice'] = ({
   uuid,
