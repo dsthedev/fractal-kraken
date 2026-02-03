@@ -60,18 +60,21 @@ export const QUERY: TypedDocumentNode<EditInvoiceByUuid> = gql`
         email
         phone
       }
+      payeeName
       payeeAddressLine1
       payeeAddressLine2
       payeeCity
       payeeState
       payeePostalCode
       payeeCountry
+      payorName
       payorAddressLine1
       payorAddressLine2
       payorCity
       payorState
       payorPostalCode
       payorCountry
+      jobName
       jobAddressLine1
       jobAddressLine2
       jobCity

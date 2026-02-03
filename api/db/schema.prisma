@@ -330,6 +330,7 @@ model Invoice {
   sourceRetailerEntity    Entity?   @relation("retailerEntity", fields: [sourceRetailerEntityId], references: [id])
 
   // Snapshot payee/payor/job location (for historical records)
+  payeeName         String  @default("")
   payeeAddressLine1 String?
   payeeAddressLine2 String?
   payeeCity         String?
@@ -337,6 +338,7 @@ model Invoice {
   payeePostalCode   String?
   payeeCountry      String? @default("US")
 
+  payorName         String  @default("")
   payorAddressLine1 String?
   payorAddressLine2 String?
   payorCity         String?
@@ -344,6 +346,7 @@ model Invoice {
   payorPostalCode   String?
   payorCountry      String? @default("US")
 
+  jobName         String?
   jobAddressLine1 String?
   jobAddressLine2 String?
   jobCity         String?

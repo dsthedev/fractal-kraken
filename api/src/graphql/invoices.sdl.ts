@@ -24,18 +24,21 @@ export const schema = gql`
     sourceClientEntity: Entity
     sourceRetailerEntityId: Int
     sourceRetailerEntity: Entity
+    payeeName: String!
     payeeAddressLine1: String
     payeeAddressLine2: String
     payeeCity: String
     payeeState: String
     payeePostalCode: String
     payeeCountry: String
+    payorName: String!
     payorAddressLine1: String
     payorAddressLine2: String
     payorCity: String
     payorState: String
     payorPostalCode: String
     payorCountry: String
+    jobName: String
     jobAddressLine1: String
     jobAddressLine2: String
     jobCity: String
@@ -83,18 +86,21 @@ export const schema = gql`
     sourceInstallerEntityId: Int
     sourceClientEntityId: Int
     sourceRetailerEntityId: Int
+    payeeName: String!
     payeeAddressLine1: String
     payeeAddressLine2: String
     payeeCity: String
     payeeState: String
     payeePostalCode: String
     payeeCountry: String
+    payorName: String!
     payorAddressLine1: String
     payorAddressLine2: String
     payorCity: String
     payorState: String
     payorPostalCode: String
     payorCountry: String
+    jobName: String
     jobAddressLine1: String
     jobAddressLine2: String
     jobCity: String
@@ -123,18 +129,21 @@ export const schema = gql`
     sourceInstallerEntityId: Int
     sourceClientEntityId: Int
     sourceRetailerEntityId: Int
+    payeeName: String
     payeeAddressLine1: String
     payeeAddressLine2: String
     payeeCity: String
     payeeState: String
     payeePostalCode: String
     payeeCountry: String
+    payorName: String
     payorAddressLine1: String
     payorAddressLine2: String
     payorCity: String
     payorState: String
     payorPostalCode: String
     payorCountry: String
+    jobName: String
     jobAddressLine1: String
     jobAddressLine2: String
     jobCity: String
