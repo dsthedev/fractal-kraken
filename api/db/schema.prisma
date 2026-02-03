@@ -213,6 +213,9 @@ model Entity {
   invoicesAsSourceRetailer  Invoice[] @relation("retailerEntity")
   invoices                  Invoice[]
 
+  isBusiness   Boolean @default(false)
+  usesNickname Boolean @default(false)
+
   @@index([authorId])
 }
 

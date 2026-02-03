@@ -25,6 +25,8 @@ export const QUERY: TypedDocumentNode<
       phone
       city
       state
+      isBusiness
+      usesNickname
     }
   }
 `

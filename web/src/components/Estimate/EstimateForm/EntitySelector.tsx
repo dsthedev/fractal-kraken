@@ -1,10 +1,16 @@
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Pencil } from 'lucide-react'
+import { useForm } from 'react-hook-form'
 import type { Entity } from 'types/graphql'
 
-import { Label, FieldError } from '@cedarjs/forms'
+import { Form, Label, FieldError } from '@cedarjs/forms'
 
+import EntityFields, {
+  entityValidationSchema,
+  type EntityFormValues,
+} from 'src/components/Entity/EntityForm/EntityFields'
 import { Button } from 'src/components/ui/button'
 import {
   Command,
@@ -57,7 +63,6 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
   const [openCombobox, setOpenCombobox] = useState(false)
   const [openNewDialog, setOpenNewDialog] = useState(false)
   const [openEditDialog, setOpenEditDialog] = useState(false)
-  const [editDraft, setEditDraft] = useState<Partial<Entity>>({})
 
   const displayLabel = selectedEntity
     ? selectedEntity.name
@@ -76,22 +81,54 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
     entities?.filter((e) => entityTypeFilters[entityType]?.includes(e.type)) ||
     []
 
+  const newDialogType = entityType === 'CONTRACTOR' ? 'INSTALLER' : entityType
+
+  const editDefaultValues = useMemo<EntityFormValues>(
+    () => ({
+      type: selectedEntity?.type ?? newDialogType,
+      name: selectedEntity?.name ?? '',
+      nickname: selectedEntity?.nickname ?? '',
+      contactName: selectedEntity?.contactName ?? '',
+      email: selectedEntity?.email ?? '',
+      phone: selectedEntity?.phone ?? '',
+      addressLine1: selectedEntity?.addressLine1 ?? '',
+      addressLine2: selectedEntity?.addressLine2 ?? '',
+      city: selectedEntity?.city ?? '',
+      state: selectedEntity?.state ?? '',
+      postalCode: selectedEntity?.postalCode ?? '',
+      country: selectedEntity?.country ?? '',
+      notes: selectedEntity?.notes ?? '',
+      isBusiness: selectedEntity?.isBusiness ?? false,
+      usesNickname: selectedEntity?.usesNickname ?? false,
+    }),
+    [newDialogType, selectedEntity]
+  )
+
+  const editForm = useForm<EntityFormValues>({
+    resolver: zodResolver(entityValidationSchema),
+    defaultValues: editDefaultValues,
+  })
+
+  useEffect(() => {
+    if (openEditDialog && selectedEntity) {
+      editForm.reset(editDefaultValues)
+    }
+  }, [editDefaultValues, editForm, openEditDialog, selectedEntity])
+
   const handleEditOpen = () => {
     if (selectedEntity) {
-      setEditDraft({ ...selectedEntity })
+      editForm.reset(editDefaultValues)
       setOpenEditDialog(true)
     }
   }
 
-  const handleEditSave = async () => {
+  const handleEditSubmit = (data: EntityFormValues) => {
     if (selectedEntity && onEntityUpdate) {
-      const updatedEntity = { ...selectedEntity, ...editDraft } as Entity
+      const updatedEntity = { ...selectedEntity, ...data } as Entity
       onEntityUpdate(updatedEntity)
       setOpenEditDialog(false)
     }
   }
-
-  const newDialogType = entityType === 'CONTRACTOR' ? 'INSTALLER' : entityType
 
   return (
     <div>
@@ -115,9 +152,7 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
                 !selectedEntity && 'text-muted-foreground'
               )}
             >
-              <span className="truncate">
-                {displayLabel}
-              </span>
+              <span className="truncate">{displayLabel}</span>
               <svg
                 className="ml-2 h-4 w-4 shrink-0 opacity-50"
                 xmlns="http://www.w3.org/2000/svg"
@@ -212,274 +247,30 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
               <DialogTitle>Edit {label}</DialogTitle>
             </DialogHeader>
             {selectedEntity ? (
-              <div className="space-y-4">
-                {/* Name and Nickname row */}
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div>
-                    <label
-                      className="rw-label"
-                      htmlFor={`edit-${fieldName}-name`}
-                    >
-                      Name
-                    </label>
-                    <input
-                      id={`edit-${fieldName}-name`}
-                      className="rw-input"
-                      value={editDraft.name ?? ''}
-                      onChange={(e) =>
-                        setEditDraft((d) => ({ ...d, name: e.target.value }))
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label
-                      className="rw-label"
-                      htmlFor={`edit-${fieldName}-nickname`}
-                    >
-                      Nickname
-                    </label>
-                    <input
-                      id={`edit-${fieldName}-nickname`}
-                      className="rw-input"
-                      value={editDraft.nickname ?? ''}
-                      onChange={(e) =>
-                        setEditDraft((d) => ({
-                          ...d,
-                          nickname: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                </div>
-
-                {/* Contact Name row */}
-                <div>
-                  <label
-                    className="rw-label"
-                    htmlFor={`edit-${fieldName}-contactName`}
-                  >
-                    Contact Name
-                  </label>
-                  <input
-                    id={`edit-${fieldName}-contactName`}
-                    className="rw-input"
-                    value={editDraft.contactName ?? ''}
-                    onChange={(e) =>
-                      setEditDraft((d) => ({
-                        ...d,
-                        contactName: e.target.value,
-                      }))
-                    }
+              <Form<EntityFormValues>
+                onSubmit={handleEditSubmit}
+                formMethods={editForm}
+              >
+                <div className="space-y-4">
+                  <EntityFields
+                    initialValues={editDefaultValues}
+                    includeType={true}
+                    showAddressLine2
+                    showCountry
                   />
-                </div>
 
-                {/* Email and Phone row */}
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div>
-                    <label
-                      className="rw-label"
-                      htmlFor={`edit-${fieldName}-email`}
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => setOpenEditDialog(false)}
                     >
-                      Email
-                    </label>
-                    <input
-                      id={`edit-${fieldName}-email`}
-                      type="email"
-                      className="rw-input"
-                      value={editDraft.email ?? ''}
-                      onChange={(e) =>
-                        setEditDraft((d) => ({
-                          ...d,
-                          email: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label
-                      className="rw-label"
-                      htmlFor={`edit-${fieldName}-phone`}
-                    >
-                      Phone
-                    </label>
-                    <input
-                      id={`edit-${fieldName}-phone`}
-                      className="rw-input"
-                      value={editDraft.phone ?? ''}
-                      onChange={(e) =>
-                        setEditDraft((d) => ({
-                          ...d,
-                          phone: e.target.value,
-                        }))
-                      }
-                      placeholder="(XXX) XXX-XXXX"
-                    />
+                      Cancel
+                    </Button>
+                    <Button type="submit">Save</Button>
                   </div>
                 </div>
-
-                {/* Address Line 1 */}
-                <div>
-                  <label
-                    className="rw-label"
-                    htmlFor={`edit-${fieldName}-address1`}
-                  >
-                    Address Line 1
-                  </label>
-                  <input
-                    id={`edit-${fieldName}-address1`}
-                    className="rw-input"
-                    value={editDraft.addressLine1 ?? ''}
-                    onChange={(e) =>
-                      setEditDraft((d) => ({
-                        ...d,
-                        addressLine1: e.target.value,
-                      }))
-                    }
-                    placeholder="Street address"
-                  />
-                </div>
-
-                {/* Address Line 2 */}
-                <div>
-                  <label
-                    className="rw-label"
-                    htmlFor={`edit-${fieldName}-address2`}
-                  >
-                    Address Line 2
-                  </label>
-                  <input
-                    id={`edit-${fieldName}-address2`}
-                    className="rw-input"
-                    value={editDraft.addressLine2 ?? ''}
-                    onChange={(e) =>
-                      setEditDraft((d) => ({
-                        ...d,
-                        addressLine2: e.target.value,
-                      }))
-                    }
-                    placeholder="Apartment, suite, etc."
-                  />
-                </div>
-
-                {/* City, State, Postal Code row */}
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                  <div>
-                    <label
-                      className="rw-label"
-                      htmlFor={`edit-${fieldName}-city`}
-                    >
-                      City
-                    </label>
-                    <input
-                      id={`edit-${fieldName}-city`}
-                      className="rw-input"
-                      value={editDraft.city ?? ''}
-                      onChange={(e) =>
-                        setEditDraft((d) => ({
-                          ...d,
-                          city: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label
-                      className="rw-label"
-                      htmlFor={`edit-${fieldName}-state`}
-                    >
-                      State
-                    </label>
-                    <input
-                      id={`edit-${fieldName}-state`}
-                      className="rw-input"
-                      value={editDraft.state ?? ''}
-                      onChange={(e) =>
-                        setEditDraft((d) => ({
-                          ...d,
-                          state: e.target.value,
-                        }))
-                      }
-                      placeholder="TX"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      className="rw-label"
-                      htmlFor={`edit-${fieldName}-postal`}
-                    >
-                      Postal Code
-                    </label>
-                    <input
-                      id={`edit-${fieldName}-postal`}
-                      className="rw-input"
-                      value={editDraft.postalCode ?? ''}
-                      onChange={(e) =>
-                        setEditDraft((d) => ({
-                          ...d,
-                          postalCode: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                </div>
-
-                {/* Country */}
-                <div>
-                  <label
-                    className="rw-label"
-                    htmlFor={`edit-${fieldName}-country`}
-                  >
-                    Country
-                  </label>
-                  <input
-                    id={`edit-${fieldName}-country`}
-                    className="rw-input"
-                    value={editDraft.country ?? ''}
-                    onChange={(e) =>
-                      setEditDraft((d) => ({
-                        ...d,
-                        country: e.target.value,
-                      }))
-                    }
-                    placeholder="US"
-                  />
-                </div>
-
-                {/* Notes */}
-                <div>
-                  <label
-                    className="rw-label"
-                    htmlFor={`edit-${fieldName}-notes`}
-                  >
-                    Notes
-                  </label>
-                  <textarea
-                    id={`edit-${fieldName}-notes`}
-                    className="rw-input"
-                    value={editDraft.notes ?? ''}
-                    onChange={(e) =>
-                      setEditDraft((d) => ({
-                        ...d,
-                        notes: e.target.value,
-                      }))
-                    }
-                    rows={3}
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 pt-4">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => setOpenEditDialog(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="button" onClick={handleEditSave}>
-                    Save
-                  </Button>
-                </div>
-              </div>
+              </Form>
             ) : (
               <p className="text-sm text-muted-foreground">
                 No {label.toLowerCase()} selected.

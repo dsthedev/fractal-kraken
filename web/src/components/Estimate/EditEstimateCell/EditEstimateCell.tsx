@@ -32,6 +32,8 @@ const FIND_ENTITIES_QUERY: TypedDocumentNode<FindEntities> = gql`
       contactName
       email
       phone
+      isBusiness
+      usesNickname
       createdAt
       updatedAt
       usersDefault {

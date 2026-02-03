@@ -26,6 +26,8 @@ export const QUERY: TypedDocumentNode<FindEntityById, FindEntityByIdVariables> =
         postalCode
         country
         notes
+        isBusiness
+        usesNickname
         createdAt
         updatedAt
       }

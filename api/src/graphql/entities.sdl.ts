@@ -14,6 +14,8 @@ export const schema = gql`
     postalCode: String
     country: String
     notes: String
+    isBusiness: Boolean!
+    usesNickname: Boolean!
     authorId: String
     author: User
     createdAt: DateTime!
@@ -54,6 +56,8 @@ export const schema = gql`
     postalCode: String
     country: String
     notes: String
+    isBusiness: Boolean
+    usesNickname: Boolean
   }
 
   input UpdateEntityInput {
@@ -70,6 +74,8 @@ export const schema = gql`
     postalCode: String
     country: String
     notes: String
+    isBusiness: Boolean
+    usesNickname: Boolean
   }
 
   input ImportEntityInput {
@@ -86,6 +92,8 @@ export const schema = gql`
     postalCode: String
     country: String
     notes: String
+    isBusiness: Boolean
+    usesNickname: Boolean
   }
 
   type ImportResult {

@@ -30,6 +30,8 @@ const CREATE_ENTITY_MUTATION: TypedDocumentNode<
       postalCode
       country
       notes
+      isBusiness
+      usesNickname
       authorId
     }
   }

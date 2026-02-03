@@ -38,6 +38,8 @@ export const QUERY: TypedDocumentNode<FindEntities, FindEntitiesVariables> =
         postalCode
         country
         notes
+        isBusiness
+        usesNickname
         createdAt
         updatedAt
       }

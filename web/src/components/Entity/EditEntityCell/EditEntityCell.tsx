@@ -32,6 +32,8 @@ export const QUERY: TypedDocumentNode<EditEntityById> = gql`
       postalCode
       country
       notes
+      isBusiness
+      usesNickname
       authorId
       createdAt
       updatedAt
@@ -59,6 +61,8 @@ const UPDATE_ENTITY_MUTATION: TypedDocumentNode<
       postalCode
       country
       notes
+      isBusiness
+      usesNickname
       authorId
       createdAt
       updatedAt
