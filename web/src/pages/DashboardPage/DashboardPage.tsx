@@ -52,6 +52,14 @@ const ESTIMATES_QUERY: TypedDocumentNode<FindEstimatesForDashboard> = gql`
   }
 `
 
+const INVOICES_QUERY = gql`
+  query FindInvoicesForDashboard {
+    invoices {
+      uuid
+    }
+  }
+`
+
 const DashboardPage = () => {
   const [isEditing, setIsEditing] = useState(false)
   const { data: entitiesData, loading: entitiesLoading } =
@@ -59,12 +67,16 @@ const DashboardPage = () => {
   const { data: ratesData, loading: ratesLoading } = useQuery(RATES_QUERY)
   const { data: estimatesData, loading: estimatesLoading } =
     useQuery(ESTIMATES_QUERY)
+  const { data: invoicesData, loading: invoicesLoading } =
+    useQuery(INVOICES_QUERY)
 
   const entitiesCount =
     !entitiesLoading && entitiesData ? entitiesData.entities.length : 0
   const ratesCount = !ratesLoading && ratesData ? ratesData.rates.length : 0
   const estimatesCount =
     !estimatesLoading && estimatesData ? estimatesData.estimates.length : 0
+  const invoicesCount =
+    !invoicesLoading && invoicesData ? invoicesData.invoices.length : 0
 
   return (
     <>
@@ -94,6 +106,7 @@ const DashboardPage = () => {
               entitiesCount={entitiesCount}
               ratesCount={ratesCount}
               estimatesCount={estimatesCount}
+              invoicesCount={invoicesCount}
             />
             <div className="flex my-8 border-b-2 py-4 text-2xl">
               <h2>What are these metrics?</h2>

@@ -34,18 +34,21 @@ export const QUERY: TypedDocumentNode<
       sourceInstallerEntityId
       sourceClientEntityId
       sourceRetailerEntityId
+      payeeName
       payeeAddressLine1
       payeeAddressLine2
       payeeCity
       payeeState
       payeePostalCode
       payeeCountry
+      payorName
       payorAddressLine1
       payorAddressLine2
       payorCity
       payorState
       payorPostalCode
       payorCountry
+      jobName
       jobAddressLine1
       jobAddressLine2
       jobCity
@@ -57,6 +60,44 @@ export const QUERY: TypedDocumentNode<
       total
       notes
       entityId
+      payeeEntity {
+        id
+        type
+        name
+        nickname
+        contactName
+      }
+      payorEntity {
+        id
+        type
+        name
+        nickname
+        contactName
+      }
+      billableItems {
+        id
+        quantity
+        unit {
+          id
+          symbol
+          fullName
+          shortName
+        }
+        action {
+          id
+          name
+          description
+        }
+        material {
+          id
+          name
+          description
+        }
+        notes
+        unitPrice
+        subtotal
+        sortOrder
+      }
     }
   }
 `

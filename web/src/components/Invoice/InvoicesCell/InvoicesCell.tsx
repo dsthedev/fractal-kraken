@@ -1,3 +1,4 @@
+import { InfoIcon } from 'lucide-react'
 import type { FindInvoices, FindInvoicesVariables } from 'types/graphql'
 
 import { Link, routes } from '@cedarjs/router'
@@ -8,6 +9,14 @@ import type {
 } from '@cedarjs/web'
 
 import Invoices from 'src/components/Invoice/Invoices'
+import { Alert, AlertDescription, AlertTitle } from 'src/components/ui/alert'
+import { Button } from 'src/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from 'src/components/ui/card'
 import { useSearch } from 'src/contexts/SearchContext'
 
 export const QUERY: TypedDocumentNode<FindInvoices, FindInvoicesVariables> =
@@ -100,11 +109,62 @@ export const Loading = () => <div>Loading...</div>
 
 export const Empty = () => {
   return (
-    <div className="rw-text-center">
-      No invoices yet.{' '}
-      <Link to={routes.newInvoice()} className="rw-link">
-        Create one?
-      </Link>
+    <div className="flex justify-center py-12">
+      <Card className="w-full max-w-md text-center">
+        <CardHeader>
+          <CardTitle>
+            <h2 className="text-4xl">No Invoices... Yet!</h2>
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          <div className="space-y-3 text-sm text-muted-foreground">
+            <p>
+              An invoice is a formal request for payment for work completed. It
+              locks in the details and tracks payment status.
+            </p>
+
+            <div className="rounded-md border p-3 text-left text-sm">
+              <ul className="space-y-1">
+                <li>
+                  <strong>Payment Tracking:</strong> Monitor paid, pending, and
+                  overdue amounts
+                </li>
+                <li>
+                  <strong>Job Completion:</strong> Record when work started and
+                  finished
+                </li>
+                <li>
+                  <strong>Financial Records:</strong> Locked line items and
+                  totals
+                </li>
+                <li>
+                  <strong>Payor & Payee:</strong> Track who owes and who gets
+                  paid
+                </li>
+              </ul>
+            </div>
+
+            <Alert variant="default">
+              <InfoIcon className="h-4 w-4" />
+              <AlertTitle>Tip: Convert Estimates</AlertTitle>
+              <AlertDescription>
+                Create invoices by converting approved estimates.{' '}
+                <Link
+                  to={routes.estimates()}
+                  className="underline hover:no-underline font-semibold"
+                >
+                  View Estimates
+                </Link>
+              </AlertDescription>
+            </Alert>
+          </div>
+
+          <Button asChild variant="lime" size="lg" className="w-full">
+            <Link to={routes.newInvoice()}>Create an Invoice</Link>
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   )
 }
