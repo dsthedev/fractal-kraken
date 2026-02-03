@@ -1371,7 +1371,16 @@ const EstimateForm = (props: EstimateFormProps) => {
                                         setOpenQuickAddCombobox(false)
                                       }}
                                     >
-                                      {buildRateLabel(rate, pricingType)}
+                                      <div className="flex flex-col">
+                                        <span>
+                                          {buildRateLabel(rate, pricingType)}
+                                        </span>
+                                        {rate.context && (
+                                          <span className="text-xs text-muted-foreground">
+                                            {rate.context}
+                                          </span>
+                                        )}
+                                      </div>
                                     </CommandItem>
                                   ))}
                               </CommandGroup>
