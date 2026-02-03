@@ -58,10 +58,10 @@ export const createInvoiceFromEstimate: MutationResolvers['createInvoiceFromEsti
     const installer = estimate.installerEntity
     const client = estimate.clientEntity
     const retailer = estimate.retailerEntity
-    const payeeEntity = retailer ?? client ?? installer
+    const payorEntity = retailer ?? client
 
-    if (!payeeEntity) {
-      throw new Error('Estimate is missing a payee entity')
+    if (!payorEntity) {
+      throw new Error('Estimate is missing a payor entity (retailer or client)')
     }
 
     const retailerName = retailer?.nickname || retailer?.name
@@ -98,24 +98,24 @@ export const createInvoiceFromEstimate: MutationResolvers['createInvoiceFromEsti
         status: 'DRAFT',
         payStatus: 'UNPAID',
         dueAt,
-        payorEntityId: estimate.installerEntityId,
-        payeeEntityId: payeeEntity.id,
+        payorEntityId: payorEntity.id,
+        payeeEntityId: estimate.installerEntityId,
         sourceEstimateId: estimate.id,
         sourceInstallerEntityId: estimate.installerEntityId,
         sourceClientEntityId: estimate.clientEntityId,
         sourceRetailerEntityId: estimate.retailerEntityId,
-        payorAddressLine1: installer?.addressLine1,
-        payorAddressLine2: installer?.addressLine2,
-        payorCity: installer?.city,
-        payorState: installer?.state,
-        payorPostalCode: installer?.postalCode,
-        payorCountry: installer?.country,
-        payeeAddressLine1: payeeEntity.addressLine1,
-        payeeAddressLine2: payeeEntity.addressLine2,
-        payeeCity: payeeEntity.city,
-        payeeState: payeeEntity.state,
-        payeePostalCode: payeeEntity.postalCode,
-        payeeCountry: payeeEntity.country,
+        payorAddressLine1: payorEntity.addressLine1,
+        payorAddressLine2: payorEntity.addressLine2,
+        payorCity: payorEntity.city,
+        payorState: payorEntity.state,
+        payorPostalCode: payorEntity.postalCode,
+        payorCountry: payorEntity.country,
+        payeeAddressLine1: installer.addressLine1,
+        payeeAddressLine2: installer.addressLine2,
+        payeeCity: installer.city,
+        payeeState: installer.state,
+        payeePostalCode: installer.postalCode,
+        payeeCountry: installer.country,
         jobAddressLine1: estimate.jobAddressLine1,
         jobAddressLine2: estimate.jobAddressLine2,
         jobCity: estimate.jobCity,
