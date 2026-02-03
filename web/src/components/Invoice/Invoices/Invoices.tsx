@@ -22,12 +22,13 @@ import {
   DrawerTitle,
 } from 'src/components/ui/drawer'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from 'src/components/ui/select'
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from 'src/components/ui/dropdown-menu'
 import { generateCSV } from 'src/lib/csvExport'
 import { currencyDisplay, formatEnum, truncate } from 'src/lib/formatters.js'
 import { sortByField, toggleSort } from 'src/lib/sort'
@@ -240,9 +241,17 @@ const InvoiceDrawerContent = ({
 }
 
 const InvoicesList = ({ invoices }: FindInvoices) => {
+  // Default: all statuses except ARCHIVED, all pay statuses
+  const getDefaultStatuses = (): string[] => {
+    return INVOICE_STATUSES.filter((status) => status !== 'ARCHIVED')
+  }
+
   const [openDrawerUuid, setOpenDrawerUuid] = useState<string | null>(null)
-  const [selectedStatus, setSelectedStatus] = useState<string>('ALL')
-  const [selectedPayStatus, setSelectedPayStatus] = useState<string>('ALL')
+  const [selectedStatuses, setSelectedStatuses] =
+    useState<string[]>(getDefaultStatuses())
+  const [selectedPayStatuses, setSelectedPayStatuses] = useState<string[]>([
+    ...INVOICE_PAY_STATUSES,
+  ])
   const [sortConfig, setSortConfig] = useState<{
     key: string
     direction: 'asc' | 'desc'
@@ -285,17 +294,19 @@ const InvoicesList = ({ invoices }: FindInvoices) => {
     return counts
   }, [invoices])
 
-  // Filter invoices by selected status and pay status
+  // Filter invoices by selected statuses and pay statuses
   const filteredInvoices = useMemo(() => {
     let filtered = invoices
-    if (selectedStatus !== 'ALL') {
-      filtered = filtered.filter((i) => i.status === selectedStatus)
+    if (selectedStatuses.length > 0) {
+      filtered = filtered.filter((i) => selectedStatuses.includes(i.status))
     }
-    if (selectedPayStatus !== 'ALL') {
-      filtered = filtered.filter((i) => i.payStatus === selectedPayStatus)
+    if (selectedPayStatuses.length > 0) {
+      filtered = filtered.filter((i) =>
+        selectedPayStatuses.includes(i.payStatus)
+      )
     }
     return filtered
-  }, [invoices, selectedStatus, selectedPayStatus])
+  }, [invoices, selectedStatuses, selectedPayStatuses])
 
   const selectedInvoicesTotal = useMemo(
     () =>
@@ -375,45 +386,86 @@ const InvoicesList = ({ invoices }: FindInvoices) => {
 
   return (
     <div className="rw-segment">
-      {/* Status filter dropdowns */}
-      <div className="flex items-center justify-between mb-4 space-y-2 sm:space-y-0 sm:flex-row flex-col gap-2">
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">ALL ({invoices.length})</SelectItem>
-              {INVOICE_STATUSES.map((status) => (
-                <SelectItem key={status} value={status}>
-                  {status} ({statusCounts[status]})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={selectedPayStatus}
-            onValueChange={setSelectedPayStatus}
-          >
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">ALL PAY ({invoices.length})</SelectItem>
-              {INVOICE_PAY_STATUSES.map((payStatus) => (
-                <SelectItem key={payStatus} value={payStatus}>
-                  {payStatus} ({payStatusCounts[payStatus]})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      {/* Status filter dropdown */}
+      <div className="flex items-center justify-between mb-4 space-y-2 sm:space-y-0 sm:flex-row flex-col">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="w-full sm:w-64">
+              Filters ({selectedStatuses.length + selectedPayStatuses.length} )
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56">
+            <DropdownMenuLabel>Status</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuCheckboxItem
+              checked={selectedStatuses.length === INVOICE_STATUSES.length}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  setSelectedStatuses([...INVOICE_STATUSES])
+                } else {
+                  setSelectedStatuses([])
+                }
+              }}
+            >
+              All Statuses
+            </DropdownMenuCheckboxItem>
+            {INVOICE_STATUSES.map((status) => (
+              <DropdownMenuCheckboxItem
+                key={status}
+                checked={selectedStatuses.includes(status)}
+                onCheckedChange={(checked) => {
+                  setSelectedStatuses((prev) => {
+                    if (checked) {
+                      return [...prev, status]
+                    }
+                    return prev.filter((s) => s !== status)
+                  })
+                }}
+              >
+                {formatEnum(status)} ({statusCounts[status]})
+              </DropdownMenuCheckboxItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Pay Status</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuCheckboxItem
+              checked={
+                selectedPayStatuses.length === INVOICE_PAY_STATUSES.length
+              }
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  setSelectedPayStatuses([...INVOICE_PAY_STATUSES])
+                } else {
+                  setSelectedPayStatuses([])
+                }
+              }}
+            >
+              All Pay Statuses
+            </DropdownMenuCheckboxItem>
+            {INVOICE_PAY_STATUSES.map((payStatus) => (
+              <DropdownMenuCheckboxItem
+                key={payStatus}
+                checked={selectedPayStatuses.includes(payStatus)}
+                onCheckedChange={(checked) => {
+                  setSelectedPayStatuses((prev) => {
+                    if (checked) {
+                      return [...prev, payStatus]
+                    }
+                    return prev.filter((s) => s !== payStatus)
+                  })
+                }}
+              >
+                {formatEnum(payStatus)} ({payStatusCounts[payStatus]})
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
         <div className="flex space-x-4">
           <Badge variant="outline">
             <strong>
-              {selectedStatus === 'ALL' ? 'All' : formatEnum(selectedStatus)}
+              {selectedStatuses.length + selectedPayStatuses.length}
             </strong>{' '}
-            <small>Total</small>
+            <small>Filter(s)</small>
           </Badge>
           <div className="text-2xl font-semibold">
             {currencyDisplay(selectedInvoicesTotal)}
@@ -469,7 +521,7 @@ const InvoicesList = ({ invoices }: FindInvoices) => {
         size="sm"
         onClick={handleExportInvoices}
       >
-        Export Invoices
+        Export Filtered Invoices ({filteredInvoices.length})
       </Button>
     </div>
   )

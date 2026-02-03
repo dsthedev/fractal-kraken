@@ -23,12 +23,13 @@ import {
   DrawerTitle,
 } from 'src/components/ui/drawer'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from 'src/components/ui/select'
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from 'src/components/ui/dropdown-menu'
 import { generateCSV } from 'src/lib/csvExport'
 import { currencyDisplay, formatEnum, truncate } from 'src/lib/formatters.js'
 import { sortByField, toggleSort } from 'src/lib/sort'
@@ -195,19 +196,16 @@ const EstimatesTable = ({
 }
 
 const EstimatesList = ({ estimates }: FindEstimates) => {
-  // Determine default status based on priority: DRAFT > UNDERWAY > INVOICED > ALL
-  const getDefaultStatus = () => {
-    return 'ALL'
-    const priorityOrder = ['UNDERWAY', 'DRAFT', 'INVOICED']
-    for (const status of priorityOrder) {
-      if (estimates.some((e) => e.status === status)) {
-        return status
-      }
-    }
+  // Default: all statuses except INVOICED, REJECTED, and EXPIRED
+  const getDefaultStatuses = (): string[] => {
+    return ESTIMATE_STATUSES.filter(
+      (status) => !['INVOICED', 'REJECTED', 'EXPIRED'].includes(status)
+    )
   }
 
   const [openDrawerId, setOpenDrawerId] = useState<number | null>(null)
-  const [selectedStatus, setSelectedStatus] = useState<string>(getDefaultStatus)
+  const [selectedStatuses, setSelectedStatuses] =
+    useState<string[]>(getDefaultStatuses())
   const [sortConfig, setSortConfig] = useState<{
     key: string
     direction: 'asc' | 'desc'
@@ -239,13 +237,13 @@ const EstimatesList = ({ estimates }: FindEstimates) => {
     return counts
   }, [estimates])
 
-  // Filter estimates by selected status
+  // Filter estimates by selected statuses
   const filteredEstimates = useMemo(
     () =>
-      selectedStatus === 'ALL'
+      selectedStatuses.length === 0
         ? estimates
-        : estimates.filter((e) => e.status === selectedStatus),
-    [estimates, selectedStatus]
+        : estimates.filter((e) => selectedStatuses.includes(e.status)),
+    [estimates, selectedStatuses]
   )
 
   const handleExportEstimates = () => {
@@ -329,22 +327,49 @@ const EstimatesList = ({ estimates }: FindEstimates) => {
     <div className="rw-segment">
       {/* Status filter dropdown */}
       <div className="flex items-center justify-between mb-4 space-y-2 sm:space-y-0 sm:flex-row flex-col">
-        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-          <SelectTrigger className="w-full sm:w-64">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">ALL ({estimates.length})</SelectItem>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="w-full sm:w-64">
+              Filter Statuses ({selectedStatuses.length} selected)
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56">
+            <DropdownMenuLabel>Status Filters</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuCheckboxItem
+              checked={selectedStatuses.length === ESTIMATE_STATUSES.length}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  setSelectedStatuses([...ESTIMATE_STATUSES])
+                } else {
+                  setSelectedStatuses([])
+                }
+              }}
+            >
+              All Statuses ({estimates.length})
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuSeparator />
             {ESTIMATE_STATUSES.map((status) => (
-              <SelectItem key={status} value={status}>
-                {status} ({statusCounts[status]})
-              </SelectItem>
+              <DropdownMenuCheckboxItem
+                key={status}
+                checked={selectedStatuses.includes(status)}
+                onCheckedChange={(checked) => {
+                  setSelectedStatuses((prev) => {
+                    if (checked) {
+                      return [...prev, status]
+                    }
+                    return prev.filter((s) => s !== status)
+                  })
+                }}
+              >
+                {formatEnum(status)} ({statusCounts[status]})
+              </DropdownMenuCheckboxItem>
             ))}
-          </SelectContent>
-        </Select>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <div className="flex space-x-4">
           <Badge variant="outline">
-            <strong>{formatEnum(selectedStatus)}</strong> <small>Total</small>
+            <strong>{selectedStatuses.length}</strong> <small>Status(es)</small>
           </Badge>
           <div className="text-2xl font-semibold">
             {currencyDisplay(selectedEstimatesTotal(filteredEstimates))}
@@ -356,9 +381,7 @@ const EstimatesList = ({ estimates }: FindEstimates) => {
       {/* Table for filtered estimates */}
       {filteredEstimates.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-xl">
-            No {formatEnum(selectedStatus)} Estimates Currently
-          </p>
+          <p className="text-xl">No Estimates Found for Selected Filters</p>
         </div>
       ) : (
         <div className="rw-table-wrapper-responsive">
@@ -402,7 +425,7 @@ const EstimatesList = ({ estimates }: FindEstimates) => {
         size="sm"
         onClick={handleExportEstimates}
       >
-        Export {selectedStatus === 'ALL' ? 'All' : selectedStatus} Estimates
+        Export Filtered Estimates ({filteredEstimates.length})
       </Button>
     </div>
   )
