@@ -23,12 +23,13 @@ export const serviceLabel = (item: BillableItem): string => {
  */
 export const buildRateLabel = (
   rate: FindRates['rates'][0],
-  pricingType: 'sub' | 'retail'
+  pricingType: 'sub' | 'retail',
+  includeContext = false
 ): string => {
   const serviceDisplay = [rate.action?.name, rate.material?.name]
     .filter(Boolean)
     .join(' ')
-  const context = rate.context ? ` (${rate.context})` : ''
+  const context = includeContext && rate.context ? ` (${rate.context})` : ''
   const amount = pricingType === 'sub' ? rate.subAmount : rate.retailAmount
   return `${serviceDisplay}${context} - ${rate.unit?.fullName} - $${Number(amount).toFixed(2)}`
 }
