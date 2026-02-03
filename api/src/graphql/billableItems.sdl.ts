@@ -16,6 +16,8 @@ export const schema = gql`
     sortOrder: Int!
     estimateId: Int
     estimate: Estimate
+    invoiceUuid: String
+    invoice: Invoice
     authorId: String!
     author: User!
     createdAt: DateTime!
@@ -44,6 +46,7 @@ export const schema = gql`
     notes: String
     sortOrder: Int
     estimateId: Int
+    invoiceUuid: String
     authorId: String!
   }
 
@@ -59,6 +62,7 @@ export const schema = gql`
     notes: String
     sortOrder: Int
     estimateId: Int
+    invoiceUuid: String
     authorId: String
   }
 

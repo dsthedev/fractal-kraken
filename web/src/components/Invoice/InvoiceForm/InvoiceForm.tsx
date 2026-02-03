@@ -1,10 +1,19 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useCallback } from 'react'
 
+import { gql } from '@apollo/client'
+import { BookAlert, Pencil, Plus, Trash2Icon } from 'lucide-react'
 import { useController } from 'react-hook-form'
 import type {
   EditInvoiceByUuid,
   UpdateInvoiceInput,
   Entity,
+  BillableItem,
+  CreateBillableItemInput,
+  CreateBillableItemMutationVariables,
+  UpdateBillableItemInput,
+  UpdateBillableItemMutationVariables,
+  DeleteBillableItemMutationVariables,
+  FindRates,
 } from 'types/graphql'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -21,10 +30,13 @@ import {
 } from '@cedarjs/forms'
 import { Link, routes } from '@cedarjs/router'
 import type { TypedDocumentNode } from '@cedarjs/web'
-import { useQuery } from '@cedarjs/web'
+import { useQuery, useMutation } from '@cedarjs/web'
+import { toast } from '@cedarjs/web/toast'
 
 import { useAuth } from 'src/auth'
+import BillableItemFormWrapper from 'src/components/BillableItem/BillableItemFormWrapper'
 import { EntitySelector } from 'src/components/Estimate/EstimateForm/EntitySelector'
+import { Alert, AlertTitle } from 'src/components/ui/alert'
 import { Button } from 'src/components/ui/button'
 import {
   Command,
@@ -42,10 +54,27 @@ import {
   DialogTrigger,
 } from 'src/components/ui/dialog'
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from 'src/components/ui/drawer'
+import { Input } from 'src/components/ui/input'
+import {
   Popover,
   PopoverTrigger,
   PopoverContent,
 } from 'src/components/ui/popover'
+import { ToggleGroup, ToggleGroupItem } from 'src/components/ui/toggle-group'
+import {
+  formatMoney,
+  serviceLabel,
+  buildRateLabel,
+  buildRateSearchValue,
+} from 'src/lib/estimateUtils'
+import { currencyDisplay } from 'src/lib/formatters.js'
 import { cn, getWeekNumber, buildTitle } from 'src/lib/utils'
 
 type FormInvoice = NonNullable<EditInvoiceByUuid['invoice']>
@@ -76,6 +105,123 @@ const FIND_ENTITIES_QUERY: TypedDocumentNode<{ entities: Entity[] }> = gql`
       phone
       createdAt
       updatedAt
+    }
+  }
+`
+
+const CREATE_BILLABLE_ITEM_MUTATION: TypedDocumentNode<
+  { createBillableItem: BillableItem },
+  CreateBillableItemMutationVariables
+> = gql`
+  mutation CreateBillableItemForInvoice($input: CreateBillableItemInput!) {
+    createBillableItem(input: $input) {
+      id
+      actionId
+      materialId
+      unitId
+      unitPrice
+      pricingType
+      quantity
+      subtotal
+      estimatedMinutesPerUnit
+      notes
+      sortOrder
+      invoiceUuid
+      authorId
+      action {
+        id
+        name
+      }
+      material {
+        id
+        name
+      }
+      unit {
+        id
+        shortName
+        fullName
+      }
+    }
+  }
+`
+
+const UPDATE_BILLABLE_ITEM_MUTATION: TypedDocumentNode<
+  { updateBillableItem: BillableItem },
+  UpdateBillableItemMutationVariables
+> = gql`
+  mutation UpdateBillableItemInInvoice(
+    $id: Int!
+    $input: UpdateBillableItemInput!
+  ) {
+    updateBillableItem(id: $id, input: $input) {
+      id
+      actionId
+      unitId
+      unitPrice
+      pricingType
+      quantity
+      subtotal
+      estimatedMinutesPerUnit
+      notes
+      sortOrder
+      invoiceUuid
+      authorId
+      action {
+        id
+        name
+      }
+      material {
+        id
+        name
+      }
+      unit {
+        id
+        shortName
+        fullName
+      }
+    }
+  }
+`
+
+const DELETE_BILLABLE_ITEM_MUTATION: TypedDocumentNode<
+  { deleteBillableItem: BillableItem },
+  DeleteBillableItemMutationVariables
+> = gql`
+  mutation DeleteBillableItemFromInvoice($id: Int!) {
+    deleteBillableItem(id: $id) {
+      id
+    }
+  }
+`
+
+const GET_RATES_QUERY: TypedDocumentNode<FindRates> = gql`
+  query GetRatesForInvoiceQuickAdd {
+    rates {
+      id
+      actionId
+      materialId
+      unitId
+      subAmount
+      retailAmount
+      currency
+      context
+      description
+      estimatedMinutesPerUnit
+      action {
+        id
+        name
+        description
+      }
+      material {
+        id
+        name
+        description
+      }
+      unit {
+        id
+        shortName
+        fullName
+      }
     }
   }
 `
@@ -562,10 +708,211 @@ const InvoiceForm = (props: InvoiceFormProps) => {
     ]
   )
 
+  // Billable Items State and Logic
+  const [billableItems, setBillableItems] = useState<BillableItem[]>(
+    props.invoice?.billableItems || []
+  )
+
+  // Update billable items when invoice changes (for edit mode)
+  useEffect(() => {
+    if (props.invoice?.billableItems) {
+      setBillableItems(props.invoice.billableItems)
+    }
+  }, [props.invoice?.billableItems])
+
+  const [pricingType, setPricingType] = useState<'sub' | 'retail'>('retail')
+  const [openNewBillableItem, setOpenNewBillableItem] = useState(false)
+  const [editingBillableItem, setEditingBillableItem] =
+    useState<BillableItem | null>(null)
+  const [isDesktop, setIsDesktop] = useState(false)
+
+  // Delete confirmation dialog state
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [billableItemToDelete, setBillableItemToDelete] = useState<
+    number | null
+  >(null)
+
+  const openDeleteConfirm = (id: number) => {
+    setBillableItemToDelete(id)
+    setDeleteConfirmOpen(true)
+  }
+
+  const closeDeleteConfirm = () => {
+    setBillableItemToDelete(null)
+    setDeleteConfirmOpen(false)
+  }
+
+  // Quick-add state
+  const [selectedQuickAddRate, setSelectedQuickAddRate] = useState<
+    FindRates['rates'][0] | null
+  >(null)
+  const [quickAddQuantity, setQuickAddQuantity] = useState<number>(1)
+  const [openQuickAddCombobox, setOpenQuickAddCombobox] = useState(false)
+
+  // Check for desktop media query
+  useEffect(() => {
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 768)
+    checkDesktop()
+    window.addEventListener('resize', checkDesktop)
+    return () => window.removeEventListener('resize', checkDesktop)
+  }, [])
+
+  // Fetch rates for quick-add functionality
+  const { data: ratesData, loading: ratesLoading } =
+    useQuery<FindRates>(GET_RATES_QUERY)
+
+  // Mutations for billable items
+  const [
+    createBillableItem,
+    { loading: createBillableItemLoading, error: createBillableItemError },
+  ] = useMutation(CREATE_BILLABLE_ITEM_MUTATION, {
+    onCompleted: () => toast.success('Line item added'),
+    onError: (error) => toast.error(error.message),
+  })
+
+  const [
+    updateBillableItem,
+    { loading: updateBillableItemLoading, error: updateBillableItemError },
+  ] = useMutation(UPDATE_BILLABLE_ITEM_MUTATION, {
+    onError: (error) => toast.error(error.message),
+  })
+
+  const [deleteBillableItem] = useMutation(DELETE_BILLABLE_ITEM_MUTATION, {
+    onError: (error) => toast.error(error.message),
+  })
+
+  // Check if invoice is persisted (has UUID)
+  const isPersistedInvoice = Boolean(props.invoice?.uuid)
+
+  // Calculate total from billable items
+  const itemsTotal = useMemo(() => {
+    return billableItems.reduce((sum, item) => {
+      return sum + Number(item.subtotal || 0)
+    }, 0)
+  }, [billableItems])
+
+  // Handlers for billable items
+  const handleQuickAddFromRate = async (
+    rate: FindRates['rates'][0] | null | undefined
+  ) => {
+    if (!rate) return
+    if (!props.invoice?.uuid) {
+      toast.error('Save the invoice before adding items')
+      return
+    }
+
+    const unitPrice = pricingType === 'sub' ? rate.subAmount : rate.retailAmount
+    const input: Omit<
+      CreateBillableItemInput,
+      'authorId' | 'invoiceUuid' | 'sortOrder'
+    > = {
+      actionId: rate.actionId ?? undefined,
+      materialId: rate.materialId ?? undefined,
+      unitId: rate.unitId ?? undefined,
+      unitPrice: Number(unitPrice) as any,
+      pricingType: pricingType === 'sub' ? 'SUB' : 'RETAIL',
+      quantity: quickAddQuantity,
+      subtotal: Number(unitPrice) * quickAddQuantity,
+      estimatedMinutesPerUnit: rate.estimatedMinutesPerUnit ?? undefined,
+      notes:
+        rate.context ??
+        rate.action?.description ??
+        rate.material?.description ??
+        undefined,
+    }
+
+    await handleCreateBillableItem(input)
+    // reset selection
+    setSelectedQuickAddRate(null)
+    setQuickAddQuantity(1)
+    setOpenQuickAddCombobox(false)
+  }
+
+  const handleCreateBillableItem = async (
+    input: Omit<
+      CreateBillableItemInput,
+      'authorId' | 'invoiceUuid' | 'sortOrder'
+    >
+  ): Promise<void> => {
+    if (!props.invoice?.uuid) {
+      toast.error('Save the invoice before adding items')
+      return
+    }
+
+    const nextSortOrder = billableItems.length
+
+    const { data } = await createBillableItem({
+      variables: {
+        input: {
+          ...input,
+          invoiceUuid: props.invoice.uuid,
+          sortOrder: nextSortOrder,
+          authorId:
+            currentUser?.id || (props.invoice?.authorId as unknown as string),
+        },
+      },
+    })
+
+    if (data?.createBillableItem) {
+      setBillableItems((prev) => [...prev, data.createBillableItem])
+      setOpenNewBillableItem(false)
+    }
+  }
+
+  const handleUpdateBillableItem = async (
+    input: Omit<UpdateBillableItemInput, 'authorId' | 'invoiceUuid'>,
+    id?: number
+  ): Promise<void> => {
+    if (!id) return
+
+    const { data } = await updateBillableItem({
+      variables: {
+        id,
+        input: {
+          ...input,
+          authorId: currentUser?.id,
+        },
+      },
+    })
+
+    if (data?.updateBillableItem) {
+      setBillableItems((prev) =>
+        prev.map((item) => (item.id === id ? data.updateBillableItem : item))
+      )
+      setEditingBillableItem(null)
+    }
+  }
+
+  const handleDeleteBillableItem = async (id: number): Promise<void> => {
+    await deleteBillableItem({ variables: { id } })
+    setBillableItems((prev) => prev.filter((item) => item.id !== id))
+    closeDeleteConfirm()
+    toast.success('Line item removed')
+  }
+
+  const recalculateAll = useCallback(() => {
+    setBillableItems((prev) =>
+      prev.map((item) => {
+        const newSubtotal =
+          Number(item.unitPrice || 0) * Number(item.quantity || 0)
+        return {
+          ...item,
+          subtotal: newSubtotal as any,
+        }
+      })
+    )
+    toast.success('All subtotals recalculated')
+  }, [])
+
   const onSubmit = (data: FormInvoice) => {
     const { uuid: _uuid, ...inputData } = data
     const uuidToUse = props.invoice?.uuid || invoiceUuid
-    props.onSave(inputData as UpdateInvoiceInput, uuidToUse)
+    const submitData = {
+      ...inputData,
+      subtotal: itemsTotal,
+      total: itemsTotal,
+    } as UpdateInvoiceInput
+    props.onSave(submitData, uuidToUse)
   }
 
   return (
@@ -1230,6 +1577,387 @@ const InvoiceForm = (props: InvoiceFormProps) => {
           </div>
         </div>
 
+        {/* Billable Items Section */}
+        <fieldset className="mt-6 space-y-3">
+          <div className="flex items-center justify-between">
+            <legend className="text-sm font-medium flex items-center gap-2">
+              Billable Items
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={recalculateAll}
+                title="Recalculate all subtotals"
+              >
+                Recalculate
+              </Button>
+            </legend>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">
+                Default Rate:
+              </span>
+              <ToggleGroup
+                type="single"
+                value={pricingType}
+                onValueChange={(v) => setPricingType(v as 'sub' | 'retail')}
+                className="p-1"
+              >
+                <ToggleGroupItem value="retail" className="text-xs">
+                  Retailer
+                </ToggleGroupItem>
+                <ToggleGroupItem value="sub" className="text-xs">
+                  Subcontractor
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+          </div>
+
+          {(createBillableItemError || updateBillableItemError) && (
+            <div className="text-sm text-red-600">
+              {createBillableItemError?.message ||
+                updateBillableItemError?.message}
+            </div>
+          )}
+
+          {billableItems.length === 0 ? (
+            <div className="text-sm text-muted-foreground">
+              No items yet. Add your first line item.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-2">
+                {billableItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="rounded-md border p-2 flex items-center justify-between gap-2"
+                  >
+                    {/* Left: clickable details */}
+                    <div
+                      className="flex-1 cursor-pointer"
+                      onClick={() => setEditingBillableItem(item)}
+                    >
+                      <div className="font-medium">
+                        <strong className="text-xl">{item.quantity}</strong> ×{' '}
+                        <span className="text-muted-foreground">
+                          {item.unit?.shortName ||
+                            item.unit?.fullName ||
+                            item.unitId}{' '}
+                        </span>
+                        <strong className="text-lg">
+                          {serviceLabel(item)}
+                        </strong>
+                      </div>
+                      {item.notes && (
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {item.notes}
+                        </div>
+                      )}
+
+                      <div className="flex justify-between items-center mt-1">
+                        <div>
+                          <span className="text-xs text-muted-foreground">
+                            @{' '}
+                          </span>
+                          <span className="text-sm">
+                            ${formatMoney(item.unitPrice as number)}
+                          </span>
+                        </div>
+                        <div className="font-semibold text-lg">
+                          ${formatMoney(item.subtotal as number)}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Remove button */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      title="Remove"
+                      onClick={() => openDeleteConfirm(item.id)}
+                    >
+                      <Trash2Icon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Grid View */}
+              <div className="hidden md:block">
+                <div className="grid grid-cols-12 gap-2 pb-2 text-xs text-muted-foreground font-medium border-b">
+                  <div className="col-span-4">Item</div>
+                  <div className="col-span-2">Qty × Unit</div>
+                  <div className="col-span-2 text-right">Unit Price</div>
+                  <div className="col-span-2 text-right pr-4">Subtotal</div>
+                  <div className="col-span-2 text-right">Actions</div>
+                </div>
+                <div className="space-y-1">
+                  {billableItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="grid grid-cols-12 gap-2 py-2 border-b hover:bg-muted/30 items-center"
+                    >
+                      <div
+                        className="col-span-4 cursor-pointer"
+                        onClick={() => setEditingBillableItem(item)}
+                      >
+                        <div className="font-medium">{serviceLabel(item)}</div>
+                        {item.notes && (
+                          <div className="text-xs text-muted-foreground">
+                            {item.notes.length > 50
+                              ? item.notes.substring(0, 50) + '...'
+                              : item.notes}
+                          </div>
+                        )}
+                      </div>
+                      <div className="col-span-2">
+                        <strong>{item.quantity}</strong> ×{' '}
+                        <span className="text-muted-foreground text-xs">
+                          {item.unit?.shortName || item.unit?.fullName}
+                        </span>
+                      </div>
+                      <div className="col-span-2 text-right">
+                        <div className="text-xs text-muted-foreground">
+                          Unit Price
+                        </div>
+                        <div>${formatMoney(item.unitPrice as number)}</div>
+                      </div>
+                      <div className="col-span-2 text-right font-semibold pr-4">
+                        <div className="text-xs text-muted-foreground">
+                          Subtotal
+                        </div>
+                        <div>${formatMoney(item.subtotal as number)}</div>
+                      </div>
+                      <div className="col-span-2 flex justify-end gap-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          title="Edit"
+                          onClick={() => setEditingBillableItem(item)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          title="Remove"
+                          onClick={() => openDeleteConfirm(item.id)}
+                        >
+                          <Trash2Icon className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2">
+            <div className="flex flex-col gap-4 w-full">
+              {/* Quick add controls */}
+              <div className="flex flex-1 flex-col md:flex-row items-end gap-4 justify-between">
+                <div className="flex flex-row items-end">
+                  {/* Quantity */}
+                  <div className="flex-0 gap-2 mr-2">
+                    <label
+                      htmlFor="quickAddQuantity"
+                      className="text-xs text-muted-foreground whitespace-nowrap"
+                    >
+                      Qty
+                    </label>
+                    <Input
+                      id="quickAddQuantity"
+                      type="number"
+                      min="1"
+                      value={quickAddQuantity}
+                      onChange={(e) =>
+                        setQuickAddQuantity(
+                          Math.max(1, parseInt(e.target.value) || 1)
+                        )
+                      }
+                      className=" w-20"
+                      disabled={!isPersistedInvoice}
+                      onFocus={(e) => e.target.select()}
+                    />
+                  </div>
+
+                  {/* Rate combobox */}
+                  <div className="flex-1">
+                    <Popover
+                      open={openQuickAddCombobox}
+                      onOpenChange={setOpenQuickAddCombobox}
+                    >
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={openQuickAddCombobox}
+                          className={cn(
+                            'w-full',
+                            !selectedQuickAddRate && 'text-muted-foreground'
+                          )}
+                          disabled={!isPersistedInvoice || ratesLoading}
+                        >
+                          {selectedQuickAddRate
+                            ? buildRateLabel(selectedQuickAddRate, pricingType)
+                            : 'Select from Rates...'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="p-0 w-fit">
+                        <Command>
+                          <CommandInput placeholder="Search rates..." />
+                          <CommandEmpty>No rates found.</CommandEmpty>
+                          <CommandList>
+                            <CommandGroup>
+                              {ratesData?.rates
+                                ?.slice()
+                                .sort((a, b) => {
+                                  const aAction = a.action?.name || ''
+                                  const bAction = b.action?.name || ''
+                                  const actionCompare =
+                                    aAction.localeCompare(bAction)
+                                  if (actionCompare !== 0) return actionCompare
+                                  const aMaterial = a.material?.name || ''
+                                  const bMaterial = b.material?.name || ''
+                                  return aMaterial.localeCompare(bMaterial)
+                                })
+                                .map((rate) => (
+                                  <CommandItem
+                                    key={rate.id}
+                                    value={buildRateSearchValue(rate)}
+                                    onSelect={() => {
+                                      setSelectedQuickAddRate(rate)
+                                      setOpenQuickAddCombobox(false)
+                                    }}
+                                  >
+                                    {buildRateLabel(rate, pricingType)}
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+
+                {/* Add selected rate */}
+                <div className="flex">
+                  <Button
+                    type="button"
+                    variant="lime"
+                    size="xl"
+                    className="w-full md:w-auto md:flex-shrink-0"
+                    onClick={() => handleQuickAddFromRate(selectedQuickAddRate)}
+                    disabled={!isPersistedInvoice || !selectedQuickAddRate}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add from Rate
+                  </Button>
+                </div>
+              </div>
+
+              {/* Persisted invoice warning */}
+              {!isPersistedInvoice && (
+                <Alert>
+                  <BookAlert />
+                  <AlertTitle>
+                    <strong>Note:</strong> Invoices must be saved before adding
+                    billable items
+                  </AlertTitle>
+                </Alert>
+              )}
+
+              {/* Add a custom item */}
+              <div className="flex flex-col md:flex-row gap-2 my-2">
+                {isDesktop ? (
+                  <Dialog
+                    open={openNewBillableItem}
+                    onOpenChange={setOpenNewBillableItem}
+                  >
+                    <DialogTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="lg"
+                        className="w-full md:w-auto"
+                        disabled={!isPersistedInvoice}
+                      >
+                        Add Custom Item
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-full sm:max-w-3xl">
+                      <DialogHeader>
+                        <DialogTitle>Add Billable Item</DialogTitle>
+                      </DialogHeader>
+                      {isPersistedInvoice && (
+                        <BillableItemFormWrapper
+                          onSave={handleCreateBillableItem}
+                          loading={createBillableItemLoading}
+                          error={createBillableItemError}
+                        />
+                      )}
+                    </DialogContent>
+                  </Dialog>
+                ) : (
+                  <Drawer
+                    open={openNewBillableItem}
+                    onOpenChange={setOpenNewBillableItem}
+                  >
+                    <DrawerTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="lg"
+                        className="w-full"
+                        disabled={!isPersistedInvoice}
+                      >
+                        Add Custom Item
+                      </Button>
+                    </DrawerTrigger>
+                    <DrawerContent>
+                      <DrawerHeader>
+                        <DrawerTitle>Add Billable Item</DrawerTitle>
+                      </DrawerHeader>
+                      <div className="max-h-[calc(100vh-180px)] overflow-y-auto px-4 pb-6">
+                        {isPersistedInvoice && (
+                          <BillableItemFormWrapper
+                            onSave={handleCreateBillableItem}
+                            loading={createBillableItemLoading}
+                            error={createBillableItemError}
+                          />
+                        )}
+                      </div>
+                      <div className="px-4 pb-4">
+                        <DrawerClose asChild>
+                          <Button variant="outline" className="w-full">
+                            Close
+                          </Button>
+                        </DrawerClose>
+                      </div>
+                    </DrawerContent>
+                  </Drawer>
+                )}
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+        {/* Hidden fields for totals */}
+        <input type="hidden" name="subtotal" value={itemsTotal} />
+        <input type="hidden" name="total" value={itemsTotal} />
+
+        <div className="mt-6 rounded-md border bg-muted/30 px-4 py-3 flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">Total</span>
+          <span className="text-3xl font-semibold">
+            {currencyDisplay(itemsTotal)}
+          </span>
+        </div>
+
         {/* Notes Section */}
         <div className="mt-6">
           <Label name="notes" className="rw-label">
@@ -1247,6 +1975,84 @@ const InvoiceForm = (props: InvoiceFormProps) => {
           <Submit disabled={props.loading}>Save</Submit>
         </div>
       </Form>
+
+      {/* Edit Billable Item Dialog/Drawer moved outside the parent form to avoid nested form submission */}
+      {isDesktop ? (
+        <Dialog
+          open={Boolean(editingBillableItem)}
+          onOpenChange={(open) => !open && setEditingBillableItem(null)}
+        >
+          <DialogContent className="max-w-full sm:max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Edit Billable Item</DialogTitle>
+            </DialogHeader>
+            {editingBillableItem && (
+              <BillableItemFormWrapper
+                billableItem={editingBillableItem as BillableItem}
+                onSave={(input, id) => handleUpdateBillableItem(input, id)}
+                loading={updateBillableItemLoading}
+                error={updateBillableItemError}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+      ) : (
+        <Drawer
+          open={Boolean(editingBillableItem)}
+          onOpenChange={(open) => !open && setEditingBillableItem(null)}
+        >
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>Edit Billable Item</DrawerTitle>
+            </DrawerHeader>
+            <div className="max-h-[calc(100vh-180px)] overflow-y-auto px-4 pb-6">
+              {editingBillableItem && (
+                <BillableItemFormWrapper
+                  billableItem={editingBillableItem as BillableItem}
+                  onSave={(input, id) => handleUpdateBillableItem(input, id)}
+                  loading={updateBillableItemLoading}
+                  error={updateBillableItemError}
+                />
+              )}
+            </div>
+            <div className="px-4 pb-4">
+              <DrawerClose asChild>
+                <Button variant="outline" className="w-full">
+                  Close
+                </Button>
+              </DrawerClose>
+            </div>
+          </DrawerContent>
+        </Drawer>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+          </DialogHeader>
+          <p>
+            Are you sure you want to remove this item? This action cannot be
+            undone.
+          </p>
+          <div className="flex gap-4 justify-end mt-6">
+            <Button variant="outline" onClick={closeDeleteConfirm}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (billableItemToDelete !== null) {
+                  handleDeleteBillableItem(billableItemToDelete)
+                }
+              }}
+            >
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

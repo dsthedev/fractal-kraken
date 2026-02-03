@@ -86,6 +86,41 @@ export const QUERY: TypedDocumentNode<EditInvoiceByUuid> = gql`
       total
       notes
       entityId
+      billableItems {
+        id
+        actionId
+        materialId
+        unitId
+        unitPrice
+        pricingType
+        quantity
+        subtotal
+        estimatedMinutesPerUnit
+        notes
+        sortOrder
+        invoiceUuid
+        authorId
+        createdAt
+        updatedAt
+        author {
+          id
+          name
+          email
+        }
+        action {
+          id
+          name
+        }
+        material {
+          id
+          name
+        }
+        unit {
+          id
+          shortName
+          fullName
+        }
+      }
     }
   }
 `
