@@ -11,6 +11,7 @@ import {
   LogIn,
   LogOut,
   Compass,
+  DollarSign,
 } from 'lucide-react'
 
 import { navigate, routes } from '@cedarjs/router'
@@ -57,6 +58,11 @@ const Nav = () => {
       label: 'Getting Started',
       route: routes.gettingStarted,
       icon: <Compass className="mr-2 h-6 w-6" />,
+    },
+    {
+      label: 'Invoices',
+      route: routes.invoices,
+      icon: <DollarSign className="mr-2 h-6 w-6" />,
     },
     {
       label: 'Estimates',

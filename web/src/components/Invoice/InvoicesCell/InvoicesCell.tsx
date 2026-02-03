@@ -8,6 +8,7 @@ import type {
 } from '@cedarjs/web'
 
 import Invoices from 'src/components/Invoice/Invoices'
+import { useSearch } from 'src/contexts/SearchContext'
 
 export const QUERY: TypedDocumentNode<FindInvoices, FindInvoicesVariables> =
   gql`
@@ -30,18 +31,21 @@ export const QUERY: TypedDocumentNode<FindInvoices, FindInvoicesVariables> =
         sourceInstallerEntityId
         sourceClientEntityId
         sourceRetailerEntityId
+        payeeName
         payeeAddressLine1
         payeeAddressLine2
         payeeCity
         payeeState
         payeePostalCode
         payeeCountry
+        payorName
         payorAddressLine1
         payorAddressLine2
         payorCity
         payorState
         payorPostalCode
         payorCountry
+        jobName
         jobAddressLine1
         jobAddressLine2
         jobCity
@@ -53,6 +57,41 @@ export const QUERY: TypedDocumentNode<FindInvoices, FindInvoicesVariables> =
         total
         notes
         entityId
+        payorEntity {
+          id
+          type
+          name
+          nickname
+          contactName
+        }
+        payeeEntity {
+          id
+          type
+          name
+          nickname
+          contactName
+        }
+        billableItems {
+          id
+          actionId
+          materialId
+          unitId
+          quantity
+          unitPrice
+          subtotal
+          action {
+            id
+            name
+          }
+          material {
+            id
+            name
+          }
+          unit {
+            id
+            fullName
+          }
+        }
       }
     }
   `
@@ -77,5 +116,32 @@ export const Failure = ({ error }: CellFailureProps<FindInvoices>) => (
 export const Success = ({
   invoices,
 }: CellSuccessProps<FindInvoices, FindInvoicesVariables>) => {
-  return <Invoices invoices={invoices} />
+  const { searchQuery } = useSearch()
+
+  const filtered = invoices.filter((invoice) => {
+    const searchable = [
+      invoice.invoiceNumber || '',
+      invoice.status || '',
+      invoice.payStatus || '',
+      invoice.payorName || '',
+      invoice.payorEntity?.name || '',
+      invoice.payorEntity?.nickname || '',
+      invoice.payorEntity?.contactName || '',
+      invoice.payeeName || '',
+      invoice.payeeEntity?.name || '',
+      invoice.payeeEntity?.nickname || '',
+      invoice.payeeEntity?.contactName || '',
+      invoice.jobName || '',
+      invoice.jobAddressLine1 || '',
+      invoice.jobAddressLine2 || '',
+      invoice.jobCity || '',
+      invoice.jobState || '',
+      invoice.notes || '',
+    ]
+      .join(' ')
+      .toLowerCase()
+    return searchable.includes(searchQuery.toLowerCase())
+  })
+
+  return <Invoices invoices={filtered} />
 }

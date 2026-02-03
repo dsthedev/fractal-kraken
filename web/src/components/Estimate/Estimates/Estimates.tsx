@@ -86,10 +86,42 @@ const EstimatesTable = ({
     sortConfig.direction
   )
 
+  const getStatusBadgeVariant = (
+    status: string
+  ):
+    | 'draft'
+    | 'sent'
+    | 'accepted'
+    | 'underway'
+    | 'invoiced'
+    | 'rejected'
+    | 'expired' => {
+    const statusMap: Record<
+      string,
+      | 'draft'
+      | 'sent'
+      | 'accepted'
+      | 'underway'
+      | 'invoiced'
+      | 'rejected'
+      | 'expired'
+    > = {
+      DRAFT: 'draft',
+      SENT: 'sent',
+      ACCEPTED: 'accepted',
+      UNDERWAY: 'underway',
+      INVOICED: 'invoiced',
+      REJECTED: 'rejected',
+      EXPIRED: 'expired',
+    }
+    return statusMap[status] || 'draft'
+  }
+
   return (
     <table className="rw-table">
       <thead>
         <tr>
+          <th className="table-cell text-left">Status</th>
           <th
             onClick={() => handleSort('title')}
             className="table-cell text-left cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -110,6 +142,11 @@ const EstimatesTable = ({
       <tbody>
         {sortedEstimates.map((estimate) => (
           <tr key={estimate.id}>
+            <td className="table-cell">
+              <Badge variant={getStatusBadgeVariant(estimate.status)}>
+                {formatEnum(estimate.status)}
+              </Badge>
+            </td>
             <td>
               <button
                 type="button"

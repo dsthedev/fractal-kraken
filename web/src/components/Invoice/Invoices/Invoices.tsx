@@ -1,3 +1,6 @@
+import { useMemo, useState } from 'react'
+
+import { Pencil, Trash2Icon } from 'lucide-react'
 import type {
   DeleteInvoiceMutation,
   DeleteInvoiceMutationVariables,
@@ -10,7 +13,25 @@ import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
 import { QUERY } from 'src/components/Invoice/InvoicesCell'
-import { formatEnum, timeTag, truncate } from 'src/lib/formatters.js'
+import { Badge } from 'src/components/ui/badge'
+import { Button } from 'src/components/ui/button'
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from 'src/components/ui/drawer'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from 'src/components/ui/select'
+import { generateCSV } from 'src/lib/csvExport'
+import { currencyDisplay, formatEnum, truncate } from 'src/lib/formatters.js'
+import { sortByField, toggleSort } from 'src/lib/sort'
+import { todayAsYYYYMMDD } from 'src/lib/utils'
 
 const DELETE_INVOICE_MUTATION: TypedDocumentNode<
   DeleteInvoiceMutation,
@@ -23,7 +44,210 @@ const DELETE_INVOICE_MUTATION: TypedDocumentNode<
   }
 `
 
+const INVOICE_STATUSES = ['DRAFT', 'SENT', 'ARCHIVED'] as const
+const INVOICE_PAY_STATUSES = ['UNPAID', 'OUTSTANDING', 'PAID'] as const
+
+interface InvoicesTableProps {
+  invoices: FindInvoices['invoices']
+  sortConfig: { key: string; direction: 'asc' | 'desc' }
+  onSortChange: (config: { key: string; direction: 'asc' | 'desc' }) => void
+  onDeleteClick: (uuid: string) => void
+  setOpenDrawerUuid: (uuid: string | null) => void
+  openDrawerUuid: string | null
+}
+
+const InvoicesTable = ({
+  invoices,
+  sortConfig,
+  onSortChange,
+  onDeleteClick,
+  setOpenDrawerUuid,
+}: InvoicesTableProps) => {
+  const handleSort = (key: string) => {
+    onSortChange(toggleSort(sortConfig, key))
+  }
+
+  const SortIcon = ({ columnKey }: { columnKey: string }) => {
+    if (sortConfig.key !== columnKey) return null
+    return sortConfig.direction === 'asc' ? ' ↑' : ' ↓'
+  }
+
+  const sortedInvoices = sortByField(
+    invoices,
+    sortConfig.key,
+    sortConfig.direction
+  )
+
+  const getStatusBadgeVariant = (
+    status: string
+  ): 'draft' | 'sent' | 'archived' => {
+    const statusMap: Record<string, 'draft' | 'sent' | 'archived'> = {
+      DRAFT: 'draft',
+      SENT: 'sent',
+      ARCHIVED: 'archived',
+    }
+    return statusMap[status] || 'draft'
+  }
+
+  const getPayStatusBadgeVariant = (
+    payStatus: string
+  ): 'unpaid' | 'outstanding' | 'paid' => {
+    const payStatusMap: Record<string, 'unpaid' | 'outstanding' | 'paid'> = {
+      UNPAID: 'unpaid',
+      OUTSTANDING: 'outstanding',
+      PAID: 'paid',
+    }
+    return payStatusMap[payStatus] || 'unpaid'
+  }
+
+  return (
+    <table className="rw-table">
+      <thead>
+        <tr>
+          <th className="table-cell text-left">Status</th>
+          <th className="table-cell text-left hidden sm:table-cell">
+            Pay Status
+          </th>
+          <th
+            onClick={() => handleSort('invoiceNumber')}
+            className="table-cell text-left cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
+            Invoice #
+            <SortIcon columnKey="invoiceNumber" />
+          </th>
+          <th
+            onClick={() => handleSort('total')}
+            className="table-cell text-right cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
+            Total
+            <SortIcon columnKey="total" />
+          </th>
+          <th className="hidden sm:table-cell">&nbsp;</th>
+        </tr>
+      </thead>
+      <tbody>
+        {sortedInvoices.map((invoice) => (
+          <tr key={invoice.uuid}>
+            <td className="table-cell">
+              <Badge variant={getStatusBadgeVariant(invoice.status)}>
+                {formatEnum(invoice.status)}
+              </Badge>
+            </td>
+            <td className="hidden sm:table-cell">
+              {invoice.status !== 'DRAFT' && (
+                <Badge variant={getPayStatusBadgeVariant(invoice.payStatus)}>
+                  {formatEnum(invoice.payStatus)}
+                </Badge>
+              )}
+            </td>
+            <td>
+              <button
+                type="button"
+                title={'Details for invoice ' + invoice.invoiceNumber}
+                className="text-sm font-medium text-blue-600 hover:underline sm:hidden text-left"
+                onClick={() => setOpenDrawerUuid(invoice.uuid)}
+              >
+                {truncate(invoice.invoiceNumber)}
+              </button>
+              <Button asChild variant="ghost" className="hidden sm:inline-flex">
+                <Link
+                  to={routes.invoice({ uuid: invoice.uuid })}
+                  title={'Show invoice ' + invoice.invoiceNumber + ' detail'}
+                >
+                  {truncate(invoice.invoiceNumber)}
+                </Link>
+              </Button>
+            </td>
+            <td className="table-cell text-right">
+              {currencyDisplay(invoice.total)}
+            </td>
+            <td className="hidden sm:table-cell">
+              <nav className="rw-table-actions flex flex-wrap gap-1 sm:flex-nowrap">
+                <Link
+                  to={routes.editInvoice({ uuid: invoice.uuid })}
+                  title={'Edit invoice ' + invoice.invoiceNumber}
+                  className="rw-button rw-button-small rw-button-blue flex-1"
+                >
+                  <Pencil />
+                </Link>
+                <button
+                  type="button"
+                  title={'Delete invoice ' + invoice.invoiceNumber}
+                  className="rw-button rw-button-small rw-button-red flex-1"
+                  onClick={() => onDeleteClick(invoice.uuid)}
+                >
+                  <Trash2Icon />
+                </button>
+              </nav>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
+const InvoiceDrawerContent = ({
+  invoice,
+  onDelete,
+}: {
+  invoice: FindInvoices['invoices'][0]
+  onDelete: (uuid: string) => void
+}) => {
+  return (
+    <div className="p-4 space-y-4">
+      <div>
+        <strong>Invoice #:</strong> {invoice.invoiceNumber}
+      </div>
+      <div>
+        <strong>Status:</strong>{' '}
+        <Badge variant={invoice.status.toLowerCase() as any}>
+          {formatEnum(invoice.status)}
+        </Badge>
+      </div>
+      <div>
+        <strong>Pay Status:</strong>{' '}
+        <Badge variant={invoice.payStatus.toLowerCase() as any}>
+          {formatEnum(invoice.payStatus)}
+        </Badge>
+      </div>
+      <div>
+        <strong>Total:</strong> {currencyDisplay(invoice.total)}
+      </div>
+      {invoice.notes && (
+        <div>
+          <strong>Notes:</strong> {invoice.notes}
+        </div>
+      )}
+      <div className="flex gap-2 pt-4">
+        <Button asChild variant="default" size="sm" className="flex-1">
+          <Link to={routes.invoice({ uuid: invoice.uuid })}>View</Link>
+        </Button>
+        <Button asChild variant="outline" size="sm" className="flex-1">
+          <Link to={routes.editInvoice({ uuid: invoice.uuid })}>Edit</Link>
+        </Button>
+        <Button
+          variant="destructive"
+          size="sm"
+          className="flex-1"
+          onClick={() => onDelete(invoice.uuid)}
+        >
+          Delete
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 const InvoicesList = ({ invoices }: FindInvoices) => {
+  const [openDrawerUuid, setOpenDrawerUuid] = useState<string | null>(null)
+  const [selectedStatus, setSelectedStatus] = useState<string>('ALL')
+  const [selectedPayStatus, setSelectedPayStatus] = useState<string>('ALL')
+  const [sortConfig, setSortConfig] = useState<{
+    key: string
+    direction: 'asc' | 'desc'
+  }>({ key: 'invoiceNumber', direction: 'desc' })
+
   const [deleteInvoice] = useMutation(DELETE_INVOICE_MUTATION, {
     onCompleted: () => {
       toast.success('Invoice deleted')
@@ -31,9 +255,6 @@ const InvoicesList = ({ invoices }: FindInvoices) => {
     onError: (error) => {
       toast.error(error.message)
     },
-    // This refetches the query on the list page. Read more about other ways to
-    // update the cache over here:
-    // https://www.apollographql.com/docs/react/data/mutations/#making-all-other-cache-updates
     refetchQueries: [{ query: QUERY }],
     awaitRefetchQueries: true,
   })
@@ -44,127 +265,212 @@ const InvoicesList = ({ invoices }: FindInvoices) => {
     }
   }
 
+  // Count invoices by status
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    INVOICE_STATUSES.forEach((status) => {
+      counts[status] = invoices.filter((i) => i.status === status).length
+    })
+    return counts
+  }, [invoices])
+
+  // Count invoices by pay status
+  const payStatusCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    INVOICE_PAY_STATUSES.forEach((payStatus) => {
+      counts[payStatus] = invoices.filter(
+        (i) => i.payStatus === payStatus
+      ).length
+    })
+    return counts
+  }, [invoices])
+
+  // Filter invoices by selected status and pay status
+  const filteredInvoices = useMemo(() => {
+    let filtered = invoices
+    if (selectedStatus !== 'ALL') {
+      filtered = filtered.filter((i) => i.status === selectedStatus)
+    }
+    if (selectedPayStatus !== 'ALL') {
+      filtered = filtered.filter((i) => i.payStatus === selectedPayStatus)
+    }
+    return filtered
+  }, [invoices, selectedStatus, selectedPayStatus])
+
+  const selectedInvoicesTotal = useMemo(
+    () =>
+      filteredInvoices.reduce((sum, invoice) => sum + (invoice.total || 0), 0),
+    [filteredInvoices]
+  )
+
+  const handleExportInvoices = () => {
+    const exportData: any[] = []
+
+    filteredInvoices.forEach((invoice) => {
+      if (!invoice.billableItems || invoice.billableItems.length === 0) {
+        exportData.push({
+          invoiceUuid: invoice.uuid,
+          invoiceNumber: invoice.invoiceNumber,
+          status: invoice.status,
+          payStatus: invoice.payStatus,
+          total: invoice.total,
+          subtotal: invoice.subtotal,
+          taxTotal: invoice.taxTotal,
+          payorEntityId: invoice.payorEntityId,
+          payeeEntityId: invoice.payeeEntityId,
+          jobAddressLine1: invoice.jobAddressLine1,
+          jobAddressLine2: invoice.jobAddressLine2,
+          jobCity: invoice.jobCity,
+          jobState: invoice.jobState,
+          jobPostalCode: invoice.jobPostalCode,
+          jobCountry: invoice.jobCountry,
+          createdAt: invoice.createdAt,
+          lineItemId: '',
+          actionId: '',
+          actionName: '',
+          materialId: '',
+          materialName: '',
+          unitId: '',
+          unitName: '',
+          quantity: '',
+          unitPrice: '',
+          lineItemSubtotal: '',
+        })
+      } else {
+        invoice.billableItems.forEach((item) => {
+          exportData.push({
+            invoiceUuid: invoice.uuid,
+            invoiceNumber: invoice.invoiceNumber,
+            status: invoice.status,
+            payStatus: invoice.payStatus,
+            total: invoice.total,
+            subtotal: invoice.subtotal,
+            taxTotal: invoice.taxTotal,
+            payorEntityId: invoice.payorEntityId,
+            payeeEntityId: invoice.payeeEntityId,
+            jobAddressLine1: invoice.jobAddressLine1,
+            jobAddressLine2: invoice.jobAddressLine2,
+            jobCity: invoice.jobCity,
+            jobState: invoice.jobState,
+            jobPostalCode: invoice.jobPostalCode,
+            jobCountry: invoice.jobCountry,
+            createdAt: invoice.createdAt,
+            lineItemId: item.id,
+            actionId: item.actionId,
+            actionName: item.action?.name || '',
+            materialId: item.materialId,
+            materialName: item.material?.name || '',
+            unitId: item.unitId,
+            unitName: item.unit?.fullName || '',
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            lineItemSubtotal: item.subtotal,
+          })
+        })
+      }
+    })
+
+    generateCSV(exportData, `${todayAsYYYYMMDD()}-invoices.csv`)
+  }
+
   return (
-    <div className="rw-segment rw-table-wrapper-responsive">
-      <table className="rw-table">
-        <thead>
-          <tr>
-            <th>Uuid</th>
-            <th>Created at</th>
-            <th>Updated at</th>
-            <th>Author id</th>
-            <th>Invoice number</th>
-            <th>Status</th>
-            <th>Pay status</th>
-            <th>Job started at</th>
-            <th>Job finished at</th>
-            <th>Due at</th>
-            <th>Paid at</th>
-            <th>Payor entity id</th>
-            <th>Payee entity id</th>
-            <th>Source estimate id</th>
-            <th>Source installer entity id</th>
-            <th>Source client entity id</th>
-            <th>Source retailer entity id</th>
-            <th>Payee address line1</th>
-            <th>Payee address line2</th>
-            <th>Payee city</th>
-            <th>Payee state</th>
-            <th>Payee postal code</th>
-            <th>Payee country</th>
-            <th>Payor address line1</th>
-            <th>Payor address line2</th>
-            <th>Payor city</th>
-            <th>Payor state</th>
-            <th>Payor postal code</th>
-            <th>Payor country</th>
-            <th>Job address line1</th>
-            <th>Job address line2</th>
-            <th>Job city</th>
-            <th>Job state</th>
-            <th>Job postal code</th>
-            <th>Job country</th>
-            <th>Subtotal</th>
-            <th>Tax total</th>
-            <th>Total</th>
-            <th>Notes</th>
-            <th>Entity id</th>
-            <th>&nbsp;</th>
-          </tr>
-        </thead>
-        <tbody>
-          {invoices.map((invoice) => (
-            <tr key={invoice.uuid}>
-              <td>{truncate(invoice.uuid)}</td>
-              <td>{timeTag(invoice.createdAt)}</td>
-              <td>{timeTag(invoice.updatedAt)}</td>
-              <td>{truncate(invoice.authorId)}</td>
-              <td>{truncate(invoice.invoiceNumber)}</td>
-              <td>{formatEnum(invoice.status)}</td>
-              <td>{formatEnum(invoice.payStatus)}</td>
-              <td>{timeTag(invoice.jobStartedAt)}</td>
-              <td>{timeTag(invoice.jobFinishedAt)}</td>
-              <td>{timeTag(invoice.dueAt)}</td>
-              <td>{timeTag(invoice.paidAt)}</td>
-              <td>{truncate(invoice.payorEntityId)}</td>
-              <td>{truncate(invoice.payeeEntityId)}</td>
-              <td>{truncate(invoice.sourceEstimateId)}</td>
-              <td>{truncate(invoice.sourceInstallerEntityId)}</td>
-              <td>{truncate(invoice.sourceClientEntityId)}</td>
-              <td>{truncate(invoice.sourceRetailerEntityId)}</td>
-              <td>{truncate(invoice.payeeAddressLine1)}</td>
-              <td>{truncate(invoice.payeeAddressLine2)}</td>
-              <td>{truncate(invoice.payeeCity)}</td>
-              <td>{truncate(invoice.payeeState)}</td>
-              <td>{truncate(invoice.payeePostalCode)}</td>
-              <td>{truncate(invoice.payeeCountry)}</td>
-              <td>{truncate(invoice.payorAddressLine1)}</td>
-              <td>{truncate(invoice.payorAddressLine2)}</td>
-              <td>{truncate(invoice.payorCity)}</td>
-              <td>{truncate(invoice.payorState)}</td>
-              <td>{truncate(invoice.payorPostalCode)}</td>
-              <td>{truncate(invoice.payorCountry)}</td>
-              <td>{truncate(invoice.jobAddressLine1)}</td>
-              <td>{truncate(invoice.jobAddressLine2)}</td>
-              <td>{truncate(invoice.jobCity)}</td>
-              <td>{truncate(invoice.jobState)}</td>
-              <td>{truncate(invoice.jobPostalCode)}</td>
-              <td>{truncate(invoice.jobCountry)}</td>
-              <td>{truncate(invoice.subtotal)}</td>
-              <td>{truncate(invoice.taxTotal)}</td>
-              <td>{truncate(invoice.total)}</td>
-              <td>{truncate(invoice.notes)}</td>
-              <td>{truncate(invoice.entityId)}</td>
-              <td>
-                <nav className="rw-table-actions">
-                  <Link
-                    to={routes.invoice({ uuid: invoice.uuid })}
-                    title={'Show invoice ' + invoice.uuid + ' detail'}
-                    className="rw-button rw-button-small"
-                  >
-                    Show
-                  </Link>
-                  <Link
-                    to={routes.editInvoice({ uuid: invoice.uuid })}
-                    title={'Edit invoice ' + invoice.uuid}
-                    className="rw-button rw-button-small rw-button-blue"
-                  >
-                    Edit
-                  </Link>
-                  <button
-                    type="button"
-                    title={'Delete invoice ' + invoice.uuid}
-                    className="rw-button rw-button-small rw-button-red"
-                    onClick={() => onDeleteClick(invoice.uuid)}
-                  >
-                    Delete
-                  </button>
-                </nav>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="rw-segment">
+      {/* Status filter dropdowns */}
+      <div className="flex items-center justify-between mb-4 space-y-2 sm:space-y-0 sm:flex-row flex-col gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">ALL ({invoices.length})</SelectItem>
+              {INVOICE_STATUSES.map((status) => (
+                <SelectItem key={status} value={status}>
+                  {status} ({statusCounts[status]})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={selectedPayStatus}
+            onValueChange={setSelectedPayStatus}
+          >
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">ALL PAY ({invoices.length})</SelectItem>
+              {INVOICE_PAY_STATUSES.map((payStatus) => (
+                <SelectItem key={payStatus} value={payStatus}>
+                  {payStatus} ({payStatusCounts[payStatus]})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex space-x-4">
+          <Badge variant="outline">
+            <strong>
+              {selectedStatus === 'ALL' ? 'All' : formatEnum(selectedStatus)}
+            </strong>{' '}
+            <small>Total</small>
+          </Badge>
+          <div className="text-2xl font-semibold">
+            {currencyDisplay(selectedInvoicesTotal)}
+          </div>
+        </div>
+        <div>&nbsp;</div>
+      </div>
+
+      {/* Table for filtered invoices */}
+      {filteredInvoices.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-xl">No Invoices Found</p>
+        </div>
+      ) : (
+        <div className="rw-table-wrapper-responsive">
+          <InvoicesTable
+            invoices={filteredInvoices}
+            sortConfig={sortConfig}
+            onSortChange={setSortConfig}
+            onDeleteClick={onDeleteClick}
+            setOpenDrawerUuid={setOpenDrawerUuid}
+            openDrawerUuid={openDrawerUuid}
+          />
+        </div>
+      )}
+
+      {/* Drawer for mobile details view */}
+      {filteredInvoices.map((invoice) => (
+        <Drawer
+          key={`drawer-${invoice.uuid}`}
+          open={openDrawerUuid === invoice.uuid}
+          onOpenChange={(open) => setOpenDrawerUuid(open ? invoice.uuid : null)}
+        >
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>Invoice Details</DrawerTitle>
+            </DrawerHeader>
+            <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
+              <InvoiceDrawerContent
+                invoice={invoice}
+                onDelete={onDeleteClick}
+              />
+            </div>
+          </DrawerContent>
+        </Drawer>
+      ))}
+
+      <hr className="mb-6" />
+      <Button
+        className="print:hidden"
+        variant="outline"
+        disabled={filteredInvoices.length === 0}
+        size="sm"
+        onClick={handleExportInvoices}
+      >
+        Export Invoices
+      </Button>
     </div>
   )
 }

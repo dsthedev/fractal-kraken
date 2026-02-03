@@ -27,6 +27,7 @@ import {
   NumberField,
   Submit,
   useFormContext,
+  TextAreaField,
 } from '@cedarjs/forms'
 import { Link, routes } from '@cedarjs/router'
 import type { TypedDocumentNode } from '@cedarjs/web'
@@ -907,10 +908,16 @@ const InvoiceForm = (props: InvoiceFormProps) => {
   const onSubmit = (data: FormInvoice) => {
     const { uuid: _uuid, ...inputData } = data
     const uuidToUse = props.invoice?.uuid || invoiceUuid
+
+    // Convert empty date strings to null for GraphQL DateTime fields
     const submitData = {
       ...inputData,
       subtotal: itemsTotal,
       total: itemsTotal,
+      jobStartedAt: inputData.jobStartedAt || null,
+      jobFinishedAt: inputData.jobFinishedAt || null,
+      dueAt: inputData.dueAt || null,
+      paidAt: inputData.paidAt || null,
     } as UpdateInvoiceInput
     props.onSave(submitData, uuidToUse)
   }
@@ -1963,10 +1970,11 @@ const InvoiceForm = (props: InvoiceFormProps) => {
           <Label name="notes" className="rw-label">
             Notes
           </Label>
-          <TextField
+          <TextAreaField
             name="notes"
             errorClassName="rw-input rw-input-error"
             className="rw-input"
+            rows={6}
           />
           <FieldError name="notes" className="rw-field-error" />
         </div>

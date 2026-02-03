@@ -16,6 +16,27 @@ const badgeVariants = cva(
           'border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60',
         outline:
           'text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground',
+        // Status variants
+        draft:
+          'border-transparent bg-gray-500 text-white [a&]:hover:bg-gray-500/90 dark:bg-gray-600',
+        sent: 'border-transparent bg-blue-500 text-white [a&]:hover:bg-blue-500/90 dark:bg-blue-600',
+        accepted:
+          'border-transparent bg-green-500 text-white [a&]:hover:bg-green-500/90 dark:bg-green-600',
+        underway:
+          'border-transparent bg-purple-500 text-white [a&]:hover:bg-purple-500/90 dark:bg-purple-600',
+        invoiced:
+          'border-transparent bg-teal-500 text-white [a&]:hover:bg-teal-500/90 dark:bg-teal-600',
+        rejected:
+          'border-transparent bg-red-500 text-white [a&]:hover:bg-red-500/90 dark:bg-red-600',
+        expired:
+          'border-transparent bg-orange-500 text-white [a&]:hover:bg-orange-500/90 dark:bg-orange-600',
+        archived:
+          'border-transparent bg-gray-400 text-white [a&]:hover:bg-gray-400/90 dark:bg-gray-500',
+        unpaid:
+          'border-transparent bg-yellow-500 text-white [a&]:hover:bg-yellow-500/90 dark:bg-yellow-600',
+        outstanding:
+          'border-transparent bg-amber-500 text-white [a&]:hover:bg-amber-500/90 dark:bg-amber-600',
+        paid: 'border-transparent bg-emerald-500 text-white [a&]:hover:bg-emerald-500/90 dark:bg-emerald-600',
       },
     },
     defaultVariants: {

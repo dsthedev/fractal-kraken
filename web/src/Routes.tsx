@@ -15,7 +15,7 @@ const Routes = () => {
           <Route path="/invoices/{uuid}/edit" page={InvoiceEditInvoicePage} name="editInvoice" />
           <Route path="/invoices/{uuid}" page={InvoiceInvoicePage} name="invoice" />
         </Set>
-        <Set wrap={AdminScaffoldLayout} title="Invoices" titleTo="invoices" buttonLabel="New Invoice" buttonTo="newInvoice">
+        <Set wrap={AdminScaffoldLayout} title="Invoices" titleTo="invoices" buttonLabel="New Invoice" buttonTo="newInvoice" showSearch={true}>
           <Route path="/invoices" page={InvoiceInvoicesPage} name="invoices" />
         </Set>
         <Set wrap={AdminScaffoldLayout} title="Materials" titleTo="materials" buttonLabel="New" buttonTo="newMaterial">

@@ -1683,16 +1683,19 @@ const EstimateForm = (props: EstimateFormProps) => {
       </Dialog>
 
       {/* Status change confirmation dialog */}
-      <Dialog open={statusChangeConfirmOpen} onOpenChange={setStatusChangeConfirmOpen}>
+      <Dialog
+        open={statusChangeConfirmOpen}
+        onOpenChange={setStatusChangeConfirmOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Change Estimate Status?</DialogTitle>
           </DialogHeader>
           <div className="px-3 pb-3 pt-1">
             <p className="text-sm text-muted-foreground">
-              This estimate is currently marked as <strong>INVOICED</strong>. 
-              If an invoice has been created from this estimate, changing the status 
-              here will not update the invoice status.
+              This estimate is currently marked as <strong>INVOICED</strong>. If
+              an invoice has been created from this estimate, changing the
+              status here will not update the invoice status.
             </p>
             <p className="text-sm text-muted-foreground mt-2">
               You may need to update the related invoice separately.
