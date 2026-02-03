@@ -396,6 +396,12 @@ const EstimateForm = (props: EstimateFormProps) => {
     number | null
   >(null)
 
+  // Status change confirmation dialog state
+  const [statusChangeConfirmOpen, setStatusChangeConfirmOpen] = useState(false)
+  const [pendingStatus, setPendingStatus] = useState<
+    UpdateEstimateInput['status'] | null
+  >(null)
+
   const openDeleteConfirm = (id: number) => {
     setBillableItemToDelete(id)
     setDeleteConfirmOpen(true)
@@ -404,6 +410,32 @@ const EstimateForm = (props: EstimateFormProps) => {
   const closeDeleteConfirm = () => {
     setBillableItemToDelete(null)
     setDeleteConfirmOpen(false)
+  }
+
+  const handleStatusChange = (newStatus: UpdateEstimateInput['status']) => {
+    // If changing from INVOICED to something else, show confirmation
+    if (selectedStatus === 'INVOICED' && newStatus !== 'INVOICED') {
+      setPendingStatus(newStatus)
+      setStatusChangeConfirmOpen(true)
+    } else {
+      // Otherwise, change directly
+      setSelectedStatus(newStatus)
+      setOpenStatus(false)
+    }
+  }
+
+  const confirmStatusChange = () => {
+    if (pendingStatus) {
+      setSelectedStatus(pendingStatus)
+      setPendingStatus(null)
+    }
+    setStatusChangeConfirmOpen(false)
+    setOpenStatus(false)
+  }
+
+  const cancelStatusChange = () => {
+    setPendingStatus(null)
+    setStatusChangeConfirmOpen(false)
   }
 
   const handleCreateInvoice = async () => {
@@ -849,10 +881,9 @@ const EstimateForm = (props: EstimateFormProps) => {
                               key={status}
                               value={status}
                               onSelect={(value) => {
-                                setSelectedStatus(
+                                handleStatusChange(
                                   value as UpdateEstimateInput['status']
                                 )
-                                setOpenStatus(false)
                               }}
                             >
                               {status}
@@ -1645,6 +1676,33 @@ const EstimateForm = (props: EstimateFormProps) => {
                 }}
               >
                 Yes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Status change confirmation dialog */}
+      <Dialog open={statusChangeConfirmOpen} onOpenChange={setStatusChangeConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Estimate Status?</DialogTitle>
+          </DialogHeader>
+          <div className="px-3 pb-3 pt-1">
+            <p className="text-sm text-muted-foreground">
+              This estimate is currently marked as <strong>INVOICED</strong>. 
+              If an invoice has been created from this estimate, changing the status 
+              here will not update the invoice status.
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              You may need to update the related invoice separately.
+            </p>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={cancelStatusChange}>
+                Cancel
+              </Button>
+              <Button variant="default" onClick={confirmStatusChange}>
+                Continue
               </Button>
             </div>
           </div>
