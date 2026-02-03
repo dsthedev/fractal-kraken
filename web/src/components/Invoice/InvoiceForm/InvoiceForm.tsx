@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 
-import { Plus } from 'lucide-react'
 import type {
   EditInvoiceByUuid,
   UpdateInvoiceInput,
@@ -23,6 +22,7 @@ import type { TypedDocumentNode } from '@cedarjs/web'
 import { useQuery } from '@cedarjs/web'
 
 import { useAuth } from 'src/auth'
+import { EntitySelector } from 'src/components/Estimate/EstimateForm/EntitySelector'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -94,6 +94,11 @@ const InvoiceForm = (props: InvoiceFormProps) => {
   const { data: entitiesData } = useQuery(FIND_ENTITIES_QUERY)
   const entities = entitiesData?.entities || props.entities || []
 
+  // Filter entities by type (for invoices, include all types)
+  const allowedEntityTypes = ['CONTRACTOR', 'CLIENT', 'RETAILER', 'INSTALLER']
+  const filteredEntities =
+    entities?.filter((e) => allowedEntityTypes.includes(e.type)) || []
+
   // Generate UUID for new invoices
   const invoiceUuid = useMemo(
     () => props.invoice?.uuid || uuidv4(),
@@ -114,8 +119,6 @@ const InvoiceForm = (props: InvoiceFormProps) => {
   const [openStatus, setOpenStatus] = useState(false)
   const [openPayStatus, setOpenPayStatus] = useState(false)
   const [openSourceDialog, setOpenSourceDialog] = useState(false)
-  const [openPayorCombobox, setOpenPayorCombobox] = useState(false)
-  const [openPayeeCombobox, setOpenPayeeCombobox] = useState(false)
   const [openPayorCopyConfirm, setOpenPayorCopyConfirm] = useState(false)
   const [openPayeeCopyConfirm, setOpenPayeeCopyConfirm] = useState(false)
 
@@ -217,7 +220,7 @@ const InvoiceForm = (props: InvoiceFormProps) => {
           listClassName="rw-form-error-list"
         />
 
-        {/* Hidden System Fields */}
+        {/* Visually Hidden + ReadOnly System Fields */}
 
         {/* UUID - Auto-generated for new invoices, persisted for existing */}
         <TextField
@@ -226,6 +229,7 @@ const InvoiceForm = (props: InvoiceFormProps) => {
           className="hidden"
           errorClassName="hidden"
           validation={{ required: true }}
+          readOnly
         />
 
         {/* Author ID - Auto-populated from current user */}
@@ -235,6 +239,7 @@ const InvoiceForm = (props: InvoiceFormProps) => {
           className="hidden"
           errorClassName="hidden"
           validation={{ required: true }}
+          readOnly
         />
 
         {/* Tax Total - Hidden, defaults to 0 (future tax calculation feature) */}
@@ -596,76 +601,25 @@ const InvoiceForm = (props: InvoiceFormProps) => {
               Payor (Who is paying)
             </legend>
 
-            <div className="flex items-end gap-2">
-              <div className="flex-1">
-                <Label
-                  name="payorEntityId"
-                  className="rw-label"
-                  errorClassName="rw-label rw-label-error"
-                >
-                  Entity
-                </Label>
-                <Popover
-                  open={openPayorCombobox}
-                  onOpenChange={setOpenPayorCombobox}
-                >
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openPayorCombobox}
-                      className={cn(
-                        'justify-between w-full',
-                        !payorEntityId && 'text-muted-foreground'
-                      )}
-                    >
-                      {payorEntityId
-                        ? entities?.find((e) => e.id === payorEntityId)?.name ||
-                          `ID: ${payorEntityId}`
-                        : 'Select entity...'}
-                      <svg
-                        className="ml-2 h-4 w-4 shrink-0 opacity-50"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M7 10l5 5 5-5H7z" />
-                      </svg>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="p-0 w-fit">
-                    <Command>
-                      <CommandInput placeholder="Search entities..." />
-                      <CommandEmpty>No entities found.</CommandEmpty>
-                      <CommandList>
-                        <CommandGroup>
-                          {props.entities?.map((entity) => (
-                            <CommandItem
-                              key={entity.id}
-                              value={entity.id.toString()}
-                              onSelect={(value) => {
-                                setPayorEntityId(parseInt(value))
-                                setOpenPayorCombobox(false)
-                              }}
-                            >
-                              {entity.nickname || entity.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                <FieldError name="payorEntityId" className="rw-field-error" />
-              </div>
-              <Button type="button" variant="outline" size="sm">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
+            <EntitySelector
+              label="Payor"
+              placeholder="Select Payor..."
+              fieldName="payorEntityId"
+              entityType="CLIENT"
+              entities={filteredEntities}
+              selectedEntity={
+                payorEntityId
+                  ? filteredEntities?.find((e) => e.id === payorEntityId)
+                  : undefined
+              }
+              onEntitySelect={(entity) => {
+                setPayorEntityId(entity?.id || undefined)
+              }}
+              onEntityCreate={(entity) => {
+                setPayorEntityId(entity.id)
+              }}
+              hiddenInputValue={payorEntityId || ''}
+            />
 
             {/* Copy Address Button - shown if payor entity is selected */}
             {payorEntityId && (
@@ -829,76 +783,25 @@ const InvoiceForm = (props: InvoiceFormProps) => {
               Payee (Who is being paid)
             </legend>
 
-            <div className="flex items-end gap-2">
-              <div className="flex-1">
-                <Label
-                  name="payeeEntityId"
-                  className="rw-label"
-                  errorClassName="rw-label rw-label-error"
-                >
-                  Entity
-                </Label>
-                <Popover
-                  open={openPayeeCombobox}
-                  onOpenChange={setOpenPayeeCombobox}
-                >
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openPayeeCombobox}
-                      className={cn(
-                        'justify-between w-full',
-                        !payeeEntityId && 'text-muted-foreground'
-                      )}
-                    >
-                      {payeeEntityId
-                        ? entities?.find((e) => e.id === payeeEntityId)?.name ||
-                          `ID: ${payeeEntityId}`
-                        : 'Select entity...'}
-                      <svg
-                        className="ml-2 h-4 w-4 shrink-0 opacity-50"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M7 10l5 5 5-5H7z" />
-                      </svg>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="p-0 w-fit">
-                    <Command>
-                      <CommandInput placeholder="Search entities..." />
-                      <CommandEmpty>No entities found.</CommandEmpty>
-                      <CommandList>
-                        <CommandGroup>
-                          {entities?.map((entity) => (
-                            <CommandItem
-                              key={entity.id}
-                              value={entity.id.toString()}
-                              onSelect={(value) => {
-                                setPayeeEntityId(parseInt(value))
-                                setOpenPayeeCombobox(false)
-                              }}
-                            >
-                              {entity.nickname || entity.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                <FieldError name="payeeEntityId" className="rw-field-error" />
-              </div>
-              <Button type="button" variant="outline" size="sm">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
+            <EntitySelector
+              label="Payee"
+              placeholder="Select Payee..."
+              fieldName="payeeEntityId"
+              entityType="CONTRACTOR"
+              entities={filteredEntities}
+              selectedEntity={
+                payeeEntityId
+                  ? filteredEntities?.find((e) => e.id === payeeEntityId)
+                  : undefined
+              }
+              onEntitySelect={(entity) => {
+                setPayeeEntityId(entity?.id || undefined)
+              }}
+              onEntityCreate={(entity) => {
+                setPayeeEntityId(entity.id)
+              }}
+              hiddenInputValue={payeeEntityId || ''}
+            />
 
             {/* Copy Address Button - shown if payee entity is selected */}
             {payeeEntityId && (

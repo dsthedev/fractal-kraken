@@ -1026,6 +1026,7 @@ const EstimateForm = (props: EstimateFormProps) => {
                   entities={props.entities}
                   selectedEntity={selectedInstallerEntity}
                   onEntitySelect={setSelectedInstallerEntity}
+                  onEntityCreate={setSelectedInstallerEntity}
                   onEntityUpdate={(entity) =>
                     handleEntityUpdate(entity, setSelectedInstallerEntity)
                   }
@@ -1042,6 +1043,7 @@ const EstimateForm = (props: EstimateFormProps) => {
                   entities={props.entities}
                   selectedEntity={selectedClientEntity}
                   onEntitySelect={setSelectedClientEntity}
+                  onEntityCreate={setSelectedClientEntity}
                   onEntityUpdate={(entity) =>
                     handleEntityUpdate(entity, setSelectedClientEntity)
                   }
@@ -1058,6 +1060,7 @@ const EstimateForm = (props: EstimateFormProps) => {
                   entities={props.entities}
                   selectedEntity={selectedRetailerEntity}
                   onEntitySelect={setSelectedRetailerEntity}
+                  onEntityCreate={setSelectedRetailerEntity}
                   onEntityUpdate={(entity) =>
                     handleEntityUpdate(entity, setSelectedRetailerEntity)
                   }

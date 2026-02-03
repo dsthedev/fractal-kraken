@@ -69,10 +69,11 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
     INSTALLER: ['INSTALLER', 'CONTRACTOR'],
     CLIENT: ['CLIENT', 'RETAILER', 'CONTRACTOR'],
     RETAILER: ['RETAILER', 'CONTRACTOR'],
+    CONTRACTOR: ['CONTRACTOR', 'INSTALLER', 'CLIENT', 'RETAILER'],
   }
 
   const filteredEntities =
-    entities?.filter((e) => entityTypeFilters[entityType].includes(e.type)) ||
+    entities?.filter((e) => entityTypeFilters[entityType]?.includes(e.type)) ||
     []
 
   const handleEditOpen = () => {

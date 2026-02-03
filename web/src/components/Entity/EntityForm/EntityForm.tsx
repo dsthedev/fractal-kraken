@@ -69,7 +69,13 @@ const EntityForm = (props: EntityFormProps) => {
   }
 
   return (
-    <div className="rw-form-wrapper">
+    <div
+      className="rw-form-wrapper"
+      onSubmit={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+      }}
+    >
       <Form<FormEntity> onSubmit={onSubmit} error={props.error}>
         <FormError
           error={props.error}
