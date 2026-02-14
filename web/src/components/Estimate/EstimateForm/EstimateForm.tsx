@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 
 import { gql } from '@apollo/client'
 import { BookAlert, Pencil, Plus, Trash2Icon } from 'lucide-react'
@@ -307,6 +307,7 @@ const TitleSection: React.FC<TitleSectionProps> = ({
 
 const EstimateForm = (props: EstimateFormProps) => {
   const { currentUser } = useAuth()
+  const defaultsAppliedRef = useRef(false)
   const { data: ratesData, loading: ratesLoading } =
     useQuery<FindRates>(GET_RATES_QUERY)
   const [updateEntity] = useMutation(UPDATE_ENTITY_MUTATION, {
@@ -476,9 +477,16 @@ const EstimateForm = (props: EstimateFormProps) => {
     return () => mediaQuery.removeEventListener('change', handler)
   }, [])
 
-  // Set default entities from current user if fields are empty
+  // Set default entities ONLY on initial mount of new estimates
   useEffect(() => {
-    if (!props.estimate?.installerEntityId && currentUser?.defaultEntityId) {
+    // Only apply defaults once, and only for new estimates
+    if (defaultsAppliedRef.current || props.estimate?.id) {
+      return
+    }
+
+    defaultsAppliedRef.current = true
+
+    if (!selectedInstallerEntity && currentUser?.defaultEntityId) {
       const defaultEntity = props.entities?.find(
         (e) => e.id === currentUser.defaultEntityId
       )
@@ -487,10 +495,7 @@ const EstimateForm = (props: EstimateFormProps) => {
       }
     }
 
-    if (
-      !props.estimate?.retailerEntityId &&
-      currentUser?.defaultRetailerEntityId
-    ) {
+    if (!selectedRetailerEntity && currentUser?.defaultRetailerEntityId) {
       const defaultRetailer = props.entities?.find(
         (e) => e.id === currentUser.defaultRetailerEntityId
       )
@@ -499,11 +504,12 @@ const EstimateForm = (props: EstimateFormProps) => {
       }
     }
   }, [
-    props.estimate?.installerEntityId,
-    props.estimate?.retailerEntityId,
     currentUser?.defaultEntityId,
     currentUser?.defaultRetailerEntityId,
     props.entities,
+    props.estimate?.id,
+    selectedInstallerEntity,
+    selectedRetailerEntity,
   ])
 
   // Auto-populate job address from client if fields are empty
@@ -752,9 +758,9 @@ const EstimateForm = (props: EstimateFormProps) => {
       jobPostalCode,
       uuid: data?.uuid || props.estimate?.uuid || uuidv4(),
       status: selectedStatus,
-      installerEntityId: selectedInstallerEntity?.id,
-      clientEntityId: selectedClientEntity?.id,
-      retailerEntityId: selectedRetailerEntity?.id,
+      installerEntityId: selectedInstallerEntity?.id ?? null,
+      clientEntityId: selectedClientEntity?.id ?? null,
+      retailerEntityId: selectedRetailerEntity?.id ?? null,
       authorId: currentUser?.id || props.estimate?.authorId,
       jobCountry: 'United States',
       subtotal: itemsTotal,
