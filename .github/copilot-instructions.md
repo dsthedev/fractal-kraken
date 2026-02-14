@@ -1,40 +1,19 @@
-# CedarJS/Redwood Full-Stack Project - AI Agent Instructions
+# Fractal Kraken AI Agent Instructions
 
 ## Project Overview
 
-**Floorkick** is a comprehensive sidekick application designed for flooring contractors to quickly and efficiently manage business operations. The app enables contractors to estimate jobs, invoice clients, track payments, and manage service data with minimal friction.
-
-### Phased Development Approach
-
-The project follows a structured build order from low to high coupling:
-
-1. **Phase 0**: Foundation (Auth, ownership)
-2. **Phase 1**: Reference Data (MeasurementUnit, Service, Rate)
-3. **Phase 2**: Entities (Client, Retailer, Installer data)
-4. **Phase 3**: Line Items (BillableItem, Adjustments)
-5. **Phase 4**: Estimates (Editable documents with statuses)
-6. **Phase 5**: Invoices (Locked financial records)
-7. **Phase 6**: Payments & PayStubs (Money tracking)
-
-Each phase builds on the previous with minimal schema disruption, ensuring features are usable at every stage.
-
-As new data models are added, features to export and import it easily via the UX should are prioritized as data migration and resets will be invevitable during development.
-
----
-
-This is a **CedarJS** (formerly Redwood) full-stack web application with monorepo structure using **Node 24** and **Yarn workspaces**. The project uses **TypeScript**, **React 18**, **GraphQL**, **Prisma ORM**, and **PostgreSQL**.
+The purpose of this app is to enable contractors to estimate jobs, invoice clients, track payment status, and manage service data with minimal friction.
 
 ## Project Architecture
 
 ### Monorepo Structure
 
-- **`/api`** - Backend GraphQL server (port 8911) using `@cedarjs/graphql-server`
-- **`/web`** - Frontend React app (port 8910) with Vite bundler
+- **`/api`** - Backend GraphQL server using `@cedarjs/graphql-server`
+- **`/web`** - Frontend React app with Vite bundler
 - **`/scripts`** - Database seeding and utility scripts
 
 ### Key Tech Stack
 
-- **Backend**: GraphQL (Apollo), Prisma ORM, DbAuth (built-in auth), Nodemailer for email
 - **Backend**: GraphQL (Apollo), Prisma ORM, DbAuth (built-in auth), Nodemailer for email
 - **Mailer**: CedarJS mailer is used for transactional email (see https://cedarjs.com/docs/mailer)
 - **Frontend**: React 18, Tailwind CSS v4 (with @tailwindcss/vite), React Hook Form, Zod validation
@@ -63,14 +42,7 @@ Quick reference links for the main packages used in this project:
 - **[React Hook Form](https://react-hook-form.com/)** - Performant form state management
 - **[Zod](https://zod.dev/)** - TypeScript-first schema validation library
 
-## Critical Development Workflows
-
-### Setup & Dev Server
-
-```bash
-yarn install
-yarn cedar dev  # Starts both API (8911) and web (8910) simultaneously
-```
+## Development Workflows
 
 ### Database
 
@@ -87,10 +59,10 @@ yarn cedar dev  # Starts both API (8911) and web (8910) simultaneously
 ### Testing
 
 ```bash
-yarn test                    # Run all tests
-yarn test --watch           # Watch mode
-yarn test api               # Test API only
-yarn test web               # Test web only
+yarn test         # Run all tests
+yarn test --watch # Watch mode
+yarn test api     # Test API only
+yarn test web     # Test web only
 ```
 
 ## Code Patterns & Conventions
@@ -152,16 +124,6 @@ scenario('returns all users', async (scenario: StandardScenario) => {
 ```
 
 Scenarios defined in `*.scenarios.ts` files via Faker-generated data.
-
-### Reference Data & Unit Conversions
-
-**Phase 1 reference data** includes foundational lookup tables like `MeasurementUnit`. Key patterns:
-
-- **Fixed vocabularies** use Prisma enums (e.g., `UnitDimension`, `UnitCategory`) to enforce data integrity
-- **Conversion logic** lives in component utilities (`web/src/lib/unitConversions.ts`), not in resolvers
-- **ConversionFactor** on MeasurementUnit enables calculators to normalize across units: `baseValue = rawValue × conversionFactor`
-- Example: Convert 100 sq ft to sq yd: `(100 × 0.092903) / 0.836127 ≈ 11.1 sq yd`
-- Export/import CSV data via scripts for bulk updates to reference data
 
 ## File Organization
 
