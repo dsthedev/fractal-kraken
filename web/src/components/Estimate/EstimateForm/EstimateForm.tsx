@@ -343,7 +343,7 @@ const EstimateForm = (props: EstimateFormProps) => {
       onCompleted: () => {
         toast.success('Invoice created')
         setSelectedStatus('INVOICED')
-        navigate(routes.estimates())
+        navigate(routes.invoices())
       },
       onError: (error) => toast.error(error.message),
     })

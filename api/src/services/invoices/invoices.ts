@@ -4,7 +4,7 @@ import type {
   InvoiceRelationResolvers,
 } from 'types/graphql'
 
-import { context } from '@cedarjs/graphql-server'
+import { context, RedwoodGraphQLError } from '@cedarjs/graphql-server'
 
 import { db } from 'src/lib/db'
 import { buildTitle, getWeekNumber } from 'src/lib/estimateTitle'
@@ -31,7 +31,7 @@ export const createInvoiceFromEstimate: MutationResolvers['createInvoiceFromEsti
   async ({ estimateId }) => {
     const currentUserId = context.currentUser?.id
     if (!currentUserId) {
-      throw new Error('User not authenticated')
+      throw new RedwoodGraphQLError('User not authenticated')
     }
 
     const estimate = await db.estimate.findFirst({
@@ -48,11 +48,11 @@ export const createInvoiceFromEstimate: MutationResolvers['createInvoiceFromEsti
     })
 
     if (!estimate) {
-      throw new Error('Estimate not found')
+      throw new RedwoodGraphQLError('Estimate not found')
     }
 
     if (!estimate.installerEntityId) {
-      throw new Error('Estimate is missing an installer entity')
+      throw new RedwoodGraphQLError('Estimate is missing an installer entity')
     }
 
     const installer = estimate.installerEntity
@@ -61,7 +61,9 @@ export const createInvoiceFromEstimate: MutationResolvers['createInvoiceFromEsti
     const payorEntity = retailer ?? client
 
     if (!payorEntity) {
-      throw new Error('Estimate is missing a payor entity (retailer or client)')
+      throw new RedwoodGraphQLError(
+        'Estimate is missing a payor entity (retailer or client)'
+      )
     }
 
     const retailerName = retailer?.nickname || retailer?.name
