@@ -9,7 +9,7 @@ import { useAuth } from './auth.js'
 const Routes = () => {
   return (
     <Router useAuth={useAuth}>
-      <PrivateSet wrap={WrapperLayout as any} unauthenticated="login" roles={['guest', 'admin']}>
+      <PrivateSet wrap={WrapperLayout} unauthenticated="login" roles={['guest', 'admin']}>
         <Set wrap={AdminScaffoldLayout} title="Invoices" titleTo="invoices" buttonLabel="New Invoice" buttonTo="newInvoice">
           <Route path="/invoices/new" page={InvoiceNewInvoicePage} name="newInvoice" />
           <Route path="/invoices/{uuid}/edit" page={InvoiceEditInvoicePage} name="editInvoice" />
@@ -27,7 +27,7 @@ const Routes = () => {
           <Route path="/materials" page={MaterialMaterialsPage} name="materials" />
         </Set>
       </PrivateSet>
-      <PrivateSet wrap={WrapperLayout as any} unauthenticated="login" roles={['guest', 'admin']}>
+      <PrivateSet wrap={WrapperLayout} unauthenticated="login" roles={['guest', 'admin']}>
         <Set wrap={AdminScaffoldLayout} title="Actions" titleTo="actions" buttonLabel="New" buttonTo="newAction">
           <Route path="/actions/new" page={ActionNewActionPage} name="newAction" />
           <Route path="/actions/{id:Int}/edit" page={ActionEditActionPage} name="editAction" />
@@ -37,7 +37,7 @@ const Routes = () => {
           <Route path="/actions" page={ActionActionsPage} name="actions" />
         </Set>
       </PrivateSet>
-      <PrivateSet wrap={WrapperLayout as any} unauthenticated="login" roles={['guest', 'admin']}>
+      <PrivateSet wrap={WrapperLayout} unauthenticated="login" roles={['guest', 'admin']}>
         <Set wrap={AdminScaffoldLayout} title="Estimates" titleTo="estimates" buttonLabel="New" buttonTo="newEstimate">
           <Route path="/estimates/new" page={EstimateNewEstimatePage} name="newEstimate" />
           <Route path="/estimates/{id:Int}/edit" page={EstimateEditEstimatePage} name="editEstimate" />
@@ -76,36 +76,39 @@ const Routes = () => {
           <Route path="/services/{id:Int}/edit" page={ServiceEditServicePage} name="editService" />
           <Route path="/services/{id:Int}" page={ServiceServicePage} name="service" />
         </Set>
-        <Set wrap={AdminScaffoldLayout as any} title="Services" titleTo="services" buttonLabel="New" buttonTo="newService" showSearch={true}>
+        <Set wrap={AdminScaffoldLayout} title="Services" titleTo="services" buttonLabel="New" buttonTo="newService" showSearch={true}>
           <Route path="/services" page={ServiceServicesPage} name="services" />
         </Set>
       </PrivateSet>
 
-      <PrivateSet wrap={WrapperLayout as any} unauthenticated="login" roles={['guest', 'admin']}>
-        <Set wrap={AdminScaffoldLayout as any} title="Measurement Units" titleTo="measurementUnits" buttonLabel="New" buttonTo="newMeasurementUnit">
+      <PrivateSet wrap={WrapperLayout} unauthenticated="login" roles={['guest', 'admin']}>
+        <Set wrap={AdminScaffoldLayout} title="Measurement Units" titleTo="measurementUnits" buttonLabel="New" buttonTo="newMeasurementUnit">
           <Route path="/measurement-units/new" page={MeasurementUnitNewMeasurementUnitPage} name="newMeasurementUnit" />
           <Route path="/measurement-units/{id:Int}/edit" page={MeasurementUnitEditMeasurementUnitPage} name="editMeasurementUnit" />
           <Route path="/measurement-units/{id:Int}" page={MeasurementUnitMeasurementUnitPage} name="measurementUnit" />
         </Set>
-        <Set wrap={AdminScaffoldLayout as any} title="Measurement Units" titleTo="measurementUnits" buttonLabel="New" buttonTo="newMeasurementUnit" showSearch={true}>
+        <Set wrap={AdminScaffoldLayout} title="Measurement Units" titleTo="measurementUnits" buttonLabel="New" buttonTo="newMeasurementUnit" showSearch={true}>
           <Route path="/measurement-units" page={MeasurementUnitMeasurementUnitsPage} name="measurementUnits" />
         </Set>
 
-        <Set wrap={AdminScaffoldLayout as any} title="Users" titleTo="users" buttonLabel="New" buttonTo="newUser">
+        <Set wrap={AdminScaffoldLayout} title="Users" titleTo="users" buttonLabel="New" buttonTo="newUser">
           <Route path="/users/new" page={UserNewUserPage} name="newUser" />
           <Route path="/users/{id}/edit" page={UserEditUserPage} name="editUser" />
           <Route path="/users/{id}" page={UserUserPage} name="user" />
         </Set>
-        <Set wrap={AdminScaffoldLayout as any} title="Users" titleTo="users" buttonLabel="New" buttonTo="newUser" showSearch={true}>
+        <Set wrap={AdminScaffoldLayout} title="Users" titleTo="users" buttonLabel="New" buttonTo="newUser" showSearch={true}>
           <Route path="/users" page={UserUsersPage} name="users" />
         </Set>
       </PrivateSet>
 
-      <Set wrap={WrapperLayout as any}>
-        <Route path="/getting-started" page={GettingStartedPage} name="gettingStarted" />
+      <PrivateSet wrap={WrapperLayout} unauthenticated="login" roles={['guest', 'admin']}>
+        <Route path="/orphaned-billable-items-cleanup" page={OrphanedBillableItemsCleanupPage} name="orphanedBillableItemsCleanup" />
         <Route path="/view-old-rates" page={ViewOldRatesPage} name="viewOldRates" />
+        <Route path="/getting-started" page={GettingStartedPage} name="gettingStarted" />
         <Route path="/sandbox" page={SandboxPage} name="sandbox" />
+      </PrivateSet>
 
+      <Set wrap={WrapperLayout}>
         <Route path="/login" page={LoginPage} name="login" />
         <Route path="/signup" page={SignupPage} name="signup" />
         <Route path="/forgot-password" page={ForgotPasswordPage} name="forgotPassword" />

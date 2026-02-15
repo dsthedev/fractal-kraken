@@ -20,6 +20,10 @@ const AdminNav = () => {
   const { isAuthenticated, currentUser } = useAuth()
 
   const adminMenuItems: AdminMenuItem[] = [
+    {
+      label: 'Orphaned Billable Items Cleanup',
+      route: routes.orphanedBillableItemsCleanup,
+    },
     { label: 'Invoices', route: routes.invoices },
     { label: 'Estimates', route: routes.estimates },
     { label: 'Billable Items', route: routes.billableItems },

@@ -131,6 +131,26 @@ export const deleteBillableItem: MutationResolvers['deleteBillableItem'] = ({
   })
 }
 
+export const orphanedBillableItems = async () => {
+  return db.billableItem.findMany({
+    where: {
+      AND: [{ estimateId: null }, { invoiceUuid: null }],
+    },
+    include: { estimate: true, invoice: true, author: true },
+  })
+}
+
+export const deleteOrphanedBillableItems = async ({
+  ids,
+}: {
+  ids: number[]
+}) => {
+  const result = await db.billableItem.deleteMany({
+    where: { id: { in: ids } },
+  })
+  return result.count
+}
+
 export const BillableItem: BillableItemRelationResolvers = {
   action: (_obj, { root }) => {
     return db.billableItem.findUnique({ where: { id: root?.id } }).action()

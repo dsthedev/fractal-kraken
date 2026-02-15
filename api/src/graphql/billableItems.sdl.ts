@@ -40,10 +40,8 @@ export const schema = gql`
   type Query {
     billableItems: [BillableItem!]! @requireAuth
     billableItem(id: Int!): BillableItem @requireAuth
-    billableItemsPage(
-      page: Int
-      pageSize: Int
-    ): BillableItemsPage! @requireAuth
+    billableItemsPage(page: Int, pageSize: Int): BillableItemsPage! @requireAuth
+    orphanedBillableItems: [BillableItem!]! @requireAuth(roles: ["admin"])
   }
 
   input CreateBillableItemInput {
@@ -86,5 +84,7 @@ export const schema = gql`
       input: UpdateBillableItemInput!
     ): BillableItem! @requireAuth
     deleteBillableItem(id: Int!): BillableItem! @requireAuth
+    deleteOrphanedBillableItems(ids: [Int!]!): Int!
+      @requireAuth(roles: ["admin"])
   }
 `
