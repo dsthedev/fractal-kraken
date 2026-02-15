@@ -40,6 +40,51 @@ export const billableItem: QueryResolvers['billableItem'] = ({ id }) => {
   }) as unknown as any
 }
 
+export const billableItemsPage: QueryResolvers['billableItemsPage'] = async ({
+  page = 1,
+  pageSize = 10,
+}) => {
+  const userId = context.currentUser?.id
+  if (!userId) {
+    throw new Error('User not authenticated')
+  }
+
+  // Validate and sanitize inputs
+  const validatedPage = Math.max(1, page)
+  const validatedPageSize = Math.min(Math.max(1, pageSize), 100) // Max 100 per page
+  const skip = (validatedPage - 1) * validatedPageSize
+
+  const where = { authorId: userId }
+
+  // Execute queries in parallel for efficiency
+  const [billableItems, totalCount] = await Promise.all([
+    db.billableItem.findMany({
+      where,
+      skip,
+      take: validatedPageSize,
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+      include: {
+        action: true,
+        material: true,
+        unit: true,
+        author: true,
+        estimate: true,
+      },
+    }),
+    db.billableItem.count({ where }),
+  ])
+
+  const hasMore = skip + billableItems.length < totalCount
+
+  return {
+    billableItems: billableItems as any,
+    count: totalCount,
+    hasMore,
+    page: validatedPage,
+    pageSize: validatedPageSize,
+  }
+}
+
 export const createBillableItem: MutationResolvers['createBillableItem'] = ({
   input,
 }) => {

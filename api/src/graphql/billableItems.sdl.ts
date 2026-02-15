@@ -29,9 +29,21 @@ export const schema = gql`
     RETAIL
   }
 
+  type BillableItemsPage {
+    billableItems: [BillableItem!]!
+    count: Int!
+    hasMore: Boolean!
+    page: Int!
+    pageSize: Int!
+  }
+
   type Query {
     billableItems: [BillableItem!]! @requireAuth
     billableItem(id: Int!): BillableItem @requireAuth
+    billableItemsPage(
+      page: Int
+      pageSize: Int
+    ): BillableItemsPage! @requireAuth
   }
 
   input CreateBillableItemInput {
