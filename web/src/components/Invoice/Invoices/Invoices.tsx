@@ -106,9 +106,7 @@ const InvoicesTable = ({
       <thead>
         <tr>
           <th className="table-cell text-left">Status</th>
-          <th className="table-cell text-left hidden sm:table-cell">
-            Pay Status
-          </th>
+          <th className="text-left hidden md:table-cell">Pay Status</th>
           <th
             onClick={() => handleSort('invoiceNumber')}
             className="table-cell text-left cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
