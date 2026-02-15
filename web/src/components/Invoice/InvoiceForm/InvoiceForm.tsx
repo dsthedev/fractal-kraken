@@ -712,13 +712,13 @@ const InvoiceForm = (props: InvoiceFormProps) => {
 
   // Billable Items State and Logic
   const [billableItems, setBillableItems] = useState<BillableItem[]>(
-    props.invoice?.billableItems || []
+    (props.invoice?.billableItems as BillableItem[]) || []
   )
 
   // Update billable items when invoice changes (for edit mode)
   useEffect(() => {
     if (props.invoice?.billableItems) {
-      setBillableItems(props.invoice.billableItems)
+      setBillableItems(props.invoice.billableItems as BillableItem[])
     }
   }, [props.invoice?.billableItems])
 
@@ -856,7 +856,10 @@ const InvoiceForm = (props: InvoiceFormProps) => {
     })
 
     if (data?.createBillableItem) {
-      setBillableItems((prev) => [...prev, data.createBillableItem])
+      setBillableItems((prev) => [
+        ...prev,
+        data.createBillableItem as BillableItem,
+      ])
       setOpenNewBillableItem(false)
     }
   }
@@ -879,7 +882,9 @@ const InvoiceForm = (props: InvoiceFormProps) => {
 
     if (data?.updateBillableItem) {
       setBillableItems((prev) =>
-        prev.map((item) => (item.id === id ? data.updateBillableItem : item))
+        prev.map((item) =>
+          item.id === id ? (data.updateBillableItem as BillableItem) : item
+        )
       )
       setEditingBillableItem(null)
     }
@@ -1644,6 +1649,14 @@ const InvoiceForm = (props: InvoiceFormProps) => {
                     <div
                       className="flex-1 cursor-pointer"
                       onClick={() => setEditingBillableItem(item)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          setEditingBillableItem(item)
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
                     >
                       <div className="font-medium">
                         <strong className="text-xl">{item.quantity}</strong> ×{' '}
@@ -1709,6 +1722,14 @@ const InvoiceForm = (props: InvoiceFormProps) => {
                       <div
                         className="col-span-4 cursor-pointer"
                         onClick={() => setEditingBillableItem(item)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            setEditingBillableItem(item)
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
                       >
                         <div className="font-medium">{serviceLabel(item)}</div>
                         {item.notes && (

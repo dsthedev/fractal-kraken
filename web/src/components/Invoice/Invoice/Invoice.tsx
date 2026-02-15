@@ -11,7 +11,6 @@ import { toast } from '@cedarjs/web/toast'
 
 import SendInvoiceEmail from 'src/components/SendInvoiceEmail/SendInvoiceEmail'
 import { Badge } from 'src/components/ui/badge'
-import { Button } from 'src/components/ui/button'
 import { Input } from 'src/components/ui/input'
 import {
   Table,
