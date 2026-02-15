@@ -366,8 +366,10 @@ const EstimateForm = (props: EstimateFormProps) => {
     props.estimate?.title ||
       buildTitle(
         getWeekNumber(new Date()),
-        props.estimate?.retailerEntity?.nickname,
-        props.estimate?.clientEntity?.name
+        props.estimate?.retailerEntity?.nickname ||
+          props.estimate?.retailerEntity?.name,
+        props.estimate?.clientEntity?.nickname ||
+          props.estimate?.clientEntity?.name
       ) + ' - New Estimate'
   )
 

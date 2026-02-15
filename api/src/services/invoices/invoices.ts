@@ -7,7 +7,7 @@ import type {
 import { context, RedwoodGraphQLError } from '@cedarjs/graphql-server'
 
 import { db } from 'src/lib/db'
-import { buildTitle, getWeekNumber } from 'src/lib/estimateTitle'
+import { createRefNo, getWeekNumber } from 'src/lib/estimateTitle'
 import { sendInvoiceEmail } from 'src/services/mailer/mailer'
 
 export const invoices: QueryResolvers['invoices'] = () => {
@@ -69,13 +69,7 @@ export const createInvoiceFromEstimate: MutationResolvers['createInvoiceFromEsti
 
     const retailerName = retailer?.nickname || retailer?.name
     const clientName = client?.nickname || client?.name
-    const invoiceNumber =
-      estimate.title?.trim() ||
-      buildTitle(
-        getWeekNumber(estimate.createdAt ?? new Date()),
-        retailerName,
-        clientName
-      )
+    const invoiceNumber = createRefNo(retailerName, clientName)
 
     const dueAt = new Date()
     dueAt.setDate(dueAt.getDate() + 30)

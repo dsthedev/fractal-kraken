@@ -77,7 +77,7 @@ import {
   buildRateSearchValue,
 } from 'src/lib/estimateUtils'
 import { currencyDisplay } from 'src/lib/formatters.js'
-import { cn, getWeekNumber, buildTitle } from 'src/lib/utils'
+import { cn, createRefNo } from 'src/lib/utils'
 
 type FormInvoice = NonNullable<EditInvoiceByUuid['invoice']>
 
@@ -405,9 +405,11 @@ const EntitySelectorField = (props: EntitySelectorFieldProps) => {
 
 // Wrapper components that use form context - defined here so they can be used in InvoiceForm's JSX
 const GenerateInvoiceNumberButtonContent = ({
-  weekNumber,
+  entities,
+  invoice,
 }: {
-  weekNumber: string
+  entities: Entity[]
+  invoice?: FormInvoice
 }) => {
   const { setValue } = useFormContext()
 
@@ -417,7 +419,18 @@ const GenerateInvoiceNumberButtonContent = ({
       variant="outline"
       size="sm"
       onClick={() => {
-        const newNumber = buildTitle(weekNumber, '', '')
+        // Try to get entities from source references
+        const clientEntity = invoice?.sourceClientEntityId
+          ? entities.find((e) => e.id === invoice?.sourceClientEntityId)
+          : null
+        const retailerEntity = invoice?.sourceRetailerEntityId
+          ? entities.find((e) => e.id === invoice?.sourceRetailerEntityId)
+          : null
+
+        const clientName = clientEntity?.nickname || clientEntity?.name
+        const retailerName = retailerEntity?.nickname || retailerEntity?.name
+
+        const newNumber = createRefNo(retailerName, clientName)
         setValue('invoiceNumber', newNumber)
       }}
     >
@@ -680,12 +693,22 @@ const InvoiceForm = (props: InvoiceFormProps) => {
   const [openPayeeCopyConfirm, setOpenPayeeCopyConfirm] = useState(false)
 
   // Generate invoice number default
-  const weekNumber: string = useMemo(
-    () => String(getWeekNumber(new Date())),
-    []
-  )
-  const getDefaultInvoiceNumber = () =>
-    props.invoice?.invoiceNumber || buildTitle(weekNumber, '', '')
+  const getDefaultInvoiceNumber = () => {
+    if (props.invoice?.invoiceNumber) return props.invoice.invoiceNumber
+
+    // Try to auto-generate from source entities
+    const clientEntity = props.invoice?.sourceClientEntityId
+      ? entities.find((e) => e.id === props.invoice?.sourceClientEntityId)
+      : null
+    const retailerEntity = props.invoice?.sourceRetailerEntityId
+      ? entities.find((e) => e.id === props.invoice?.sourceRetailerEntityId)
+      : null
+
+    const clientName = clientEntity?.nickname || clientEntity?.name
+    const retailerName = retailerEntity?.nickname || retailerEntity?.name
+
+    return createRefNo(retailerName, clientName)
+  }
   const getDefaultDueDate = () => {
     if (props.invoice?.dueAt) return props.invoice.dueAt
     const date = new Date()
@@ -1029,10 +1052,13 @@ const InvoiceForm = (props: InvoiceFormProps) => {
                   validation={{
                     required: 'Invoice number is required',
                   }}
-                  placeholder="Week # - Retailer - Client"
+                  placeholder="7-ClientName-RetailerName"
                   className="rw-input flex-1 w-full"
                 />
-                <GenerateInvoiceNumberButtonContent weekNumber={weekNumber} />
+                <GenerateInvoiceNumberButtonContent
+                  entities={entities}
+                  invoice={props.invoice}
+                />
               </div>
 
               <FieldError name="invoiceNumber" className="rw-field-error" />

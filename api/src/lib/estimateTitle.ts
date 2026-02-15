@@ -12,7 +12,36 @@ export const getWeekNumber = (date: Date): string => {
   return weekNum.toString()
 }
 
-// Build estimate title in format: [weekNumber - RetailerName - ClientName]
+// Helper to convert name to camelCase for compact references
+// "Bob Dole" -> "BobDole", "ACME Corp" -> "AcmeCorp"
+export const shortenNameToCamelCase = (name: string): string => {
+  return name
+    .split(/\s+/) // Split on whitespace
+    .map((word) => {
+      if (!word) return ''
+      // Capitalize first letter, lowercase the rest
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    })
+    .join('')
+}
+
+// Create compact reference number in format: [weekNo-RetailerCamelCase-ClientCamelCase]
+// Used primarily for invoice numbers
+export const createRefNo = (
+  retailerName: string | null | undefined,
+  clientName: string | null | undefined
+): string => {
+  const weekNo = getWeekNumber(new Date())
+  const retailer = retailerName
+    ? shortenNameToCamelCase(retailerName)
+    : 'RETAILER'
+  const client = clientName ? shortenNameToCamelCase(clientName) : 'CLIENT'
+
+  return `${weekNo}-${retailer}-${client}`
+}
+
+// Build full title in format: [weekNumber - RetailerName - ClientName]
+// Used for estimate titles and display purposes
 export const buildTitle = (
   weekNumber: string,
   retailerName?: string,
