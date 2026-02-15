@@ -74,6 +74,21 @@ export const QUERY: TypedDocumentNode<
         nickname
         contactName
       }
+      sourceInstallerEntity {
+        id
+        name
+        email
+      }
+      sourceClientEntity {
+        id
+        name
+        email
+      }
+      sourceRetailerEntity {
+        id
+        name
+        email
+      }
       billableItems {
         id
         quantity

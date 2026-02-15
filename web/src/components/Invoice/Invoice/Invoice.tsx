@@ -9,6 +9,7 @@ import { useMutation } from '@cedarjs/web'
 import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
+import SendInvoiceEmail from 'src/components/SendInvoiceEmail/SendInvoiceEmail'
 import { Badge } from 'src/components/ui/badge'
 import { Button } from 'src/components/ui/button'
 import { Input } from 'src/components/ui/input'
@@ -262,6 +263,19 @@ const Invoice = ({ invoice }: Props) => {
             Invoice ID: <small>{invoice.uuid}</small>
           </div>
         </div>
+      </div>
+
+      <div className="mx-auto max-w-4xl border-t px-8 py-4 print:hidden">
+        <SendInvoiceEmail
+          invoiceUuid={invoice.uuid}
+          entities={
+            [
+              invoice.sourceInstallerEntity,
+              invoice.sourceRetailerEntity,
+              invoice.sourceClientEntity,
+            ].filter(Boolean) as (typeof invoice.sourceInstallerEntity)[]
+          }
+        />
       </div>
 
       {/* Action Buttons - Hidden on Print */}

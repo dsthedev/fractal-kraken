@@ -41,28 +41,60 @@ interface EstimateEmailProps {
 }
 
 export function EstimateEmail({
-  estimateTitle,
-  clientName,
-  estimateLink,
-  contractorName,
-  installer,
-  billableItems,
-  total,
-}: EstimateEmailProps) {
+  estimateTitle = 'Kitchen Remodel - EST-2026-001',
+  clientName = 'Sarah Johnson',
+  contractorName = 'Acme Construction LLC',
+  installer = {
+    name: 'Acme Construction LLC',
+    contactName: 'Mike Rodriguez',
+    email: 'mike@acmeconstruction.com',
+    phone: '(555) 234-5678',
+    addressLine1: '123 Builder St',
+    addressLine2: 'Suite 100',
+    city: 'San Francisco',
+    state: 'CA',
+    postalCode: '94102',
+    country: 'USA',
+  },
+  billableItems = [
+    {
+      quantity: 300,
+      unitShortName: 'sqft',
+      description: 'Install Hardwood Flooring',
+      unitPrice: 12.5,
+      subtotal: 3750.0,
+    },
+    {
+      quantity: 150,
+      unitShortName: 'sqft',
+      description: 'Paint Interior Walls',
+      unitPrice: 4.0,
+      subtotal: 600.0,
+    },
+    {
+      quantity: 8,
+      unitShortName: 'ea',
+      description: 'Replace Light Fixtures',
+      unitPrice: 85.0,
+      subtotal: 680.0,
+    },
+    {
+      quantity: 1,
+      unitShortName: 'ea',
+      description: 'Install Kitchen Countertops',
+      unitPrice: 2500.0,
+      subtotal: 2500.0,
+    },
+  ],
+  total = 7530.0,
+}: EstimateEmailProps = {}) {
   const formatCurrency = (value?: number | null) =>
     typeof value === 'number' ? `$${value.toFixed(2)}` : '$0.00'
 
   const installerLines = [
-    // installer?.name,
     installer?.contactName,
     installer?.email,
     installer?.phone,
-    // [installer?.addressLine1, installer?.addressLine2]
-    //   .filter(Boolean)
-    //   .join(', '),
-    // [installer?.city, installer?.state].filter(Boolean).join(', '),
-    // installer?.postalCode,
-    // installer?.country,
   ].filter(Boolean)
 
   return (

@@ -163,5 +163,6 @@ export const schema = gql`
     updateInvoice(uuid: String!, input: UpdateInvoiceInput!): Invoice!
       @requireAuth
     deleteInvoice(uuid: String!): Invoice! @requireAuth
+    sendInvoice(uuid: String!, recipientEmail: String!): Invoice! @requireAuth
   }
 `

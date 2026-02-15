@@ -8,6 +8,7 @@ import { context, RedwoodGraphQLError } from '@cedarjs/graphql-server'
 
 import { db } from 'src/lib/db'
 import { buildTitle, getWeekNumber } from 'src/lib/estimateTitle'
+import { sendInvoiceEmail } from 'src/services/mailer/mailer'
 
 export const invoices: QueryResolvers['invoices'] = () => {
   return db.invoice.findMany()
@@ -197,4 +198,17 @@ export const Invoice: InvoiceRelationResolvers = {
   entity: (_obj, { root }) => {
     return db.invoice.findUnique({ where: { uuid: root?.uuid } }).entity()
   },
+}
+
+export const sendInvoice: MutationResolvers['sendInvoice'] = async ({
+  uuid,
+  recipientEmail,
+}) => {
+  await sendInvoiceEmail({ uuid, recipientEmail })
+
+  const invoice = await db.invoice.findUnique({
+    where: { uuid },
+  })
+
+  return invoice
 }

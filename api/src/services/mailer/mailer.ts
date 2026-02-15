@@ -10,8 +10,9 @@ import {
 } from 'src/lib/mailer'
 import { EstimateEmail } from 'src/mail/EstimateEmail/EstimateEmail'
 import { ExampleEmail } from 'src/mail/Example/Example'
+import { Invoice } from 'src/mail/Invoice/Invoice'
 
-// Doesn't work
+// not sure if this works
 export const sendExampleEmail = async ({ toEmail }: { toEmail: string }) => {
   await mailer.send(ExampleEmail({ when: new Date().toLocaleString() }), {
     to: toEmail,
@@ -120,6 +121,79 @@ export const sendEstimateEmail = async ({
       data: { status: 'SENT' },
     })
   }
+
+  return true
+}
+
+export const sendInvoiceEmail = async ({
+  uuid,
+  recipientEmail,
+}: {
+  uuid: string
+  recipientEmail: string
+}) => {
+  const invoice = await db.invoice.findFirst({
+    where: {
+      uuid,
+      authorId: context.currentUser?.id,
+    },
+    include: {
+      payorEntity: true,
+      payeeEntity: true,
+      billableItems: {
+        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+        include: {
+          unit: true,
+          action: true,
+          material: true,
+        },
+      },
+    },
+  })
+
+  if (!invoice) {
+    throw new Error('Invoice not found')
+  }
+
+  // Validate email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(recipientEmail)) {
+    throw new Error('Invalid email address')
+  }
+
+  const emailNode = Invoice({
+    invoice: {
+      ...invoice,
+      total: invoice.total ? Number(invoice.total) : null,
+      subtotal: invoice.subtotal ? Number(invoice.subtotal) : null,
+      taxTotal: invoice.taxTotal ? Number(invoice.taxTotal) : null,
+      billableItems: invoice.billableItems.map((item) => ({
+        ...item,
+        unitPrice: item.unitPrice ? Number(item.unitPrice) : null,
+        quantity: item.quantity ? Number(item.quantity) : null,
+        subtotal: item.subtotal ? Number(item.subtotal) : null,
+      })),
+    },
+  })
+
+  const [htmlContent, textContent] = await Promise.all([
+    renderAsync(emailNode),
+    renderAsync(emailNode, { plainText: true }),
+  ])
+
+  await nodemailerTransport.sendMail({
+    to: recipientEmail,
+    from: process.env.BREVO_SENDER_EMAIL || process.env.NOREPLY_EMAIL,
+    subject: `Invoice ${invoice.invoiceNumber}`,
+    html: htmlContent,
+    text: textContent,
+  })
+
+  // Update invoice status to SENT
+  await db.invoice.update({
+    where: { uuid },
+    data: { status: 'SENT' },
+  })
 
   return true
 }

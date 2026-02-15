@@ -231,3 +231,6 @@ web/src/
   - Keep changes minimal and idiomatic
   - Lower cognitive load and improve readability
   - provide a summary and ask for confirmation before making changes
+- **types and formatting**: dont worry about regenerating types or formatting as the AI constantly messes up the commands. allow the user to run those commands.
+- **discovered problems**: if you discover a problem in the code, provide a summary and ask for confirmation before making changes. do not make changes without confirmation. if you are unsure about a change, ask for clarification.
+- **env**: do not ever read this file.

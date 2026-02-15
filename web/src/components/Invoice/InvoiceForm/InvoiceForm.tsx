@@ -37,6 +37,7 @@ import { toast } from '@cedarjs/web/toast'
 import { useAuth } from 'src/auth'
 import BillableItemFormWrapper from 'src/components/BillableItem/BillableItemFormWrapper'
 import { EntitySelector } from 'src/components/Estimate/EstimateForm/EntitySelector'
+import SendInvoiceEmail from 'src/components/SendInvoiceEmail/SendInvoiceEmail'
 import { Alert, AlertTitle } from 'src/components/ui/alert'
 import { Button } from 'src/components/ui/button'
 import {
@@ -1992,6 +1993,22 @@ const InvoiceForm = (props: InvoiceFormProps) => {
           <Submit disabled={props.loading}>Save</Submit>
         </div>
       </Form>
+
+      {/* Send Invoice via Email Section */}
+      {props.invoice?.uuid && (
+        <div className="px-8 py-4 border-t print:hidden">
+          <SendInvoiceEmail
+            invoiceUuid={props.invoice.uuid}
+            entities={
+              [
+                props.invoice.sourceInstallerEntity,
+                props.invoice.sourceRetailerEntity,
+                props.invoice.sourceClientEntity,
+              ].filter(Boolean) as Entity[]
+            }
+          />
+        </div>
+      )}
 
       {/* Edit Billable Item Dialog/Drawer moved outside the parent form to avoid nested form submission */}
       {isDesktop ? (

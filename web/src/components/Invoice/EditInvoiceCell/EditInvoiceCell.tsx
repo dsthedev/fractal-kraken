@@ -206,9 +206,10 @@ export const Success = ({ invoice }: CellSuccessProps<EditInvoiceByUuid>) => {
     <div className="rw-segment">
       <header className="rw-segment-header">
         <h2 className="rw-heading rw-heading-secondary">
-          Edit Invoice {invoice?.id}
+          Edit Invoice {invoice?.invoiceNumber}
         </h2>
       </header>
+
       <div className="rw-segment-main">
         <InvoiceForm
           invoice={invoice}
