@@ -54,6 +54,7 @@ const CarpetCalculatorV1 = () => {
   >({})
   const [editingAreaId, setEditingAreaId] = useState<string | null>(null)
   const areaNameRefs = useRef<Record<string, HTMLInputElement | null>>({})
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -164,6 +165,67 @@ const CarpetCalculatorV1 = () => {
         return area
       })
     )
+  }
+
+  const handleExportData = () => {
+    const dataStr = JSON.stringify(areas, null, 2)
+    const dataBlob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(dataBlob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `carpet-calculator-data-${new Date().toISOString().split('T')[0]}.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const importedData = JSON.parse(e.target?.result as string)
+
+        // Validate that it's an array
+        if (!Array.isArray(importedData)) {
+          alert('Invalid data format: Expected an array of areas')
+          return
+        }
+
+        // If there's existing data, confirm before overwriting
+        if (areas.length > 0) {
+          const confirmed = confirm(
+            '⚠️ Warning: This will overwrite all existing data. Are you sure you want to continue?'
+          )
+          if (!confirmed) {
+            // Reset file input
+            if (fileInputRef.current) {
+              fileInputRef.current.value = ''
+            }
+            return
+          }
+        }
+
+        setAreas(importedData)
+        alert('Data imported successfully!')
+      } catch (error) {
+        alert('Error importing data: Invalid JSON format')
+        console.error('Import error:', error)
+      }
+
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+    reader.readAsText(file)
+  }
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click()
   }
 
   return (
@@ -398,19 +460,58 @@ const CarpetCalculatorV1 = () => {
         </div>
       )}
 
-      {/* Raw Data Accordion */}
-      {areas.length > 0 && (
-        <Accordion type="single" collapsible className="w-full">
+      {/* Usage Tips & Raw Data Accordion */}
+      <Accordion type="single" collapsible className="w-full">
+        <AccordionItem value="usage-tips">
+          <AccordionTrigger>Usage Tips</AccordionTrigger>
+          <AccordionContent>
+            <ul className="list-disc pl-6 space-y-2 text-sm">
+              <li>Click the pencil icon to edit area or piece names inline</li>
+              <li>
+                Use the nap direction toggle to match carpet orientation
+                (vertical/horizontal)
+              </li>
+              <li>
+                Toggle between feet/inches and decimal inches for easier
+                measuring
+              </li>
+              <li>
+                The first piece is automatically named "Main Cut", additional
+                pieces are "Fill #N"
+              </li>
+              <li>
+                All data is saved automatically to your browser's local storage
+              </li>
+            </ul>
+          </AccordionContent>
+        </AccordionItem>
+
+        {areas.length > 0 && (
           <AccordionItem value="raw-data">
             <AccordionTrigger>Show Raw Data</AccordionTrigger>
             <AccordionContent>
               <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-xs">
                 <code>{JSON.stringify(areas, null, 2)}</code>
               </pre>
+              <div className="flex gap-2 mt-4">
+                <Button onClick={handleExportData} variant="outline" size="sm">
+                  Export Data
+                </Button>
+              </div>
             </AccordionContent>
           </AccordionItem>
-        </Accordion>
-      )}
+        )}
+      </Accordion>
+      <Button onClick={triggerFileInput} variant="outline" size="sm">
+        Import Data
+      </Button>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json,application/json"
+        onChange={handleImportData}
+        className="hidden"
+      />
     </div>
   )
 }
