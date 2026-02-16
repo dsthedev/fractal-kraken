@@ -438,6 +438,17 @@ const NewPlankIncrementor = () => {
     [measurements]
   )
 
+  const goodBadCountDisplay = useMemo(
+    () => (
+      <span className="text-sm block font-normal text-gray-600">
+        <span className="text-emerald-600 font-semibold">{goodCount}</span>{' '}
+        good, <span className="text-amber-600 font-semibold">{badCount}</span>{' '}
+        careful
+      </span>
+    ),
+    [goodCount, badCount]
+  )
+
   const displayOffset = useImperial
     ? decimalToImperial(Math.abs(totalOffset))
     : `${Math.abs(totalOffset).toFixed(DECIMAL_PRECISION)}"`
@@ -478,7 +489,7 @@ const NewPlankIncrementor = () => {
                     )
                   }
                 />
-                <span className="text-xs text-gray-500">
+                <span className="text-sm block text-gray-500">
                   The width of the material, not the length!
                 </span>
               </div>
@@ -492,7 +503,7 @@ const NewPlankIncrementor = () => {
                   value={minPlankWidth}
                   onChange={(e) => setMinPlankWidth(Number(e.target.value))}
                 />
-                <span className="text-xs text-gray-500">
+                <span className="text-sm block text-gray-500">
                   Minimum acceptable width for a plank
                 </span>
               </div>
@@ -502,24 +513,10 @@ const NewPlankIncrementor = () => {
             <div className="space-y-1 border-y py-3">
               <div className="font-medium flex justify-between items-center">
                 <span className="my-3">Measurements</span>
-                <span className="text-xs font-normal text-gray-600">
-                  <span className="text-emerald-600 font-semibold">
-                    {goodCount}
-                  </span>{' '}
-                  good,{' '}
-                  <span className="text-amber-600 font-semibold">
-                    {badCount}
-                  </span>{' '}
-                  careful
-                </span>
+                {goodBadCountDisplay}
               </div>
-              <p className="text-xs text-gray-500 pb-4">
-                Starting from a centerline, measure outwards to each wall or
-                termination point. It's recommended to mark the measurements on
-                either the left or right side accoridingly. If there are
-                multiple measurements on the same side, try to keep them in
-                order from the centerline outwards and label them accordingly
-                (e.g., "Room 1", "Room 2", "Door 1") to avoid confusion.
+              <p className="text-sm text-gray-500 pb-4">
+                {`Starting from a centerline, measure outwards to each wall or termination point. It's recommended to mark measurements on left or right side accordingly. If there are multiple measurements in an area, keep them in order and label with [area & number].`}
               </p>
               {measurements.map((item) => (
                 <div key={item.id} className="flex gap-2 justify-stretch">
@@ -601,8 +598,8 @@ const NewPlankIncrementor = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col my-6 md:flex-row md:justify-center">
-              <div className="flex flex-col gap-4 md:flex-row items-center">
+            <div className="flex my-6 md:justify-center">
+              <div className="flex flex-col gap-3 w-full md:w-auto md:flex-row">
                 <Popover
                   open={showAutoAdjustPopover}
                   onOpenChange={setShowAutoAdjustPopover}
@@ -611,7 +608,8 @@ const NewPlankIncrementor = () => {
                     <Button
                       onClick={findBestAdjustment}
                       variant="outline"
-                      size="sm"
+                      size="xl"
+                      className="order-2 md:order-1 w-auto"
                     >
                       ✨ Adjust Automagically
                     </Button>
@@ -656,43 +654,50 @@ const NewPlankIncrementor = () => {
                     </div>
                   </PopoverContent>
                 </Popover>
-                <Button
-                  onClick={clearItems}
-                  variant="secondary"
-                  size="sm"
-                  className="w-full md:w-auto bg-rose-600 hover:bg-rose-700 text-white"
-                >
-                  Clear All
-                </Button>
-                <Button
-                  onClick={addBasicItem}
-                  variant="secondary"
-                  size="sm"
-                  className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  Add Item
-                </Button>
-                <Button
-                  onClick={addItem}
-                  variant="secondary"
-                  size="lg"
-                  className="w-full md:w-auto bg-lime-600 hover:bg-lime-700 text-white"
-                >
-                  Add Smart Item
-                </Button>
+                <div className="flex flex-row gap-2 order-1 md:order-2 w-full md:w-auto justify-end">
+                  <Button
+                    onClick={clearItems}
+                    variant="secondary"
+                    size="sm"
+                    className="w-auto bg-rose-600 hover:bg-rose-700 text-white"
+                  >
+                    Clear
+                  </Button>
+                  <Button
+                    onClick={addBasicItem}
+                    variant="secondary"
+                    size="sm"
+                    className="w-auto bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Add Item
+                  </Button>
+                  <Button
+                    onClick={addItem}
+                    variant="secondary"
+                    size="lg"
+                    className="w-auto bg-lime-600 hover:bg-lime-700 text-white"
+                  >
+                    {'+'} Smart Item
+                  </Button>
+                </div>
               </div>
             </div>
-
-            {/* Auto-adjust button */}
 
             {/* Total Offset Display */}
             <div className="flex flex-col justify-center items-center gap-6">
               <div className="header max-w-md mx-auto">
                 <h3 className="text-lg">Line Adjustment</h3>
-                <p className="text-muted-foreground text-xs">
-                  {
-                    'Adjust the line position using the buttons below. Notice which measurements are highlighted as "good" (green) vs "careful" (orange) as you adjust. The goal is to find a position that maximizes the number of "good" measurements, which indicates more efficient use of your material.'
-                  }
+                <p className="text-muted-foreground text-sm">
+                  Adjust the line position using the buttons below. Notice which
+                  measurements are highlighted as{' '}
+                  <span className="text-emerald-600 font-semibold">good</span>{' '}
+                  or{' '}
+                  <span className="text-amber-600 font-semibold">careful</span>{' '}
+                  as you adjust. The goal is to find a position that maximizes
+                  the number of{' '}
+                  <span className="text-emerald-600 font-semibold">good</span>{' '}
+                  remainders, to reduce waste and small pieces that don't hold
+                  up well.
                 </p>
               </div>
               <div className="flex items-center justify-center gap-4">
@@ -726,7 +731,8 @@ const NewPlankIncrementor = () => {
                   <span className="text-4xl md:text-base">→</span>
                 </Button>
               </div>
-              <div className="flex flex-col md:flex-row gap-2 border-b border-gray-300 pb-8 w-full justify-center max-w-md">
+              {goodBadCountDisplay}
+              <div className="flex flex-row gap-2 border-b border-gray-300 pb-8 w-full justify-center max-w-md">
                 <Button
                   onClick={() => setUseImperial(!useImperial)}
                   variant="outline"
@@ -738,7 +744,8 @@ const NewPlankIncrementor = () => {
                       : 'Show imperial 1/16 increments'
                   }
                 >
-                  {useImperial ? 'Imperial' : 'Decimal'}
+                  Show as:{' '}
+                  <strong>{useImperial ? 'Imperial' : 'Decimal'}</strong>
                 </Button>
                 <Button
                   onClick={resetOffset}
