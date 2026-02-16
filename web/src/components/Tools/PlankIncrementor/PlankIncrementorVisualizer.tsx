@@ -49,8 +49,8 @@ const PlankIncrementorVisualizer: React.FC<PlankIncrementorVisualizerProps> = ({
       1
     )
     const barMaxWidth = 300 // px, half width for each side
-    const canvasWidth = barMaxWidth * 2 + 40 // center + padding
-    const canvasHeight = measurements.length * (BAR_HEIGHT + BAR_GAP) + 40
+    const canvasWidth = barMaxWidth * 2 + 20 // center + padding
+    const canvasHeight = measurements.length * (BAR_HEIGHT + BAR_GAP) + 20
 
     canvas.width = canvasWidth
     canvas.height = canvasHeight
@@ -67,7 +67,7 @@ const PlankIncrementorVisualizer: React.FC<PlankIncrementorVisualizerProps> = ({
 
     measurements.forEach((measurement, i) => {
       const value = Math.abs(parseFloat(measurement.length) || 0)
-      const y = i * (BAR_HEIGHT + BAR_GAP) + 40
+      const y = i * (BAR_HEIGHT + BAR_GAP) + 10
       if (measurement.isLeft) {
         // Draw left bar (to the left of center)
         const barLength = (value / leftMax) * barMaxWidth
