@@ -147,7 +147,7 @@ const adjustMeasurementByDelta = (
 const NewPlankIncrementor = () => {
   const [plankWidth, setPlankWidth] = useState(7.25)
   const [minPlankWidth, setMinPlankWidth] = useState(2)
-  const [adjustmentAmount, setAdjustmentAmount] = useState(0.25)
+  const [adjustmentAmount, setAdjustmentAmount] = useState(0.125)
   const [measurements, setMeasurements] = useState<Measurement[]>([
     {
       id: '1',
