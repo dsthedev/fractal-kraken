@@ -109,6 +109,7 @@ const Routes = () => {
       </PrivateSet>
 
       <Set wrap={WrapperLayout}>
+        <Route path="/carpet-calculator" page={CarpetCalculatorPage} name="carpetCalculator" />
         <Route path="/plank-incrementor" page={PlankIncrementorPage} name="plankIncrementor" />
 
         <Route path="/login" page={LoginPage} name="login" />

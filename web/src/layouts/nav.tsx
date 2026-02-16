@@ -47,6 +47,11 @@ const Nav = () => {
       route: routes.plankIncrementor,
       icon: <Wrench className="mr-2 h-6 w-6" />,
     },
+    {
+      label: 'Carpet Calculator',
+      route: routes.carpetCalculator,
+      icon: <Wrench className="mr-2 h-6 w-6" />,
+    },
     // { label: 'Contact', route: routes.contact, icon: <Mail className="mr-2 h-6 w-6" /> },
   ]
 

@@ -20,6 +20,7 @@ const AdminNav = () => {
   const { isAuthenticated, currentUser } = useAuth()
 
   const adminMenuItems: AdminMenuItem[] = [
+    { label: 'Carpet Calculator', route: routes.carpetCalculator },
     {
       label: 'Orphaned Billable Items Cleanup',
       route: routes.orphanedBillableItemsCleanup,
