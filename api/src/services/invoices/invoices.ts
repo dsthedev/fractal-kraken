@@ -218,7 +218,9 @@ export const Invoice: InvoiceRelationResolvers = {
     if (root?.authorId !== userId) {
       throw new RedwoodGraphQLError('Not authorized')
     }
-    return db.invoice.findUnique({ where: { uuid: root?.uuid } }).sourceEstimate()
+    return db.invoice
+      .findUnique({ where: { uuid: root?.uuid } })
+      .sourceEstimate()
   },
   sourceInstallerEntity: (_obj, { root }) => {
     const userId = getCurrentUserId()
