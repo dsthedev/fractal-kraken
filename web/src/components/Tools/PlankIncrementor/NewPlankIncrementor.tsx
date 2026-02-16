@@ -685,21 +685,6 @@ const NewPlankIncrementor = () => {
 
             {/* Total Offset Display */}
             <div className="flex flex-col justify-center items-center gap-6">
-              <div className="header max-w-md mx-auto">
-                <h3 className="text-lg">Line Adjustment</h3>
-                <p className="text-muted-foreground text-sm">
-                  Adjust the line position using the buttons below. Notice which
-                  measurements are highlighted as{' '}
-                  <span className="text-emerald-600 font-semibold">good</span>{' '}
-                  or{' '}
-                  <span className="text-amber-600 font-semibold">careful</span>{' '}
-                  as you adjust. The goal is to find a position that maximizes
-                  the number of{' '}
-                  <span className="text-emerald-600 font-semibold">good</span>{' '}
-                  remainders, to reduce waste and small pieces that don't hold
-                  up well.
-                </p>
-              </div>
               <div className="flex items-center justify-center gap-4">
                 <Button
                   onClick={() => adjustLengths(true)}
@@ -732,6 +717,21 @@ const NewPlankIncrementor = () => {
                 </Button>
               </div>
               {goodBadCountDisplay}
+              <div className="header max-w-md mx-auto">
+                <h3 className="text-lg">Line Adjustment</h3>
+                <p className="text-muted-foreground text-sm">
+                  Adjust the line position using the buttons below. Notice which
+                  measurements are highlighted as{' '}
+                  <span className="text-emerald-600 font-semibold">good</span>{' '}
+                  or{' '}
+                  <span className="text-amber-600 font-semibold">careful</span>{' '}
+                  as you adjust. The goal is to find a position that maximizes
+                  the number of{' '}
+                  <span className="text-emerald-600 font-semibold">good</span>{' '}
+                  remainders, to reduce waste and small pieces that don't hold
+                  up well.
+                </p>
+              </div>
               <div className="flex flex-row gap-2 border-b border-gray-300 pb-8 w-full justify-center max-w-md">
                 <Button
                   onClick={() => setUseImperial(!useImperial)}
