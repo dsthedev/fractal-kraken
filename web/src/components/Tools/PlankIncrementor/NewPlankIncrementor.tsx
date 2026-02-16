@@ -727,8 +727,8 @@ const NewPlankIncrementor = () => {
               <div className="header max-w-md mx-auto">
                 <h3 className="text-lg">Line Adjustment</h3>
                 <p className="text-muted-foreground text-sm">
-                  Adjust the line position using the buttons below. Notice which
-                  measurements are highlighted as{' '}
+                  Adjust the line position using the arrow buttons above. Notice
+                  which measurements are highlighted as{' '}
                   <span className="text-emerald-600 font-semibold">good</span>{' '}
                   or{' '}
                   <span className="text-amber-600 font-semibold">careful</span>{' '}
