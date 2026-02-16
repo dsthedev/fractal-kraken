@@ -319,6 +319,91 @@ const CarpetCalculatorV1 = () => {
     fileInputRef.current?.click()
   }
 
+  const randomInt = (min: number, max: number) =>
+    Math.floor(Math.random() * (max - min + 1)) + min
+
+  const pickWeightedMain = () => {
+    const r = Math.random()
+    if (r < 0.6) return randomInt(120, 199)
+    if (r < 0.9) return randomInt(80, 150)
+    return randomInt(36, 100)
+  }
+
+  const generateRandomAreas = () => {
+    if (areas.length > 0) {
+      const confirmed = confirm(
+        '⚠️ This will overwrite existing area data. Do you want to continue?'
+      )
+      if (!confirmed) return
+    }
+
+    const areaNames = [
+      'Bedroom',
+      'Living Room',
+      'Hallway',
+      'Basement',
+      'Office',
+      'Kitchen',
+      'Dining',
+      'Guest Room',
+      'Entry',
+    ]
+
+    const countAreas = randomInt(2, 5)
+    const shuffled = areaNames.sort(() => Math.random() - 0.5)
+    const chosen = shuffled.slice(0, countAreas)
+
+    const newAreas: Area[] = chosen.map((name) => {
+      const pieceCount = randomInt(1, 3)
+      const pieces: Piece[] = []
+      for (let i = 0; i < pieceCount; i++) {
+        const isMain = i === 0
+        const width = isMain ? pickWeightedMain() : randomInt(36, 199)
+        const length = isMain ? pickWeightedMain() : randomInt(36, 199)
+        const widthFeet = Math.floor(width / 12)
+        const widthInches = width % 12
+        const lengthFeet = Math.floor(length / 12)
+        const lengthInches = length % 12
+        pieces.push({
+          id: crypto.randomUUID(),
+          name: `${name} ${i === 0 ? 'Main' : `Cut ${i}`}`,
+          // provide both split fields and numeric fields so the editor inputs populate
+          widthFeet,
+          widthInches,
+          lengthFeet,
+          lengthInches,
+          width,
+          length,
+          napFollowsLength: Math.random() < 0.5,
+          isNet: Math.random() < 0.5,
+          needsFill: false,
+          hasExcess: false,
+          fillReqWidth: 0,
+          excessWidth: 0,
+        } as unknown as Piece)
+      }
+      return {
+        id: crypto.randomUUID(),
+        name,
+        napFollowsLength: true,
+        pieces,
+      }
+    })
+
+    const processed = newAreas.map((a) => ({
+      ...a,
+      pieces: processPieces(a.pieces),
+    }))
+    setAreas(processed)
+    if (processed.length > 0) {
+      const first = processed[0]
+      setOpenAreas([first.id])
+      setOpenPiecesByArea({
+        [first.id]: [first.pieces[0]?.id].filter(Boolean) as string[],
+      })
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Roll Width Selector */}
@@ -857,16 +942,25 @@ const CarpetCalculatorV1 = () => {
           </AccordionItem>
         )}
       </Accordion>
-      <Button onClick={triggerFileInput} variant="outline" size="sm">
-        Import Data
-      </Button>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".json,application/json"
-        onChange={handleImportData}
-        className="hidden"
-      />
+      <div className="flex justify-between space-4 my-4">
+        <Button onClick={triggerFileInput} variant="outline" size="sm">
+          Import Data
+        </Button>
+        <Button
+          onClick={generateRandomAreas}
+          variant="outline"
+          className="w-auto border-slate-800 text-sm dark:border-slate-200"
+        >
+          Generate Random Sample Areas & Pieces
+        </Button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json,application/json"
+          onChange={handleImportData}
+          className="hidden"
+        />
+      </div>
     </div>
   )
 }

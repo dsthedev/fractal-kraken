@@ -21,7 +21,7 @@ const Visualizer = ({
   rollWidth,
   showPadded = true,
   showRollOverlay = true,
-  areaName,
+  areaName: areaNameProp,
 }: VisualizerProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
@@ -185,9 +185,9 @@ const Visualizer = ({
 
     ctx.fillStyle = '#0f172a'
     ctx.font = '12px system-ui'
-    if (areaName) {
+    if (areaNameProp) {
       ctx.font = '12px system-ui'
-      ctx.fillText(areaName, originX + 6, originY + 10)
+      ctx.fillText(areaNameProp, originX + 6, originY + 10)
       ctx.font = '13px system-ui'
       ctx.fillText(piece.name || 'Piece', originX + 6, originY + 26)
       ctx.font = '12px system-ui'
@@ -204,11 +204,13 @@ const Visualizer = ({
         originY + 28
       )
     }
-  }, [piece, rollWidth, showPadded, showRollOverlay, areaName])
+  }, [piece, rollWidth, showPadded, showRollOverlay, areaNameProp])
 
   return (
-    <div className="h-64 w-full">
-      <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />
+    <div className="w-full">
+      <div className="h-64 w-full">
+        <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />
+      </div>
     </div>
   )
 }
