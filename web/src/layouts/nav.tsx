@@ -42,6 +42,11 @@ const Nav = () => {
       route: routes.home,
       icon: <Home className="mr-2 h-6 w-6" />,
     },
+    {
+      label: 'Plank Incrementor',
+      route: routes.plankIncrementor,
+      icon: <Wrench className="mr-2 h-6 w-6" />,
+    },
     // { label: 'Contact', route: routes.contact, icon: <Mail className="mr-2 h-6 w-6" /> },
   ]
 

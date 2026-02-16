@@ -109,6 +109,8 @@ const Routes = () => {
       </PrivateSet>
 
       <Set wrap={WrapperLayout}>
+        <Route path="/plank-incrementor" page={PlankIncrementorPage} name="plankIncrementor" />
+
         <Route path="/login" page={LoginPage} name="login" />
         <Route path="/signup" page={SignupPage} name="signup" />
         <Route path="/forgot-password" page={ForgotPasswordPage} name="forgotPassword" />

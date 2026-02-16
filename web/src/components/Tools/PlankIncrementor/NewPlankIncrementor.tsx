@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 
 import {
   Accordion,
@@ -24,14 +24,12 @@ import {
 
 interface Measurement {
   id: string
-  direction: boolean
-  length: string // Keep as string for input display
+  isLeft: boolean
+  length: string
   remainder: number
   isGood: boolean
   label: string
 }
-
-const STORAGE_KEY = 'plank-incrementor-state'
 
 interface StoredState {
   plankWidth: number
@@ -41,6 +39,110 @@ interface StoredState {
   totalOffset: number
 }
 
+interface SuggestedAdjustment {
+  adjustment: number
+  goodCount: number
+  totalMeasurements: number
+}
+
+const STORAGE_KEY = 'plank-incrementor-state'
+const DECIMAL_PRECISION = 3
+
+// Pure utility functions (extracted outside component)
+const calculateRemainder = (length: number, plankWidth: number): number => {
+  const rawRemainder = length / plankWidth - Math.floor(length / plankWidth)
+  return rawRemainder * plankWidth
+}
+
+const isRemainderGood = (remainder: number, minPlankWidth: number): boolean => {
+  return remainder >= minPlankWidth
+}
+
+const decimalToImperial = (decimal: number): string => {
+  const sixteenths = Math.ceil(decimal * 16)
+  const inches = Math.floor(sixteenths / 16)
+  const remainder = sixteenths % 16
+
+  if (remainder === 0) return `${inches}"`
+  if (remainder === 8) return inches === 0 ? `1/2"` : `${inches} 1/2"`
+  if (remainder === 4 || remainder === 12) {
+    const quarters = remainder / 4
+    return inches === 0 ? `${quarters}/4"` : `${inches} ${quarters}/4"`
+  }
+  if (
+    remainder === 2 ||
+    remainder === 6 ||
+    remainder === 10 ||
+    remainder === 14
+  ) {
+    const eighths = remainder / 2
+    return inches === 0 ? `${eighths}/8"` : `${inches} ${eighths}/8"`
+  }
+  return inches === 0 ? `${remainder}/16"` : `${inches} ${remainder}/16"`
+}
+
+const incrementLabel = (label: string): string => {
+  const match = label.match(/(\d+)(?!.*\d)/)
+  if (match) {
+    const lastNumber = parseInt(match[0])
+    return label.replace(/(\d+)(?!.*\d)/, (lastNumber + 1).toString())
+  }
+  return label ? `${label} 1` : ''
+}
+
+const isValidDecimalInput = (value: string): boolean => {
+  return value === '' || /^\d*\.?\d*$/.test(value)
+}
+
+const formatLength = (value: number): string => {
+  return value.toFixed(DECIMAL_PRECISION)
+}
+
+const getNewMeasurementWithCalculations = (
+  item: Measurement,
+  length: string,
+  plankWidth: number,
+  minPlankWidth: number
+): Measurement => {
+  const numLength = parseFloat(length) || 0
+  const remainder = calculateRemainder(numLength, plankWidth)
+  return {
+    ...item,
+    length,
+    remainder,
+    isGood: isRemainderGood(remainder, minPlankWidth),
+  }
+}
+
+const adjustMeasurementByDelta = (
+  item: Measurement,
+  delta: number,
+  plankWidth: number,
+  minPlankWidth: number
+): Measurement => {
+  const currentLength = parseFloat(item.length) || 0
+  // Apply delta based on direction:
+  // - LEFT (isLeft=true): subtract delta (moving right decreases left measurements)
+  // - RIGHT (isLeft=false): add delta (moving right increases right measurements)
+  let newLength = item.isLeft ? currentLength - delta : currentLength + delta
+  let newIsLeft = item.isLeft
+
+  // If negative, flip direction and use absolute value
+  if (newLength < 0) {
+    newIsLeft = !newIsLeft
+    newLength = Math.abs(newLength)
+  }
+
+  const remainder = calculateRemainder(newLength, plankWidth)
+  return {
+    ...item,
+    length: formatLength(newLength),
+    isLeft: newIsLeft,
+    remainder,
+    isGood: isRemainderGood(remainder, minPlankWidth),
+  }
+}
+
 const NewPlankIncrementor = () => {
   const [plankWidth, setPlankWidth] = useState(7.25)
   const [minPlankWidth, setMinPlankWidth] = useState(2)
@@ -48,7 +150,7 @@ const NewPlankIncrementor = () => {
   const [measurements, setMeasurements] = useState<Measurement[]>([
     {
       id: '1',
-      direction: true,
+      isLeft: true,
       length: '',
       remainder: 0,
       isGood: true,
@@ -58,12 +160,9 @@ const NewPlankIncrementor = () => {
   const [totalOffset, setTotalOffset] = useState(0)
   const [showGeneratePopover, setShowGeneratePopover] = useState(false)
   const [showAutoAdjustPopover, setShowAutoAdjustPopover] = useState(false)
-  const [useImperial, setUseImperial] = useState(false)
-  const [suggestedAdjustment, setSuggestedAdjustment] = useState<{
-    adjustment: number
-    goodCount: number
-    totalMeasurements: number
-  } | null>(null)
+  const [useImperial, setUseImperial] = useState(true)
+  const [suggestedAdjustment, setSuggestedAdjustment] =
+    useState<SuggestedAdjustment | null>(null)
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -94,148 +193,92 @@ const NewPlankIncrementor = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
   }, [plankWidth, minPlankWidth, adjustmentAmount, measurements, totalOffset])
 
-  // Recalculate remainder for a single measurement
-  const calculateRemainder = (length: number): number => {
-    const rawRemainder = length / plankWidth - Math.floor(length / plankWidth)
-    return rawRemainder * plankWidth
-  }
-
-  const isRemainderGood = (remainder: number): boolean => {
-    return remainder >= minPlankWidth
-  }
-
-  const decimalToImperial = (decimal: number): string => {
-    const sixteenths = Math.ceil(decimal * 16)
-    const inches = Math.floor(sixteenths / 16)
-    const remainder = sixteenths % 16
-
-    if (remainder === 0) {
-      return `${inches}"`
-    }
-
-    // Simplify to the coarsest useful fraction
-    // Check for half (8 sixteenths)
-    if (remainder === 8) {
-      return inches === 0 ? `1/2"` : `${inches} 1/2"`
-    }
-
-    // Check quarters (4, 12 sixteenths)
-    if (remainder === 4 || remainder === 12) {
-      const quarters = remainder / 4
-      return inches === 0 ? `${quarters}/4"` : `${inches} ${quarters}/4"`
-    }
-
-    // Check eighths (2, 6, 10, 14 sixteenths)
-    if (
-      remainder === 2 ||
-      remainder === 6 ||
-      remainder === 10 ||
-      remainder === 14
-    ) {
-      const eighths = remainder / 2
-      return inches === 0 ? `${eighths}/8"` : `${inches} ${eighths}/8"`
-    }
-
-    // Default to sixteenths (odd numbers: 1, 3, 5, 7, 9, 11, 13, 15)
-    return inches === 0 ? `${remainder}/16"` : `${inches} ${remainder}/16"`
-  }
-
-  const incrementLabel = (label: string): string => {
-    // Find the last number in the label
-    const match = label.match(/(\d+)(?!.*\d)/)
-    if (match) {
-      const lastNumber = parseInt(match[0])
-      return label.replace(/(\d+)(?!.*\d)/, (lastNumber + 1).toString())
-    }
-    return label ? `${label} 1` : ''
-  }
-
-  // Recalculate all remainders when plankWidth changes
+  // Recalculate all remainders when plankWidth or minPlankWidth changes
   useEffect(() => {
     setMeasurements((prev) =>
-      prev.map((item) => {
-        const remainder = calculateRemainder(parseFloat(item.length) || 0)
-        return {
-          ...item,
-          remainder,
-          isGood: isRemainderGood(remainder),
-        }
-      })
+      prev.map((item) =>
+        getNewMeasurementWithCalculations(
+          item,
+          item.length,
+          plankWidth,
+          minPlankWidth
+        )
+      )
     )
   }, [plankWidth, minPlankWidth])
 
-  const handleLengthChange = (id: string, value: string) => {
-    // Allow valid decimal input including trailing dot: 1, 1., 1.5, .5
-    if (value !== '' && !value.match(/^\d*\.?\d*$/)) return
+  const handleLengthChange = useCallback(
+    (id: string, value: string) => {
+      if (!isValidDecimalInput(value)) return
 
+      setMeasurements((prev) =>
+        prev.map((item) =>
+          item.id === id
+            ? getNewMeasurementWithCalculations(
+                item,
+                value,
+                plankWidth,
+                minPlankWidth
+              )
+            : item
+        )
+      )
+    },
+    [plankWidth, minPlankWidth]
+  )
+
+  const toggleDirection = useCallback((id: string) => {
     setMeasurements((prev) =>
       prev.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              length: value, // Keep as string for display
-              remainder: calculateRemainder(parseFloat(value) || 0),
-              isGood: isRemainderGood(
-                calculateRemainder(parseFloat(value) || 0)
-              ),
-            }
-          : item
+        item.id === id ? { ...item, isLeft: !item.isLeft } : item
       )
     )
-  }
+  }, [])
 
-  const toggleDirection = (id: string) => {
-    setMeasurements((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, direction: !item.direction } : item
-      )
-    )
-  }
-
-  const addItem = () => {
-    const newId = `${Date.now()}`
-    const lastDirection =
+  const addItem = useCallback(() => {
+    const newId = String(Date.now())
+    const lastIsLeft =
       measurements.length > 0
-        ? measurements[measurements.length - 1].direction
+        ? measurements[measurements.length - 1].isLeft
         : true
     const lastLabel =
       measurements.length > 0 ? measurements[measurements.length - 1].label : ''
-    const newLabel = lastLabel ? incrementLabel(lastLabel) : ''
+
     setMeasurements((prev) => [
       ...prev,
       {
         id: newId,
-        direction: lastDirection,
+        isLeft: lastIsLeft,
         length: '',
         remainder: 0,
         isGood: true,
-        label: newLabel,
+        label: lastLabel ? incrementLabel(lastLabel) : '',
       },
     ])
-  }
+  }, [measurements])
 
-  const addBasicItem = () => {
-    const newId = `${Date.now()}`
+  const addBasicItem = useCallback(() => {
+    const newId = String(Date.now())
     setMeasurements((prev) => [
       ...prev,
       {
         id: newId,
-        direction: true,
+        isLeft: true,
         length: '',
         remainder: 0,
         isGood: true,
         label: '',
       },
     ])
-  }
+  }, [])
 
-  const removeItem = (id: string) => {
+  const removeItem = useCallback((id: string) => {
     setMeasurements((prev) => {
       if (prev.length === 1) {
         return [
           {
             id: '1',
-            direction: true,
+            isLeft: true,
             length: '',
             remainder: 0,
             isGood: true,
@@ -245,13 +288,13 @@ const NewPlankIncrementor = () => {
       }
       return prev.filter((item) => item.id !== id)
     })
-  }
+  }, [])
 
-  const clearItems = () => {
+  const clearItems = useCallback(() => {
     setMeasurements([
       {
         id: '1',
-        direction: true,
+        isLeft: true,
         length: '',
         remainder: 0,
         isGood: true,
@@ -259,77 +302,94 @@ const NewPlankIncrementor = () => {
       },
     ])
     setTotalOffset(0)
-  }
+  }, [])
 
-  const adjustLengths = (isAdding: boolean) => {
+  const adjustLengths = useCallback(
+    (isAdding: boolean) => {
+      const delta = isAdding ? adjustmentAmount : -adjustmentAmount
+
+      setMeasurements((prev) =>
+        prev.map((item) =>
+          adjustMeasurementByDelta(item, delta, plankWidth, minPlankWidth)
+        )
+      )
+
+      setTotalOffset((prev) => prev + delta)
+    },
+    [adjustmentAmount, plankWidth, minPlankWidth]
+  )
+
+  const resetOffset = useCallback(() => {
     setMeasurements((prev) =>
       prev.map((item) => {
-        const delta = isAdding ? adjustmentAmount : -adjustmentAmount
-        const currentLength = parseFloat(item.length) || 0
-        const newLength = Math.max(0, currentLength + delta)
-        const remainder = calculateRemainder(newLength)
-        return {
-          ...item,
-          length: newLength.toString(),
-          remainder,
-          isGood: isRemainderGood(remainder),
-        }
+        // Subtract the offset, allowing for direction flip
+        const originalDelta = -totalOffset
+        return adjustMeasurementByDelta(
+          item,
+          originalDelta,
+          plankWidth,
+          minPlankWidth
+        )
       })
     )
+    setTotalOffset(0)
+  }, [totalOffset, plankWidth, minPlankWidth])
 
-    setTotalOffset(
-      (prev) => prev + (isAdding ? adjustmentAmount : -adjustmentAmount)
-    )
-  }
-
-  const generateRandomMeasurements = () => {
+  const generateRandomMeasurements = useCallback(() => {
     const locations = ['Room', 'Hallway', 'Door', 'Corner', 'Appliance']
     const newMeasurements: Measurement[] = []
-    for (let i = 0; i < 20; i++) {
+
+    for (let i = 0; i < 10; i++) {
       const randomLength = parseFloat(
-        (plankWidth * (Math.random() * 29 + 1)).toFixed(2)
+        (plankWidth * (Math.random() * 19 + 1)).toFixed(DECIMAL_PRECISION)
       )
       const randomDirection = Math.random() > 0.5
-      const remainder = calculateRemainder(randomLength)
+      const remainder = calculateRemainder(randomLength, plankWidth)
       const randomLabel = `${locations[Math.floor(Math.random() * locations.length)]} ${i + 1}`
+
       newMeasurements.push({
         id: `${Date.now()}-${i}`,
-        direction: randomDirection,
+        isLeft: randomDirection,
         length: randomLength.toString(),
         remainder,
-        isGood: isRemainderGood(remainder),
+        isGood: isRemainderGood(remainder, minPlankWidth),
         label: randomLabel,
       })
     }
+
     setMeasurements(newMeasurements)
     setTotalOffset(0)
     setShowGeneratePopover(false)
-  }
+  }, [plankWidth, minPlankWidth])
 
-  const hasExistingData = measurements.some((m) => m.length > 0)
-
-  const findBestAdjustment = () => {
-    // Only search within one plank width cycle (pattern repeats)
+  const findBestAdjustment = useCallback(() => {
     let bestAdjustment = 0
-    let bestGoodCount = measurements.filter((m) => m.isGood).length // Current state
+    let bestGoodCount = measurements.filter((m) => m.isGood).length
 
-    // Test adjustments from 0 to plankWidth in 0.01" increments
-    for (let adj = 0; adj <= plankWidth; adj += 0.01) {
+    // Test adjustments from -plankWidth to +plankWidth in 0.01" increments
+    for (let adj = -plankWidth; adj <= plankWidth; adj += 0.01) {
       let goodCount = 0
 
-      // Count how many measurements would be good with this adjustment
       for (const measurement of measurements) {
         const currentLength = parseFloat(measurement.length) || 0
-        if (currentLength === 0) continue // Skip empty measurements
+        if (currentLength === 0) continue
 
-        const newLength = currentLength + adj
-        const remainder = calculateRemainder(newLength)
-        if (isRemainderGood(remainder)) {
+        // Apply delta based on direction
+        let testLength = measurement.isLeft
+          ? currentLength - adj
+          : currentLength + adj
+
+        // Account for direction flipping if negative
+        if (testLength < 0) {
+          testLength = Math.abs(testLength)
+        }
+
+        const remainder = calculateRemainder(testLength, plankWidth)
+        if (isRemainderGood(remainder, minPlankWidth)) {
           goodCount++
         }
       }
 
-      // Update best if this is better (prefer smaller adjustment on tie)
       if (goodCount > bestGoodCount) {
         bestGoodCount = goodCount
         bestAdjustment = adj
@@ -342,44 +402,66 @@ const NewPlankIncrementor = () => {
       totalMeasurements: measurements.filter((m) => m.length).length,
     })
     setShowAutoAdjustPopover(true)
-  }
+  }, [measurements, plankWidth, minPlankWidth])
 
-  const applyBestAdjustment = () => {
+  const applyBestAdjustment = useCallback(() => {
     if (!suggestedAdjustment) return
 
     setMeasurements((prev) =>
-      prev.map((item) => {
-        const currentLength = parseFloat(item.length) || 0
-        const newLength = Math.max(
-          0,
-          currentLength + suggestedAdjustment.adjustment
+      prev.map((item) =>
+        adjustMeasurementByDelta(
+          item,
+          suggestedAdjustment.adjustment,
+          plankWidth,
+          minPlankWidth
         )
-        const remainder = calculateRemainder(newLength)
-        return {
-          ...item,
-          length: newLength.toString(),
-          remainder,
-          isGood: isRemainderGood(remainder),
-        }
-      })
+      )
     )
 
     setTotalOffset((prev) => prev + suggestedAdjustment.adjustment)
     setShowAutoAdjustPopover(false)
     setSuggestedAdjustment(null)
-  }
+  }, [suggestedAdjustment, plankWidth, minPlankWidth])
+
+  const hasExistingData = useMemo(
+    () => measurements.some((m) => m.length !== ''),
+    [measurements]
+  )
+
+  const goodCount = useMemo(
+    () => measurements.filter((m) => m.isGood).length,
+    [measurements]
+  )
+
+  const badCount = useMemo(
+    () => measurements.filter((m) => !m.isGood).length,
+    [measurements]
+  )
+
+  const displayOffset = useImperial
+    ? decimalToImperial(Math.abs(totalOffset))
+    : `${Math.abs(totalOffset).toFixed(DECIMAL_PRECISION)}"`
+
+  const offsetDirection =
+    totalOffset > 0 ? 'Left' : totalOffset < 0 ? 'Right' : 'No adjustment'
+  const offsetDirectionColor =
+    totalOffset > 0
+      ? 'text-sky-600'
+      : totalOffset < 0
+        ? 'text-purple-600'
+        : 'text-gray-600'
 
   return (
-    <div className="flex justify-center p-4">
-      <div className="w-full max-w-2xl space-y-4">
+    <div className="flex justify-center p-1">
+      <div className="w-full max-w-3xl space-y-4">
         <Card>
-          <CardHeader>
-            <CardTitle>Plank Incrementor</CardTitle>
-            <CardDescription>
-              All measurements in decimal inches. Use a laser for accuracy!
+          <CardHeader className="text-center">
+            <CardTitle className="text-3xl">Plank Incrementor</CardTitle>
+            <CardDescription className=" text-lg border-t-2 border-red-500 max-w-md w-full mx-auto mt-2 text-gray-600 pt-2">
+              Use a Laser!
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-3">
             {/* Material and Threshold Settings */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -388,6 +470,7 @@ const NewPlankIncrementor = () => {
                   id="plankWidth"
                   type="number"
                   step="0.1"
+                  className="text-xl"
                   value={plankWidth}
                   onChange={(e) =>
                     setPlankWidth(
@@ -395,6 +478,9 @@ const NewPlankIncrementor = () => {
                     )
                   }
                 />
+                <span className="text-xs text-gray-500">
+                  The width of the material, not the length!
+                </span>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="minPlankWidth">Threshold</Label>
@@ -402,102 +488,121 @@ const NewPlankIncrementor = () => {
                   id="minPlankWidth"
                   type="number"
                   step="0.25"
+                  className="text-xl"
                   value={minPlankWidth}
                   onChange={(e) => setMinPlankWidth(Number(e.target.value))}
                 />
+                <span className="text-xs text-gray-500">
+                  Minimum acceptable width for a plank
+                </span>
               </div>
             </div>
 
-            {/* Total Offset Display */}
-            <div className="rounded-lg bg-slate-200 dark:bg-slate-400 p-4">
-              <div className="text-lg font-medium text-gray-600 flex items-center justify-between mb-3">
-                <span>Line Adjustment</span>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => setUseImperial(!useImperial)}
-                    variant="outline"
-                    size="sm"
-                    className="h-6 px-2 text-xs"
-                    title={
-                      useImperial
-                        ? 'Show decimal inches'
-                        : 'Show imperial 1/16 increments'
-                    }
-                  >
-                    {useImperial ? '1/16' : 'Decimal'}
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      // Revert measurements by subtracting totalOffset
+            {/* Measurements List */}
+            <div className="space-y-1 border-y py-3">
+              <div className="font-medium flex justify-between items-center">
+                <span className="my-3">Measurements</span>
+                <span className="text-xs font-normal text-gray-600">
+                  <span className="text-emerald-600 font-semibold">
+                    {goodCount}
+                  </span>{' '}
+                  good,{' '}
+                  <span className="text-amber-600 font-semibold">
+                    {badCount}
+                  </span>{' '}
+                  careful
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 pb-4">
+                Starting from a centerline, measure outwards to each wall or
+                termination point. It's recommended to mark the measurements on
+                either the left or right side accoridingly. If there are
+                multiple measurements on the same side, try to keep them in
+                order from the centerline outwards and label them accordingly
+                (e.g., "Room 1", "Room 2", "Door 1") to avoid confusion.
+              </p>
+              {measurements.map((item) => (
+                <div key={item.id} className="flex gap-2 justify-stretch">
+                  <Input
+                    type="text"
+                    value={item.label || ''}
+                    onChange={(e) =>
                       setMeasurements((prev) =>
-                        prev.map((item) => {
-                          const currentLength = parseFloat(item.length) || 0
-                          const originalLength = Math.max(
-                            0,
-                            currentLength - totalOffset
-                          )
-                          const remainder = calculateRemainder(originalLength)
-                          return {
-                            ...item,
-                            length: originalLength.toString(),
-                            remainder,
-                            isGood: isRemainderGood(remainder),
-                          }
-                        })
+                        prev.map((m) =>
+                          m.id === item.id ? { ...m, label: e.target.value } : m
+                        )
                       )
-                      setTotalOffset(0)
+                    }
+                    placeholder="Room, Hallway 2, Door 3"
+                    className={`flex-1 h-8 text-xs hidden md:flex ${
+                      item.isLeft
+                        ? 'bg-sky-100 focus:bg-sky-50'
+                        : 'bg-purple-100 focus:bg-purple-50'
+                    }`}
+                  />
+                  <Input
+                    type="text"
+                    value={item.length}
+                    onChange={(e) =>
+                      handleLengthChange(item.id, e.target.value)
+                    }
+                    onBlur={() => {
+                      const parsed = parseFloat(item.length)
+                      if (!Number.isNaN(parsed)) {
+                        setMeasurements((prev) =>
+                          prev.map((m) =>
+                            m.id === item.id
+                              ? getNewMeasurementWithCalculations(
+                                  m,
+                                  formatLength(parsed),
+                                  plankWidth,
+                                  minPlankWidth
+                                )
+                              : m
+                          )
+                        )
+                      }
                     }}
-                    variant="ghost"
+                    placeholder="0.00"
+                    className="md:max-w-20 h-8 flex-1 md:flex-shrink-0 text-xl"
+                  />
+                  <Button
+                    onClick={() => toggleDirection(item.id)}
+                    className={`${
+                      item.isLeft
+                        ? 'bg-sky-500 hover:bg-sky-700'
+                        : 'bg-purple-500 hover:bg-purple-700'
+                    } text-white text-xs h-auto px-2`}
                     size="sm"
-                    className="h-6 px-2 text-xs"
                   >
-                    Reset
+                    {item.isLeft ? '← L' : 'R →'}
+                  </Button>
+                  <div
+                    className={`px-3 py-1 rounded font-semibold text-sm text-white text-xl flex-shrink-0 ${
+                      item.isGood
+                        ? 'bg-emerald-500'
+                        : item.remainder <= plankWidth / 10
+                          ? 'bg-red-500'
+                          : 'bg-amber-500'
+                    }`}
+                  >
+                    {item.remainder.toFixed(DECIMAL_PRECISION)}
+                  </div>
+                  <Button
+                    onClick={() => removeItem(item.id)}
+                    variant="destructive"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                  >
+                    ×
                   </Button>
                 </div>
-              </div>
-              <div className="flex items-center justify-center gap-4">
-                <Button
-                  onClick={() => adjustLengths(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white flex-shrink-0"
-                >
-                  ← Move Left
-                </Button>
-                <div className="text-center">
-                  <div className="text-sm text-gray-500 mt-1">
-                    {totalOffset > 0 ? 'Moved' : totalOffset < 0 ? 'Moved' : ''}
-                  </div>
-                  <div className="text-4xl font-bold text-gray-900">
-                    {useImperial
-                      ? decimalToImperial(Math.abs(totalOffset))
-                      : `${Math.abs(totalOffset).toFixed(2)}"`}
-                  </div>
-                  <div className="text-sm text-gray-500 mt-1">
-                    <span
-                      className={`font-semibold ${
-                        totalOffset > 0
-                          ? 'text-blue-600'
-                          : totalOffset < 0
-                            ? 'text-purple-600'
-                            : 'text-gray-600'
-                      }`}
-                    >
-                      {totalOffset > 0
-                        ? 'Left'
-                        : totalOffset < 0
-                          ? 'Right'
-                          : 'No adjustment'}
-                    </span>
-                  </div>
-                </div>
-                <Button
-                  onClick={() => adjustLengths(false)}
-                  className="bg-purple-600 hover:bg-purple-700 text-white flex-shrink-0"
-                >
-                  Move Right →
-                </Button>
-              </div>
-              {/* Auto-adjust button */}
-              <div className="flex justify-center mt-3">
+              ))}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col my-6 md:flex-row md:justify-center">
+              <div className="flex flex-col gap-4 md:flex-row items-center">
                 <Popover
                   open={showAutoAdjustPopover}
                   onOpenChange={setShowAutoAdjustPopover}
@@ -513,17 +618,8 @@ const NewPlankIncrementor = () => {
                   </PopoverTrigger>
                   <PopoverContent className="w-72">
                     <div className="space-y-3">
-                      <div className="space-y-1">
-                        <h4 className="font-medium">Optimize Line Position</h4>
-                        <p className="text-xs text-gray-500">
-                          This algorithm will test all possible adjustments to
-                          find the position that maximizes "good" remainders (≥
-                          threshold). Results are approximate and for reference
-                          only.
-                        </p>
-                      </div>
                       {suggestedAdjustment && (
-                        <div className="rounded-lg bg-slate-100 p-3 space-y-1">
+                        <div className="rounded-lg p-3 space-y-1">
                           <p className="text-sm font-semibold">
                             Suggested Adjustment:{' '}
                             {suggestedAdjustment.adjustment.toFixed(2)}"
@@ -560,22 +656,116 @@ const NewPlankIncrementor = () => {
                     </div>
                   </PopoverContent>
                 </Popover>
+                <Button
+                  onClick={clearItems}
+                  variant="secondary"
+                  size="sm"
+                  className="w-full md:w-auto bg-rose-600 hover:bg-rose-700 text-white"
+                >
+                  Clear All
+                </Button>
+                <Button
+                  onClick={addBasicItem}
+                  variant="secondary"
+                  size="sm"
+                  className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Add Item
+                </Button>
+                <Button
+                  onClick={addItem}
+                  variant="secondary"
+                  size="lg"
+                  className="w-full md:w-auto bg-lime-600 hover:bg-lime-700 text-white"
+                >
+                  Add Smart Item
+                </Button>
+              </div>
+            </div>
+
+            {/* Auto-adjust button */}
+
+            {/* Total Offset Display */}
+            <div className="flex flex-col justify-center items-center gap-6">
+              <div className="header max-w-md mx-auto">
+                <h3 className="text-lg">Line Adjustment</h3>
+                <p className="text-muted-foreground text-xs">
+                  {
+                    'Adjust the line position using the buttons below. Notice which measurements are highlighted as "good" (green) vs "careful" (orange) as you adjust. The goal is to find a position that maximizes the number of "good" measurements, which indicates more efficient use of your material.'
+                  }
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-4">
+                <Button
+                  onClick={() => adjustLengths(true)}
+                  className="bg-sky-500 hover:bg-sky-700 text-white flex-shrink-0"
+                >
+                  <span className="text-4xl md:text-base">←</span>
+                  <span className="hidden md:inline md:ml-2">Move Left</span>
+                </Button>
+                <div className="text-center">
+                  <div className="text-lg text-gray-600 dark:text-gray-400 mt-1">
+                    {totalOffset > 0
+                      ? 'Moved'
+                      : totalOffset < 0
+                        ? 'Move the Line'
+                        : '\u00A0'}
+                  </div>
+                  <div className="text-4xl font-bold">{displayOffset}</div>
+                  <div className="text-lg text-gray-500 mt-1">
+                    <span className={`font-semibold ${offsetDirectionColor}`}>
+                      {offsetDirection}
+                    </span>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => adjustLengths(false)}
+                  className="bg-purple-500 hover:bg-purple-700 text-white flex-shrink-0"
+                >
+                  <span className="hidden md:inline md:mr-2">Move Right</span>
+                  <span className="text-4xl md:text-base">→</span>
+                </Button>
+              </div>
+              <div className="flex flex-col md:flex-row gap-2 border-b border-gray-300 pb-8 w-full justify-center max-w-md">
+                <Button
+                  onClick={() => setUseImperial(!useImperial)}
+                  variant="outline"
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  title={
+                    useImperial
+                      ? 'Show decimal inches'
+                      : 'Show imperial 1/16 increments'
+                  }
+                >
+                  {useImperial ? 'Imperial' : 'Decimal'}
+                </Button>
+                <Button
+                  onClick={resetOffset}
+                  variant="destructive"
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                >
+                  Reset Adjustment
+                </Button>
               </div>
             </div>
 
             {/* Adjustment Controls */}
             <div className="space-y-2">
-              <Label htmlFor="adjustmentAmount">Move Line By (inches)</Label>
-              <div className="flex gap-1 items-center">
+              <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                By default, the move left/right buttons adjust the line by 0.25
+                inches. Use these controls to change the increment amount.
+              </p>
+              <div className="flex gap-1 items-center justify-center">
                 <Button
                   onClick={() =>
                     setAdjustmentAmount(Math.max(0, adjustmentAmount - 0.25))
                   }
-                  variant="outline"
                   size="sm"
-                  className="h-10 w-16 flex-shrink-0"
+                  className="py-2 px-4 text-lg"
                 >
-                  − 0.25
+                  {'− 0.25"'}
                 </Button>
                 <Input
                   id="adjustmentAmount"
@@ -585,186 +775,26 @@ const NewPlankIncrementor = () => {
                   onChange={(e) =>
                     setAdjustmentAmount(parseFloat(e.target.value) || 0)
                   }
-                  className="flex-1"
+                  className="flex-0 text-lg text-center min-w-40"
                 />
                 <Button
                   onClick={() => setAdjustmentAmount(adjustmentAmount + 0.25)}
-                  variant="outline"
                   size="sm"
-                  className="h-10 w-16 flex-shrink-0"
+                  className="py-2 px-4 text-lg"
                 >
-                  + 0.25
+                  {'+ 0.25"'}
                 </Button>
               </div>
-            </div>
-
-            {/* Measurements List */}
-            <div className="space-y-1 border-t pt-3">
-              <div className="font-medium text-sm text-gray-700 flex justify-between items-center">
-                <span>Measurements</span>
-                <span className="text-xs font-normal text-gray-600">
-                  <span className="text-emerald-600 font-semibold">
-                    {measurements.filter((m) => m.isGood).length}
-                  </span>{' '}
-                  good,{' '}
-                  <span className="text-amber-600 font-semibold">
-                    {measurements.filter((m) => !m.isGood).length}
-                  </span>{' '}
-                  careful
-                </span>
-              </div>
-              {measurements.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex gap-2 justify-stretch rounded-lg border p-1"
-                >
-                  <Input
-                    type="text"
-                    value={item.label || ''}
-                    onChange={(e) =>
-                      setMeasurements((prev) =>
-                        prev.map((m) =>
-                          m.id === item.id ? { ...m, label: e.target.value } : m
-                        )
-                      )
-                    }
-                    placeholder="Room, Hallway 2, Door 3"
-                    className={`flex-1 h-8 text-xs ${
-                      item.direction
-                        ? 'bg-blue-100 focus:bg-blue-50'
-                        : 'bg-purple-100 focus:bg-purple-50'
-                    }`}
-                  />
-                  <Input
-                    type="text"
-                    value={item.length}
-                    onChange={(e) =>
-                      handleLengthChange(item.id, e.target.value)
-                    }
-                    placeholder="0.00"
-                    className="max-w-20 h-8 flex-shrink-0"
-                  />
-                  <Button
-                    onClick={() => toggleDirection(item.id)}
-                    className={`${
-                      item.direction
-                        ? 'bg-blue-500 hover:bg-blue-700'
-                        : 'bg-purple-500 hover:bg-purple-700'
-                    } text-white h-8 px-4`}
-                    size="sm"
-                  >
-                    {item.direction ? '← | L' : 'R | →'}
-                  </Button>
-                  <div
-                    className={`px-3 py-1 rounded font-semibold text-sm text-white flex-shrink-0 ${
-                      item.isGood ? 'bg-emerald-500' : 'bg-amber-500'
-                    }`}
-                  >
-                    {item.remainder.toFixed(2)}
-                  </div>
-                  <Button
-                    onClick={() => removeItem(item.id)}
-                    variant="destructive"
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                  >
-                    ×
-                  </Button>
-                </div>
-              ))}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-2 justify-between">
-              <Popover
-                open={showGeneratePopover}
-                onOpenChange={setShowGeneratePopover}
+              <Label
+                className="inline-block w-full text-center text-xs text-gray-500"
+                htmlFor="adjustmentAmount"
               >
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    Generate Random Measurements
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-64">
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <h4 className="font-medium">
-                        Generate 20 Random Measurements?
-                      </h4>
-                      {hasExistingData && (
-                        <p className="text-sm text-amber-600">
-                          ⚠️ You have existing data that will be overwritten.
-                        </p>
-                      )}
-                      <p className="text-sm text-gray-600">
-                        This will create random measurements ranging from{' '}
-                        {(plankWidth * 1).toFixed(2)}" to{' '}
-                        {(plankWidth * 30).toFixed(2)}" with random left/right
-                        directions.
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => setShowGeneratePopover(false)}
-                        variant="outline"
-                        size="sm"
-                      >
-                        Cancel
-                      </Button>
-                      <Button onClick={generateRandomMeasurements} size="sm">
-                        Generate
-                      </Button>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-              <div className="flex gap-2">
-                <Button onClick={clearItems} variant="outline">
-                  Clear All
-                </Button>
-                <Button onClick={addItem} variant="default">
-                  Add Smart Item
-                </Button>
-                <Button onClick={addBasicItem} variant="outline">
-                  Add Item
-                </Button>
-              </div>
+                Increment Amount (inches)
+              </Label>
             </div>
 
             {/* Information Accordion */}
             <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="instructions">
-                <AccordionTrigger>Instructions</AccordionTrigger>
-                <AccordionContent className="space-y-3 text-sm">
-                  <ol className="list-decimal list-inside space-y-2">
-                    <li>
-                      Snap an initial line and establish your reference point
-                    </li>
-                    <li>
-                      For each termination point along the line, measure the
-                      distance from your reference point in decimal inches
-                    </li>
-                    <li>
-                      Record each measurement with its direction (left ← | blue
-                      or right → | purple) relative to your reference
-                    </li>
-                    <li>
-                      Optionally add a label (e.g., "Door 1", "Corner A") to
-                      track locations
-                    </li>
-                    <li>
-                      The tool calculates remainders for each measurement and
-                      shows which are "good" (≥ threshold) or "careful" (≤
-                      threshold)
-                    </li>
-                    <li>
-                      Use the "Move Left" and "Move Right" buttons to adjust all
-                      measurements at once, or try "Adjust Automagically" to
-                      optimize
-                    </li>
-                  </ol>
-                </AccordionContent>
-              </AccordionItem>
               <AccordionItem value="glossary">
                 <AccordionTrigger>Glossary</AccordionTrigger>
                 <AccordionContent className="space-y-2 text-sm">
@@ -795,19 +825,18 @@ const NewPlankIncrementor = () => {
                   <div>
                     <span className="font-medium">Line Adjustment:</span>
                     <p className="text-gray-600">
-                      The cumulative distance the line has been moved left
-                      (blue) or right (purple) to optimize remainder
-                      distribution.
+                      The cumulative distance the line has been moved left (sky)
+                      or right (purple) to optimize remainder distribution.
                     </p>
                   </div>
                   <div>
                     <span className="font-medium">
-                      Left (Blue) vs Right (Purple):
+                      Left (← | Blue) vs Right (→ | Purple):
                     </span>
                     <p className="text-gray-600">
-                      Indicates which side of your reference point each
-                      measurement is located. The toggle button switches
-                      direction for individual measurements.
+                      Indicates which side of the centerline each measurement is
+                      located. The toggle button switches direction for
+                      individual measurements.
                     </p>
                   </div>
                 </AccordionContent>
@@ -824,14 +853,18 @@ const NewPlankIncrementor = () => {
                     <p className="font-medium">How it works:</p>
                     <ol className="list-decimal list-inside space-y-1 ml-2">
                       <li>
-                        Tests every possible line adjustment from 0" to your
-                        material width in 0.01" increments (roughly 725
-                        adjustment points for 7.25" material)
+                        Tests every possible centerline adjustment from -
+                        {plankWidth.toFixed(2)}" to +{plankWidth.toFixed(2)}" in
+                        0.01" increments
                       </li>
                       <li>
-                        For each adjustment, calculates how many of your
-                        measurements would result in "good" remainders (≥
-                        threshold)
+                        For each adjustment, simulates how LEFT measurements
+                        decrease and RIGHT measurements increase, accounting for
+                        measurements that flip sides
+                      </li>
+                      <li>
+                        Calculates which measurements would result in "good"
+                        remainders (≥ threshold)
                       </li>
                       <li>
                         Returns the adjustment that maximizes the number of good
@@ -848,7 +881,87 @@ const NewPlankIncrementor = () => {
                   </p>
                 </AccordionContent>
               </AccordionItem>
+              <AccordionItem value="measurement-direction-flipping">
+                <AccordionTrigger>
+                  How Direction Flipping Works
+                </AccordionTrigger>
+                <AccordionContent className="space-y-2 text-sm">
+                  <p>
+                    When you move the centerline, measurements can cross from
+                    one side to the other. When a measurement goes negative, it
+                    automatically flips to the opposite side with a positive
+                    value.
+                  </p>
+                  <div className="bg-slate-100 p-3 rounded space-y-2">
+                    <p className="font-medium">Example:</p>
+                    <ul className="list-disc list-inside space-y-1 ml-2 text-xs">
+                      <li>{'Measurement: 0.5" LEFT (sky ←)'}</li>
+                      <li>{'Move centerline right by 0.75"'}</li>
+                      <li>{'Calculation: 0.5 - 0.75 = -0.25"'}</li>
+                      <li>{'Result: 0.25" RIGHT (purple →)'}</li>
+                      <li className="text-gray-600 italic">
+                        {
+                          'The measurement crosses the centerline and now measures 0.25" on the right'
+                        }
+                      </li>
+                    </ul>
+                  </div>
+                  <p className="text-gray-600 text-xs">
+                    This reflects how a centerline physically moves in real
+                    installations—points that cross the line switch sides.
+                  </p>
+                </AccordionContent>
+              </AccordionItem>
             </Accordion>
+
+            <div className="flex my-8">
+              <Popover
+                open={showGeneratePopover}
+                onOpenChange={setShowGeneratePopover}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full md:w-auto mx-auto text-gray-400"
+                  >
+                    Generate Random Measurements
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64">
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <h4 className="font-medium">
+                        Generate 10 Random Measurements?
+                      </h4>
+                      {hasExistingData && (
+                        <p className="text-sm text-amber-600">
+                          ⚠️ You have existing data that will be overwritten.
+                        </p>
+                      )}
+                      <p className="text-sm text-gray-600">
+                        This will create random measurements ranging from{' '}
+                        {(plankWidth * 1).toFixed(2)}" to{' '}
+                        {(plankWidth * 20).toFixed(2)}" with random left/right
+                        directions.
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => setShowGeneratePopover(false)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Cancel
+                      </Button>
+                      <Button onClick={generateRandomMeasurements} size="sm">
+                        Generate
+                      </Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
           </CardContent>
         </Card>
       </div>

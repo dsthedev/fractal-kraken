@@ -1,7 +1,3 @@
-import ConvertRatesToDecimal from 'src/components/ConvertRatesToDecimal/ConvertRatesToDecimal'
-import OldDataConverter from 'src/components/OldDataConverter/OldDataConverter'
-import NewPlankIncrementor from 'src/components/Tools/PlankIncrementor/NewPlankIncrementor'
-
 const SandboxPage = () => {
   return (
     <div className="p-4">
@@ -14,7 +10,6 @@ const SandboxPage = () => {
       <hr className="my-4" />
       {/* <ConvertRatesToDecimal /> */}
       {/* <OldDataConverter /> */}
-      <NewPlankIncrementor />
     </div>
   )
 }
