@@ -34,6 +34,12 @@ import {
   TableHeader,
   TableRow,
 } from 'src/components/ui/table'
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from 'src/components/ui/tabs'
 
 const STORAGE_KEY_AREAS = 'carpet-calculator-areas'
 const STORAGE_KEY_ROLL_WIDTH = 'carpet-calculator-roll-width'
@@ -56,14 +62,58 @@ const CarpetCalculatorV1 = () => {
   const areaNameRefs = useRef<Record<string, HTMLInputElement | null>>({})
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
+  // Helpers: measurements and processing
+  const inchesFromFields = (p: Piece) =>
+    p.width && p.width > 0
+      ? p.width
+      : (p.widthFeet || 0) * 12 + (p.widthInches || 0)
+  const lengthFromFields = (p: Piece) =>
+    p.length && p.length > 0
+      ? p.length
+      : (p.lengthFeet || 0) * 12 + (p.lengthInches || 0)
+
+  const formatFeetInches = (totalInches: number) => {
+    const ft = Math.floor(totalInches / 12)
+    const inch = Math.round(totalInches % 12)
+    return `${ft}′${inch}″`
+  }
+
+  const processPieces = (pieces: Piece[]) => {
+    return pieces.map((p) => {
+      const width = inchesFromFields(p)
+      const length = lengthFromFields(p)
+      const needsFill = width > rollWidth
+      const hasExcess = width < rollWidth
+      const fillReqWidth = needsFill ? width - rollWidth : 0
+      const excessWidth = hasExcess ? rollWidth - width : 0
+
+      return {
+        ...p,
+        width,
+        length,
+        needsFill,
+        hasExcess,
+        fillReqWidth,
+        excessWidth,
+      }
+    })
+  }
+
   // Load from localStorage on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const storedAreas = localStorage.getItem(STORAGE_KEY_AREAS)
     const storedRollWidth = localStorage.getItem(STORAGE_KEY_ROLL_WIDTH)
 
     if (storedAreas) {
       try {
-        setAreas(JSON.parse(storedAreas))
+        const parsed: Area[] = JSON.parse(storedAreas)
+        // process pieces to canonicalize measurements
+        const processed = parsed.map((a) => ({
+          ...a,
+          pieces: processPieces(a.pieces),
+        }))
+        setAreas(processed)
       } catch (error) {
         console.error('Failed to parse stored areas:', error)
       }
@@ -73,6 +123,15 @@ const CarpetCalculatorV1 = () => {
       setRollWidth(parseInt(storedRollWidth))
     }
   }, [])
+
+  // Re-run processing when roll width changes to update needsFill/excess
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (areas.length === 0) return
+    setAreas((prev) =>
+      prev.map((a) => ({ ...a, pieces: processPieces(a.pieces) }))
+    )
+  }, [rollWidth])
 
   // Save areas to localStorage whenever they change
   useEffect(() => {
@@ -103,8 +162,11 @@ const CarpetCalculatorV1 = () => {
           length: 0,
           width: 144,
           napFollowsLength: true,
-          isUsed: false,
-          isFilled: false,
+          needsFill: false,
+          hasExcess: false,
+          fillReqWidth: 0,
+          excessWidth: 0,
+          isNet: false,
         },
       ],
     }
@@ -142,7 +204,9 @@ const CarpetCalculatorV1 = () => {
   }
 
   const updateAreaPieces = (id: string, pieces: Piece[]) => {
-    updateArea(id, { pieces })
+    // process measurements and compute fill/excess flags before saving
+    const processed = processPieces(pieces)
+    updateArea(id, { pieces: processed })
   }
 
   const handleNapDirectionChange = (
@@ -153,19 +217,30 @@ const CarpetCalculatorV1 = () => {
     setAreas((prevAreas) =>
       prevAreas.map((area) => {
         if (area.id === areaId) {
+          const updatedPieces = area.pieces.map((piece) => ({
+            ...piece,
+            napFollowsLength,
+          }))
           return {
             ...area,
             napFollowsLength,
-            pieces: area.pieces.map((piece) => ({
-              ...piece,
-              napFollowsLength,
-            })),
+            pieces: processPieces(updatedPieces),
           }
         }
         return area
       })
     )
   }
+
+  // Ensure loaded areas get processed once after component mounts
+  useEffect(() => {
+    if (areas.length === 0) return
+    setAreas((prev) =>
+      prev.map((a) => ({ ...a, pieces: processPieces(a.pieces) }))
+    )
+    // run only once after mount / load
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleExportData = () => {
     const dataStr = JSON.stringify(areas, null, 2)
@@ -404,59 +479,259 @@ const CarpetCalculatorV1 = () => {
         </Accordion>
       )}
 
-      {/* Report Table */}
+      {/* Report Tables: Main Cut, Fill Requirements, Excess Pieces */}
       {areas.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <h3 className="text-lg font-semibold">Report</h3>
-          <div className="border rounded-lg overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Area</TableHead>
-                  <TableHead>Nap Direction</TableHead>
-                  <TableHead>Pieces</TableHead>
-                  <TableHead>Details</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {areas.map((area) => (
-                  <TableRow key={area.id}>
-                    <TableCell className="font-medium">{area.name}</TableCell>
-                    <TableCell>
-                      {area.napFollowsLength ? (
-                        <MoveVertical />
-                      ) : (
-                        <MoveHorizontal />
-                      )}
-                    </TableCell>
-                    <TableCell>{area.pieces.length}</TableCell>
-                    <TableCell>
-                      {area.pieces.length > 0 ? (
-                        <ul className="text-sm space-y-1">
-                          {area.pieces.map((piece, idx) => (
-                            <li
-                              key={piece.id}
-                              className="text-muted-foreground"
-                            >
-                              {piece.name || `Piece ${idx + 1}`}:{' '}
-                              {piece.lengthFeet || 0}′{piece.lengthInches || 0}″
-                              × {piece.widthFeet || 0}′{piece.widthInches || 0}″
-                              {piece.isUsed && ' (Used)'}
-                              {piece.isFilled && ' (Filled)'}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">
-                          No pieces
-                        </span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+
+          <Tabs defaultValue="main-cut" className="w-full">
+            <TabsList>
+              <TabsTrigger value="main-cut">Cut List</TabsTrigger>
+              <TabsTrigger value="excess">Excess Pieces</TabsTrigger>
+              <TabsTrigger value="fill-req">Fill Req.</TabsTrigger>
+              <TabsTrigger value="area-measurements">Areas</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="area-measurements">
+              <div className="border rounded-lg overflow-hidden mt-2">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Area</TableHead>
+                      <TableHead>Piece</TableHead>
+                      <TableHead>Length</TableHead>
+                      <TableHead>Width</TableHead>
+                      <TableHead>Notes</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {areas.map((area) =>
+                      area.pieces.map((piece, idx) => {
+                        const lenInches =
+                          piece.length || lengthFromFields(piece)
+                        const widInches = piece.width || inchesFromFields(piece)
+                        const lenFt =
+                          piece.lengthFeet ?? Math.floor((lenInches || 0) / 12)
+                        const lenIn =
+                          piece.lengthInches ??
+                          Math.round((lenInches || 0) % 12)
+                        const widFt =
+                          piece.widthFeet ?? Math.floor((widInches || 0) / 12)
+                        const widIn =
+                          piece.widthInches ?? Math.round((widInches || 0) % 12)
+                        const notes = piece.isNet ? 'Padded (+4" )' : ''
+                        const hideRow =
+                          (lenInches || 0) < 3 || (widInches || 0) < 3
+                        return (
+                          <TableRow
+                            key={piece.id}
+                            className={hideRow ? 'hidden' : ''}
+                          >
+                            <TableCell className="font-medium">
+                              {area.name}
+                            </TableCell>
+                            <TableCell>
+                              {piece.name || `Piece ${idx + 1}`}
+                            </TableCell>
+                            <TableCell>{`${lenFt}′${lenIn}″`}</TableCell>
+                            <TableCell>{`${widFt}′${widIn}″`}</TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {notes}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="main-cut">
+              <div className="border rounded-lg overflow-hidden mt-2">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Area</TableHead>
+                      <TableHead>Piece</TableHead>
+                      <TableHead>Nap</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Length</TableHead>
+                      <TableHead>Width (Main)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {areas.map((area) =>
+                      area.pieces.map((piece) => {
+                        const widthInches =
+                          piece.width || inchesFromFields(piece)
+                        const netWidth = widthInches
+                        const mainWidth = Math.min(netWidth, rollWidth)
+                        const lengthInches =
+                          piece.length || lengthFromFields(piece)
+                        const displayLen = lengthInches + (piece.isNet ? 4 : 0)
+                        const paddedMain = mainWidth + (piece.isNet ? 4 : 0)
+                        const displayMainWidth = Math.min(paddedMain, rollWidth)
+                        const hideRow =
+                          (lengthInches || 0) < 3 || (widthInches || 0) < 3
+                        return (
+                          <TableRow
+                            key={piece.id}
+                            className={hideRow ? 'hidden' : ''}
+                          >
+                            <TableCell className="font-medium">
+                              {area.name}
+                            </TableCell>
+                            <TableCell>{piece.name}</TableCell>
+                            <TableCell>
+                              {piece.napFollowsLength ? (
+                                <MoveVertical />
+                              ) : (
+                                <MoveHorizontal />
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {piece.needsFill ? (
+                                <span className="text-yellow-600">
+                                  Needs Fill
+                                </span>
+                              ) : piece.hasExcess ? (
+                                <span className="text-green-600">
+                                  Has Excess
+                                </span>
+                              ) : null}
+                            </TableCell>
+                            <TableCell>
+                              {formatFeetInches(displayLen)}
+                            </TableCell>
+                            <TableCell>
+                              {formatFeetInches(displayMainWidth)}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="fill-req">
+              <div className="border rounded-lg overflow-hidden mt-2">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Area</TableHead>
+                      <TableHead>Piece</TableHead>
+                      <TableHead>Nap</TableHead>
+                      <TableHead>Length</TableHead>
+                      <TableHead>Fill Width</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {areas
+                      .flatMap((area) =>
+                        area.pieces.map((piece) => ({
+                          ...piece,
+                          areaName: area.name,
+                        }))
+                      )
+                      .filter((p) => p.needsFill)
+                      .map((p) => {
+                        const lengthInches = p.length || lengthFromFields(p)
+                        const fillWidth = p.fillReqWidth || 0
+                        const hideRow =
+                          (lengthInches || 0) < 3 || (fillWidth || 0) < 3
+                        return (
+                          <TableRow
+                            key={p.id}
+                            className={hideRow ? 'hidden' : ''}
+                          >
+                            <TableCell className="font-medium">
+                              {p.areaName}
+                            </TableCell>
+                            <TableCell>{p.name}</TableCell>
+                            <TableCell>
+                              {p.napFollowsLength ? (
+                                <MoveVertical />
+                              ) : (
+                                <MoveHorizontal />
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {formatFeetInches(
+                                (lengthInches || 0) + (p.isNet ? 4 : 0)
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {formatFeetInches(fillWidth || 0)}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="excess">
+              <div className="border rounded-lg overflow-hidden mt-2">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Area</TableHead>
+                      <TableHead>Piece</TableHead>
+                      <TableHead>Nap</TableHead>
+                      <TableHead>Length</TableHead>
+                      <TableHead>Excess Width</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {areas
+                      .flatMap((area) =>
+                        area.pieces.map((piece) => ({
+                          ...piece,
+                          areaName: area.name,
+                        }))
+                      )
+                      .filter((p) => p.hasExcess)
+                      .map((p) => {
+                        const lengthInches = p.length || lengthFromFields(p)
+                        const excessWidth = p.excessWidth || 0
+                        const hideRow =
+                          (lengthInches || 0) < 3 || (excessWidth || 0) < 3
+                        return (
+                          <TableRow
+                            key={p.id}
+                            className={hideRow ? 'hidden' : ''}
+                          >
+                            <TableCell className="font-medium">
+                              {p.areaName}
+                            </TableCell>
+                            <TableCell>{p.name}</TableCell>
+                            <TableCell>
+                              {p.napFollowsLength ? (
+                                <MoveVertical />
+                              ) : (
+                                <MoveHorizontal />
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {formatFeetInches(
+                                (lengthInches || 0) + (p.isNet ? 4 : 0)
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {formatFeetInches(excessWidth || 0)}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       )}
 

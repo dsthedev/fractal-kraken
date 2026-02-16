@@ -30,8 +30,14 @@ export interface Piece {
   length: number
   width: number
   napFollowsLength: boolean
-  isUsed: boolean
-  isFilled: boolean
+  // replaced flags
+  needsFill: boolean
+  hasExcess: boolean
+  // widths (inches) for fill requirement or excess available
+  fillReqWidth: number
+  excessWidth: number
+  // true = Net (no padding). If false, display adds 4" padding (display-only)
+  isNet: boolean
 }
 
 interface PieceManagerProps {
@@ -69,8 +75,11 @@ const PieceManager = ({
       length: 0,
       width: 144,
       napFollowsLength: areaNapFollowsLength,
-      isUsed: false,
-      isFilled: false,
+      needsFill: false,
+      hasExcess: false,
+      fillReqWidth: 0,
+      excessWidth: 0,
+      isNet: false,
     }
     onChange([...pieces, newPiece])
     onOpenPiecesChange([newPiece.id])
@@ -191,6 +200,15 @@ const PieceManager = ({
                   onClick={(e) => {
                     e.stopPropagation()
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setEditingPieceId(
+                        editingPieceId === piece.id ? null : piece.id
+                      )
+                    }
+                  }}
                 >
                   {editingPieceId === piece.id ? (
                     <Check className="h-4 w-4" />
@@ -223,6 +241,21 @@ const PieceManager = ({
                       <MoveHorizontal className="h-4 w-4" />
                     )}
                   </Button>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`isNet-${piece.id}`}
+                      checked={piece.isNet}
+                      onCheckedChange={(checked) =>
+                        updatePiece(piece.id, { isNet: !!checked })
+                      }
+                    />
+                    <Label
+                      htmlFor={`isNet-${piece.id}`}
+                      className="text-sm text-muted-foreground font-normal cursor-pointer"
+                    >
+                      Net
+                    </Label>
+                  </div>
                   <Button
                     onClick={() => setEditAsInches(!editAsInches)}
                     variant="secondary"
@@ -433,33 +466,33 @@ const PieceManager = ({
               <div className="hidden px-4 pb-4">
                 <div className="flex items-center space-x-2">
                   <Checkbox
-                    id={`isUsed-${piece.id}`}
-                    checked={piece.isUsed}
+                    id={`hasExcess-${piece.id}`}
+                    checked={piece.hasExcess}
                     onCheckedChange={(checked) =>
-                      updatePiece(piece.id, { isUsed: !!checked })
+                      updatePiece(piece.id, { hasExcess: !!checked })
                     }
                   />
                   <Label
-                    htmlFor={`isUsed-${piece.id}`}
+                    htmlFor={`hasExcess-${piece.id}`}
                     className="text-sm font-normal cursor-pointer"
                   >
-                    Is used
+                    Has excess
                   </Label>
                 </div>
 
                 <div className="flex items-center space-x-2">
                   <Checkbox
-                    id={`isFilled-${piece.id}`}
-                    checked={piece.isFilled}
+                    id={`needsFill-${piece.id}`}
+                    checked={piece.needsFill}
                     onCheckedChange={(checked) =>
-                      updatePiece(piece.id, { isFilled: !!checked })
+                      updatePiece(piece.id, { needsFill: !!checked })
                     }
                   />
                   <Label
-                    htmlFor={`isFilled-${piece.id}`}
+                    htmlFor={`needsFill-${piece.id}`}
                     className="text-sm font-normal cursor-pointer"
                   >
-                    Is filled
+                    Needs fill
                   </Label>
                 </div>
               </div>
