@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 
 import {
   Check,
@@ -17,6 +17,7 @@ import {
   AccordionTrigger,
 } from 'src/components/ui/accordion'
 import { Button } from 'src/components/ui/button'
+import { Checkbox } from 'src/components/ui/checkbox'
 import { Input } from 'src/components/ui/input'
 import { Label } from 'src/components/ui/label'
 import {
@@ -41,6 +42,8 @@ import {
   TabsTrigger,
 } from 'src/components/ui/tabs'
 
+import Visualizer from './CarpetVisualizer'
+
 const STORAGE_KEY_AREAS = 'carpet-calculator-areas'
 const STORAGE_KEY_ROLL_WIDTH = 'carpet-calculator-roll-width'
 
@@ -61,6 +64,19 @@ const CarpetCalculatorV1 = () => {
   const [editingAreaId, setEditingAreaId] = useState<string | null>(null)
   const areaNameRefs = useRef<Record<string, HTMLInputElement | null>>({})
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null)
+  const [vizPadded, setVizPadded] = useState<boolean>(true)
+  const [vizRoll, setVizRoll] = useState<boolean>(true)
+
+  const selectedPiece = useMemo(() => {
+    if (!selectedPieceId) return null
+    for (const a of areas) {
+      const found = a.pieces.find((p) => p.id === selectedPieceId)
+      if (found) return found
+    }
+    return null
+  }, [selectedPieceId, areas])
 
   // Helpers: measurements and processing
   const inchesFromFields = (p: Piece) =>
@@ -471,6 +487,8 @@ const CarpetCalculatorV1 = () => {
                         [area.id]: pieceIds,
                       }))
                     }
+                    rollWidth={rollWidth}
+                    areaName={area.name}
                   />
                 </div>
               </AccordionContent>
@@ -735,8 +753,70 @@ const CarpetCalculatorV1 = () => {
         </div>
       )}
 
+      {/* Visualizer Section */}
+      <div className="mt-6 hidden">
+        <h3 className="text-lg font-medium">Visualizer</h3>
+        <div className="flex items-center gap-3 mt-3">
+          <select
+            className="border rounded px-2 py-1"
+            value={selectedPieceId ?? ''}
+            onChange={(e) => setSelectedPieceId(e.target.value || null)}
+          >
+            <option value="">Select a piece</option>
+            {areas.map((a) => (
+              <optgroup key={a.id} label={a.name}>
+                {a.pieces.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="viz-padded"
+              checked={vizPadded}
+              onCheckedChange={(v) => setVizPadded(!!v)}
+            />
+            <Label htmlFor="viz-padded" className="text-sm">
+              Show padded (+4")
+            </Label>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="viz-roll"
+              checked={vizRoll}
+              onCheckedChange={(v) => setVizRoll(!!v)}
+            />
+            <Label htmlFor="viz-roll" className="text-sm">
+              Show roll overlay
+            </Label>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <Visualizer
+            piece={selectedPiece}
+            rollWidth={rollWidth}
+            showPadded={vizPadded}
+            showRollOverlay={vizRoll}
+          />
+        </div>
+      </div>
+
       {/* Usage Tips & Raw Data Accordion */}
       <Accordion type="single" collapsible className="w-full">
+        <AccordionItem value="grand-visualizer">
+          <AccordionTrigger>Grand Visualizer</AccordionTrigger>
+          <AccordionContent>
+            <div className="p-6 text-center text-sm text-muted-foreground">
+              Coming Soon!
+            </div>
+          </AccordionContent>
+        </AccordionItem>
         <AccordionItem value="usage-tips">
           <AccordionTrigger>Usage Tips</AccordionTrigger>
           <AccordionContent>

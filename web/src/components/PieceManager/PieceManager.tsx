@@ -20,6 +20,8 @@ import { Checkbox } from 'src/components/ui/checkbox'
 import { Input } from 'src/components/ui/input'
 import { Label } from 'src/components/ui/label'
 
+import Visualizer from '../CarpetCalculatorV1/CarpetVisualizer'
+
 export interface Piece {
   id: string
   name: string
@@ -47,6 +49,8 @@ interface PieceManagerProps {
   onNapDirectionChange?: (napFollowsLength: boolean) => void
   openPieces: string[]
   onOpenPiecesChange: (pieceIds: string[]) => void
+  rollWidth: number
+  areaName: string
 }
 
 const PieceManager = ({
@@ -56,6 +60,8 @@ const PieceManager = ({
   onNapDirectionChange,
   openPieces,
   onOpenPiecesChange,
+  rollWidth,
+  areaName,
 }: PieceManagerProps) => {
   const [editAsInches, setEditAsInches] = useState(false)
   const [editingPieceId, setEditingPieceId] = useState<string | null>(null)
@@ -461,6 +467,19 @@ const PieceManager = ({
                   </div>
                 </div>
               )}
+
+              {/* Piece visualizer */}
+              <div className="m-1">
+                <div className="h-auto w-full border rounded-md overflow-hidden">
+                  <Visualizer
+                    piece={piece}
+                    rollWidth={rollWidth}
+                    showPadded={true}
+                    showRollOverlay={true}
+                    areaName={areaName}
+                  />
+                </div>
+              </div>
 
               {/* Hidden for now - will be used later */}
               <div className="hidden px-4 pb-4">
