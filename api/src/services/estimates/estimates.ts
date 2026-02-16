@@ -4,9 +4,17 @@ import type {
   EstimateRelationResolvers,
 } from 'types/graphql'
 
-import { context } from '@cedarjs/graphql-server'
+import { context, RedwoodGraphQLError } from '@cedarjs/graphql-server'
 
 import { db } from 'src/lib/db'
+
+const getCurrentUserId = () => {
+  const userId = context.currentUser?.id
+  if (!userId) {
+    throw new RedwoodGraphQLError('User not authenticated')
+  }
+  return userId
+}
 
 export const estimates: QueryResolvers['estimates'] = () => {
   return db.estimate.findMany({
@@ -60,8 +68,12 @@ export const estimate: QueryResolvers['estimate'] = ({ id }) => {
 export const createEstimate: MutationResolvers['createEstimate'] = ({
   input,
 }) => {
+  const userId = getCurrentUserId()
   return db.estimate.create({
-    data: input,
+    data: {
+      ...input,
+      authorId: userId,
+    },
   })
 }
 
@@ -69,16 +81,33 @@ export const updateEstimate: MutationResolvers['updateEstimate'] = ({
   id,
   input,
 }) => {
-  return db.estimate.update({
-    data: input,
-    where: { id },
-  })
+  const userId = getCurrentUserId()
+  return db.estimate
+    .update({
+      data: input,
+      where: { id, authorId: userId },
+    })
+    .catch(() => {
+      throw new RedwoodGraphQLError(
+        'Estimate not found or you do not have permission to update it'
+      )
+    })
 }
 
 export const deleteEstimate: MutationResolvers['deleteEstimate'] = ({ id }) => {
-  return db.estimate.delete({
-    where: { id },
-  })
+  const userId = getCurrentUserId()
+  return db.estimate
+    .delete({
+      where: {
+        id,
+        authorId: userId,
+      },
+    })
+    .catch(() => {
+      throw new RedwoodGraphQLError(
+        'Estimate not found or you do not have permission to delete it'
+      )
+    })
 }
 
 export const importEstimates: MutationResolvers['importEstimates'] = async ({
@@ -142,23 +171,47 @@ export const importEstimates: MutationResolvers['importEstimates'] = async ({
 
 export const Estimate: EstimateRelationResolvers = {
   installerEntity: (_obj, { root }) => {
+    const userId = getCurrentUserId()
+    if (root?.authorId !== userId) {
+      throw new RedwoodGraphQLError('Not authorized')
+    }
     return db.estimate.findUnique({ where: { id: root?.id } }).installerEntity()
   },
   clientEntity: (_obj, { root }) => {
+    const userId = getCurrentUserId()
+    if (root?.authorId !== userId) {
+      throw new RedwoodGraphQLError('Not authorized')
+    }
     return db.estimate.findUnique({ where: { id: root?.id } }).clientEntity()
   },
   retailerEntity: (_obj, { root }) => {
+    const userId = getCurrentUserId()
+    if (root?.authorId !== userId) {
+      throw new RedwoodGraphQLError('Not authorized')
+    }
     return db.estimate.findUnique({ where: { id: root?.id } }).retailerEntity()
   },
   author: (_obj, { root }) => {
+    const userId = getCurrentUserId()
+    if (root?.authorId !== userId) {
+      throw new RedwoodGraphQLError('Not authorized')
+    }
     return db.estimate.findUnique({ where: { id: root?.id } }).author()
   },
   billableItems: (_obj, { root }) => {
+    const userId = getCurrentUserId()
+    if (root?.authorId !== userId) {
+      throw new RedwoodGraphQLError('Not authorized')
+    }
     return db.estimate
       .findUnique({ where: { id: root?.id } })
       .billableItems({ orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] })
   },
   entity: (_obj, { root }) => {
+    const userId = getCurrentUserId()
+    if (root?.authorId !== userId) {
+      throw new RedwoodGraphQLError('Not authorized')
+    }
     return db.estimate.findUnique({ where: { id: root?.id } }).entity()
   },
 }

@@ -10,21 +10,41 @@ import { db } from 'src/lib/db'
 import { createRefNo, getWeekNumber } from 'src/lib/estimateTitle'
 import { sendInvoiceEmail } from 'src/services/mailer/mailer'
 
+const getCurrentUserId = () => {
+  const userId = context.currentUser?.id
+  if (!userId) {
+    throw new RedwoodGraphQLError('User not authenticated')
+  }
+  return userId
+}
+
 export const invoices: QueryResolvers['invoices'] = () => {
-  return db.invoice.findMany()
+  return db.invoice.findMany({
+    where: {
+      authorId: context.currentUser?.id,
+    },
+  })
 }
 
 export const invoice: QueryResolvers['invoice'] = ({ uuid }) => {
-  return db.invoice.findUnique({
-    where: { uuid },
+  const userId = getCurrentUserId()
+  return db.invoice.findFirst({
+    where: {
+      uuid,
+      authorId: userId,
+    },
   })
 }
 
 export const createInvoice: MutationResolvers['createInvoice'] = ({
   input,
 }) => {
+  const userId = getCurrentUserId()
   return db.invoice.create({
-    data: input,
+    data: {
+      ...input,
+      authorId: userId,
+    },
   })
 }
 
@@ -142,54 +162,105 @@ export const updateInvoice: MutationResolvers['updateInvoice'] = ({
   uuid,
   input,
 }) => {
-  return db.invoice.update({
-    data: input,
-    where: { uuid },
-  })
+  const userId = getCurrentUserId()
+  return db.invoice
+    .update({
+      data: input,
+      where: { uuid, authorId: userId },
+    })
+    .catch(() => {
+      throw new RedwoodGraphQLError(
+        'Invoice not found or you do not have permission to update it'
+      )
+    })
 }
 
 export const deleteInvoice: MutationResolvers['deleteInvoice'] = ({ uuid }) => {
-  return db.invoice.delete({
-    where: { uuid },
-  })
+  const userId = getCurrentUserId()
+  return db.invoice
+    .delete({
+      where: {
+        uuid,
+        authorId: userId,
+      },
+    })
+    .catch(() => {
+      throw new RedwoodGraphQLError(
+        'Invoice not found or you do not have permission to delete it'
+      )
+    })
 }
 
 export const Invoice: InvoiceRelationResolvers = {
   author: (_obj, { root }) => {
+    const userId = getCurrentUserId()
+    if (root?.authorId !== userId) {
+      throw new RedwoodGraphQLError('Not authorized')
+    }
     return db.invoice.findUnique({ where: { uuid: root?.uuid } }).author()
   },
   payorEntity: (_obj, { root }) => {
+    const userId = getCurrentUserId()
+    if (root?.authorId !== userId) {
+      throw new RedwoodGraphQLError('Not authorized')
+    }
     return db.invoice.findUnique({ where: { uuid: root?.uuid } }).payorEntity()
   },
   payeeEntity: (_obj, { root }) => {
+    const userId = getCurrentUserId()
+    if (root?.authorId !== userId) {
+      throw new RedwoodGraphQLError('Not authorized')
+    }
     return db.invoice.findUnique({ where: { uuid: root?.uuid } }).payeeEntity()
   },
   sourceEstimate: (_obj, { root }) => {
-    return db.invoice
-      .findUnique({ where: { uuid: root?.uuid } })
-      .sourceEstimate()
+    const userId = getCurrentUserId()
+    if (root?.authorId !== userId) {
+      throw new RedwoodGraphQLError('Not authorized')
+    }
+    return db.invoice.findUnique({ where: { uuid: root?.uuid } }).sourceEstimate()
   },
   sourceInstallerEntity: (_obj, { root }) => {
+    const userId = getCurrentUserId()
+    if (root?.authorId !== userId) {
+      throw new RedwoodGraphQLError('Not authorized')
+    }
     return db.invoice
       .findUnique({ where: { uuid: root?.uuid } })
       .sourceInstallerEntity()
   },
   sourceClientEntity: (_obj, { root }) => {
+    const userId = getCurrentUserId()
+    if (root?.authorId !== userId) {
+      throw new RedwoodGraphQLError('Not authorized')
+    }
     return db.invoice
       .findUnique({ where: { uuid: root?.uuid } })
       .sourceClientEntity()
   },
   sourceRetailerEntity: (_obj, { root }) => {
+    const userId = getCurrentUserId()
+    if (root?.authorId !== userId) {
+      throw new RedwoodGraphQLError('Not authorized')
+    }
     return db.invoice
       .findUnique({ where: { uuid: root?.uuid } })
       .sourceRetailerEntity()
   },
   billableItems: (_obj, { root }) => {
+    const userId = getCurrentUserId()
+    if (root?.authorId !== userId) {
+      throw new RedwoodGraphQLError('Not authorized')
+    }
     return db.invoice
       .findUnique({ where: { uuid: root?.uuid } })
       .billableItems()
   },
   entity: (_obj, { root }) => {
+    const userId = getCurrentUserId()
+    if (root?.authorId !== userId) {
+      throw new RedwoodGraphQLError('Not authorized')
+    }
     return db.invoice.findUnique({ where: { uuid: root?.uuid } }).entity()
   },
 }
@@ -198,11 +269,22 @@ export const sendInvoice: MutationResolvers['sendInvoice'] = async ({
   uuid,
   recipientEmail,
 }) => {
-  await sendInvoiceEmail({ uuid, recipientEmail })
+  const userId = getCurrentUserId()
 
-  const invoice = await db.invoice.findUnique({
-    where: { uuid },
+  const invoice = await db.invoice.findFirst({
+    where: {
+      uuid,
+      authorId: userId,
+    },
   })
+
+  if (!invoice) {
+    throw new RedwoodGraphQLError(
+      'Invoice not found or you do not have permission to send it'
+    )
+  }
+
+  await sendInvoiceEmail({ uuid, recipientEmail })
 
   return invoice
 }
