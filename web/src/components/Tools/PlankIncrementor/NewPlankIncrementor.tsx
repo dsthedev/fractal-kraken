@@ -471,6 +471,11 @@ const NewPlankIncrementor = () => {
             <CardDescription className=" text-lg border-t-2 border-red-500 max-w-md w-full mx-auto mt-2 text-gray-600 pt-2">
               Use a Laser!
             </CardDescription>
+            <p className="text-left text-sm text-muted-foreground">
+              {
+                'This tool helps to adjust where the starting line will be when laying planks. The goal is to avoid having rows be less than the minimum plank width. For example, if your last row is 1/2" it is difficult to install and may not adhere well.'
+              }
+            </p>
           </CardHeader>
           <CardContent className="space-y-3">
             {/* Material and Threshold Settings */}
@@ -691,7 +696,8 @@ const NewPlankIncrementor = () => {
                   className="bg-sky-500 hover:bg-sky-700 text-white flex-shrink-0"
                 >
                   <span className="text-4xl md:text-base">←</span>
-                  <span className="hidden md:inline md:ml-2">Move Left</span>
+                  <span className="text-lg">1/8"</span>
+                  <span className="hidden md:inline">Move Left</span>
                 </Button>
                 <div className="text-center">
                   <div className="text-lg text-gray-600 dark:text-gray-400 mt-1">
@@ -712,8 +718,9 @@ const NewPlankIncrementor = () => {
                   onClick={() => adjustLengths(false)}
                   className="bg-purple-500 hover:bg-purple-700 text-white flex-shrink-0"
                 >
-                  <span className="hidden md:inline md:mr-2">Move Right</span>
-                  <span className="text-4xl md:text-base">→</span>
+                  <span className="hidden md:inline">Move Right</span>
+                  <span className="text-lg">1/8"</span>
+                  <span className="text-2xl md:text-base">→</span>
                 </Button>
               </div>
               {goodBadCountDisplay}
@@ -759,7 +766,7 @@ const NewPlankIncrementor = () => {
             </div>
 
             {/* Adjustment Controls */}
-            <div className="space-y-2">
+            <div className="space-y-2 hidden">
               <p className="text-muted-foreground text-sm max-w-md mx-auto">
                 By default, the move left/right buttons adjust the line by 0.25
                 inches. Use these controls to change the increment amount.
@@ -860,9 +867,7 @@ const NewPlankIncrementor = () => {
                     <p className="font-medium">How it works:</p>
                     <ol className="list-decimal list-inside space-y-1 ml-2">
                       <li>
-                        Tests every possible centerline adjustment from -
-                        {plankWidth.toFixed(2)}" to +{plankWidth.toFixed(2)}" in
-                        0.01" increments
+                        {`Tests every possible centerline adjustment from - ${plankWidth.toFixed(2)}" to +${plankWidth.toFixed(2)}" in 0.01" increments`}
                       </li>
                       <li>
                         For each adjustment, simulates how LEFT measurements
@@ -889,23 +894,26 @@ const NewPlankIncrementor = () => {
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="measurement-direction-flipping">
-                <AccordionTrigger>
-                  How Direction Flipping Works
-                </AccordionTrigger>
+                <AccordionTrigger>Direction Flipping</AccordionTrigger>
                 <AccordionContent className="space-y-2 text-sm">
+                  <p className="text-gray-600 text-sm">
+                    Direction of a measurement is often switched while enteringn
+                    measurmentes.
+                  </p>
                   <p>
-                    When you move the centerline, measurements can cross from
-                    one side to the other. When a measurement goes negative, it
-                    automatically flips to the opposite side with a positive
-                    value.
+                    In some rare cases, the centerline is moved into or past an
+                    obstacle / termination point. In this case, the measurement
+                    will flip to the opposite side of the centerline and
+                    continue to increase in length as you move the line in that
+                    direction.
                   </p>
                   <div className="bg-slate-100 p-3 rounded space-y-2">
                     <p className="font-medium">Example:</p>
                     <ul className="list-disc list-inside space-y-1 ml-2 text-xs">
-                      <li>{'Measurement: 0.5" LEFT (sky ←)'}</li>
+                      <li>{'Measurement: 0.5" LEFT (←)'}</li>
                       <li>{'Move centerline right by 0.75"'}</li>
                       <li>{'Calculation: 0.5 - 0.75 = -0.25"'}</li>
-                      <li>{'Result: 0.25" RIGHT (purple →)'}</li>
+                      <li>{'Result: 0.25" RIGHT (→)'}</li>
                       <li className="text-gray-600 italic">
                         {
                           'The measurement crosses the centerline and now measures 0.25" on the right'
@@ -913,10 +921,6 @@ const NewPlankIncrementor = () => {
                       </li>
                     </ul>
                   </div>
-                  <p className="text-gray-600 text-xs">
-                    This reflects how a centerline physically moves in real
-                    installations—points that cross the line switch sides.
-                  </p>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
