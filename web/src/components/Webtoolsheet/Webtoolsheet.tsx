@@ -4,7 +4,7 @@ import CarpetRollLengthFromYardage from 'src/components/Tools/CarpetRollLengthFr
 import ImperialCalculator from 'src/components/Tools/ImperialCalculator/ImperialCalculator'
 import IsItADrop from 'src/components/Tools/IsItADrop/IsItADrop'
 import PaintCalculator from 'src/components/Tools/PaintCalculator/PaintCalculator'
-import PlankIncrementor from 'src/components/Tools/PlankIncrementor/PlankIncrementor'
+import NewPlankIncrementor from 'src/components/Tools/PlankIncrementor/NewPlankIncrementor'
 import PythagoreanTripleScale from 'src/components/Tools/PythagoreanTripleScale/PythagoreanTripleScale'
 import StepRollCalc from 'src/components/Tools/StepRollCalc/StepRollCalc'
 import TheCutList from 'src/components/Tools/TheCutList/TheCutList'
@@ -28,7 +28,7 @@ import {
 const toolList = [
   { name: 'The Cut List', component: TheCutList },
   { name: 'Step Roll Calc', component: StepRollCalc },
-  { name: 'Plank Incrementor', component: PlankIncrementor },
+  { name: 'Plank Incrementor', component: NewPlankIncrementor },
   { name: 'Pythagorean Triple Scale', component: PythagoreanTripleScale },
   { name: 'Carpet Roll Length', component: CarpetRollLengthFromYardage },
   { name: 'Imperial Calculator', component: ImperialCalculator },

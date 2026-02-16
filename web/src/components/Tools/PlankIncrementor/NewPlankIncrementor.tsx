@@ -57,6 +57,13 @@ const NewPlankIncrementor = () => {
   ])
   const [totalOffset, setTotalOffset] = useState(0)
   const [showGeneratePopover, setShowGeneratePopover] = useState(false)
+  const [showAutoAdjustPopover, setShowAutoAdjustPopover] = useState(false)
+  const [useImperial, setUseImperial] = useState(false)
+  const [suggestedAdjustment, setSuggestedAdjustment] = useState<{
+    adjustment: number
+    goodCount: number
+    totalMeasurements: number
+  } | null>(null)
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -95,6 +102,42 @@ const NewPlankIncrementor = () => {
 
   const isRemainderGood = (remainder: number): boolean => {
     return remainder >= minPlankWidth
+  }
+
+  const decimalToImperial = (decimal: number): string => {
+    const sixteenths = Math.ceil(decimal * 16)
+    const inches = Math.floor(sixteenths / 16)
+    const remainder = sixteenths % 16
+
+    if (remainder === 0) {
+      return `${inches}"`
+    }
+
+    // Simplify to the coarsest useful fraction
+    // Check for half (8 sixteenths)
+    if (remainder === 8) {
+      return inches === 0 ? `1/2"` : `${inches} 1/2"`
+    }
+
+    // Check quarters (4, 12 sixteenths)
+    if (remainder === 4 || remainder === 12) {
+      const quarters = remainder / 4
+      return inches === 0 ? `${quarters}/4"` : `${inches} ${quarters}/4"`
+    }
+
+    // Check eighths (2, 6, 10, 14 sixteenths)
+    if (
+      remainder === 2 ||
+      remainder === 6 ||
+      remainder === 10 ||
+      remainder === 14
+    ) {
+      const eighths = remainder / 2
+      return inches === 0 ? `${eighths}/8"` : `${inches} ${eighths}/8"`
+    }
+
+    // Default to sixteenths (odd numbers: 1, 3, 5, 7, 9, 11, 13, 15)
+    return inches === 0 ? `${remainder}/16"` : `${inches} ${remainder}/16"`
   }
 
   const incrementLabel = (label: string): string => {
@@ -265,6 +308,67 @@ const NewPlankIncrementor = () => {
 
   const hasExistingData = measurements.some((m) => m.length > 0)
 
+  const findBestAdjustment = () => {
+    // Only search within one plank width cycle (pattern repeats)
+    let bestAdjustment = 0
+    let bestGoodCount = measurements.filter((m) => m.isGood).length // Current state
+
+    // Test adjustments from 0 to plankWidth in 0.01" increments
+    for (let adj = 0; adj <= plankWidth; adj += 0.01) {
+      let goodCount = 0
+
+      // Count how many measurements would be good with this adjustment
+      for (const measurement of measurements) {
+        const currentLength = parseFloat(measurement.length) || 0
+        if (currentLength === 0) continue // Skip empty measurements
+
+        const newLength = currentLength + adj
+        const remainder = calculateRemainder(newLength)
+        if (isRemainderGood(remainder)) {
+          goodCount++
+        }
+      }
+
+      // Update best if this is better (prefer smaller adjustment on tie)
+      if (goodCount > bestGoodCount) {
+        bestGoodCount = goodCount
+        bestAdjustment = adj
+      }
+    }
+
+    setSuggestedAdjustment({
+      adjustment: Math.round(bestAdjustment * 100) / 100,
+      goodCount: bestGoodCount,
+      totalMeasurements: measurements.filter((m) => m.length).length,
+    })
+    setShowAutoAdjustPopover(true)
+  }
+
+  const applyBestAdjustment = () => {
+    if (!suggestedAdjustment) return
+
+    setMeasurements((prev) =>
+      prev.map((item) => {
+        const currentLength = parseFloat(item.length) || 0
+        const newLength = Math.max(
+          0,
+          currentLength + suggestedAdjustment.adjustment
+        )
+        const remainder = calculateRemainder(newLength)
+        return {
+          ...item,
+          length: newLength.toString(),
+          remainder,
+          isGood: isRemainderGood(remainder),
+        }
+      })
+    )
+
+    setTotalOffset((prev) => prev + suggestedAdjustment.adjustment)
+    setShowAutoAdjustPopover(false)
+    setSuggestedAdjustment(null)
+  }
+
   return (
     <div className="flex justify-center p-4">
       <div className="w-full max-w-2xl space-y-4">
@@ -283,7 +387,7 @@ const NewPlankIncrementor = () => {
                 <Input
                   id="plankWidth"
                   type="number"
-                  step="0.01"
+                  step="0.1"
                   value={plankWidth}
                   onChange={(e) =>
                     setPlankWidth(
@@ -297,7 +401,7 @@ const NewPlankIncrementor = () => {
                 <Input
                   id="minPlankWidth"
                   type="number"
-                  step="0.01"
+                  step="0.25"
                   value={minPlankWidth}
                   onChange={(e) => setMinPlankWidth(Number(e.target.value))}
                 />
@@ -308,33 +412,48 @@ const NewPlankIncrementor = () => {
             <div className="rounded-lg bg-slate-200 dark:bg-slate-400 p-4">
               <div className="text-lg font-medium text-gray-600 flex items-center justify-between mb-3">
                 <span>Line Adjustment</span>
-                <Button
-                  onClick={() => {
-                    // Revert measurements by subtracting totalOffset
-                    setMeasurements((prev) =>
-                      prev.map((item) => {
-                        const currentLength = parseFloat(item.length) || 0
-                        const originalLength = Math.max(
-                          0,
-                          currentLength - totalOffset
-                        )
-                        const remainder = calculateRemainder(originalLength)
-                        return {
-                          ...item,
-                          length: originalLength.toString(),
-                          remainder,
-                          isGood: isRemainderGood(remainder),
-                        }
-                      })
-                    )
-                    setTotalOffset(0)
-                  }}
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 px-2 text-xs"
-                >
-                  Reset
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setUseImperial(!useImperial)}
+                    variant="outline"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    title={
+                      useImperial
+                        ? 'Show decimal inches'
+                        : 'Show imperial 1/16 increments'
+                    }
+                  >
+                    {useImperial ? '1/16' : 'Decimal'}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      // Revert measurements by subtracting totalOffset
+                      setMeasurements((prev) =>
+                        prev.map((item) => {
+                          const currentLength = parseFloat(item.length) || 0
+                          const originalLength = Math.max(
+                            0,
+                            currentLength - totalOffset
+                          )
+                          const remainder = calculateRemainder(originalLength)
+                          return {
+                            ...item,
+                            length: originalLength.toString(),
+                            remainder,
+                            isGood: isRemainderGood(remainder),
+                          }
+                        })
+                      )
+                      setTotalOffset(0)
+                    }}
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                  >
+                    Reset
+                  </Button>
+                </div>
               </div>
               <div className="flex items-center justify-center gap-4">
                 <Button
@@ -344,15 +463,30 @@ const NewPlankIncrementor = () => {
                   ← Move Left
                 </Button>
                 <div className="text-center">
+                  <div className="text-sm text-gray-500 mt-1">
+                    {totalOffset > 0 ? 'Moved' : totalOffset < 0 ? 'Moved' : ''}
+                  </div>
                   <div className="text-4xl font-bold text-gray-900">
-                    {Math.abs(totalOffset).toFixed(2)}"
+                    {useImperial
+                      ? decimalToImperial(Math.abs(totalOffset))
+                      : `${Math.abs(totalOffset).toFixed(2)}"`}
                   </div>
                   <div className="text-sm text-gray-500 mt-1">
-                    {totalOffset > 0
-                      ? 'Moved left'
-                      : totalOffset < 0
-                        ? 'Moved right'
-                        : 'No adjustment'}
+                    <span
+                      className={`font-semibold ${
+                        totalOffset > 0
+                          ? 'text-blue-600'
+                          : totalOffset < 0
+                            ? 'text-purple-600'
+                            : 'text-gray-600'
+                      }`}
+                    >
+                      {totalOffset > 0
+                        ? 'Left'
+                        : totalOffset < 0
+                          ? 'Right'
+                          : 'No adjustment'}
+                    </span>
                   </div>
                 </div>
                 <Button
@@ -361,6 +495,71 @@ const NewPlankIncrementor = () => {
                 >
                   Move Right →
                 </Button>
+              </div>
+              {/* Auto-adjust button */}
+              <div className="flex justify-center mt-3">
+                <Popover
+                  open={showAutoAdjustPopover}
+                  onOpenChange={setShowAutoAdjustPopover}
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      onClick={findBestAdjustment}
+                      variant="outline"
+                      size="sm"
+                    >
+                      ✨ Adjust Automagically
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-72">
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <h4 className="font-medium">Optimize Line Position</h4>
+                        <p className="text-xs text-gray-500">
+                          This algorithm will test all possible adjustments to
+                          find the position that maximizes "good" remainders (≥
+                          threshold). Results are approximate and for reference
+                          only.
+                        </p>
+                      </div>
+                      {suggestedAdjustment && (
+                        <div className="rounded-lg bg-slate-100 p-3 space-y-1">
+                          <p className="text-sm font-semibold">
+                            Suggested Adjustment:{' '}
+                            {suggestedAdjustment.adjustment.toFixed(2)}"
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Would achieve{' '}
+                            <span className="font-semibold text-emerald-600">
+                              {suggestedAdjustment.goodCount}
+                            </span>{' '}
+                            good out of{' '}
+                            <span className="font-semibold">
+                              {suggestedAdjustment.totalMeasurements}
+                            </span>{' '}
+                            measurements
+                          </p>
+                        </div>
+                      )}
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => setShowAutoAdjustPopover(false)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={applyBestAdjustment}
+                          size="sm"
+                          disabled={!suggestedAdjustment}
+                        >
+                          Apply Adjustment
+                        </Button>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
 
@@ -430,7 +629,11 @@ const NewPlankIncrementor = () => {
                       )
                     }
                     placeholder="Room, Hallway 2, Door 3"
-                    className="flex-1 h-8 text-xs"
+                    className={`flex-1 h-8 text-xs ${
+                      item.direction
+                        ? 'bg-blue-100 focus:bg-blue-50'
+                        : 'bg-purple-100 focus:bg-purple-50'
+                    }`}
                   />
                   <Input
                     type="text"
@@ -535,23 +738,29 @@ const NewPlankIncrementor = () => {
                 <AccordionContent className="space-y-3 text-sm">
                   <ol className="list-decimal list-inside space-y-2">
                     <li>
-                      Start by snapping an initial line and label the left/right
-                      sides
+                      Snap an initial line and establish your reference point
                     </li>
                     <li>
-                      Choose a starting point along the line as your reference
+                      For each termination point along the line, measure the
+                      distance from your reference point in decimal inches
                     </li>
                     <li>
-                      Take measurements from your starting point to termination
-                      points along the line
+                      Record each measurement with its direction (left ← | blue
+                      or right → | purple) relative to your reference
                     </li>
                     <li>
-                      Mark each measurement on the appropriate left or right
-                      side with a laser
+                      Optionally add a label (e.g., "Door 1", "Corner A") to
+                      track locations
                     </li>
                     <li>
-                      Enter measurements and adjust the line position to account
-                      for material waste
+                      The tool calculates remainders for each measurement and
+                      shows which are "good" (≥ threshold) or "careful" (≤
+                      threshold)
+                    </li>
+                    <li>
+                      Use the "Move Left" and "Move Right" buttons to adjust all
+                      measurements at once, or try "Adjust Automagically" to
+                      optimize
                     </li>
                   </ol>
                 </AccordionContent>
@@ -563,43 +772,79 @@ const NewPlankIncrementor = () => {
                     <span className="font-medium">Material Width:</span>
                     <p className="text-gray-600">
                       The usable width of your material (e.g., 7.25" for
-                      standard plank)
+                      standard plank). This is divided by each measurement to
+                      calculate the remainder.
                     </p>
                   </div>
                   <div>
                     <span className="font-medium">Threshold:</span>
                     <p className="text-gray-600">
-                      Minimum remainder length; remainders below this trigger a
-                      warning
+                      Minimum acceptable remainder length. Remainders ≥
+                      threshold are marked "good" (green); remainders &lt;
+                      threshold are marked "careful" (orange).
                     </p>
                   </div>
                   <div>
                     <span className="font-medium">Remainder:</span>
                     <p className="text-gray-600">
-                      Leftover material after cutting a measurement from the
-                      material width
+                      The usable waste from cutting a measurement from your
+                      material. Formula: (measurement ÷ material width - floor)
+                      × material width.
                     </p>
                   </div>
                   <div>
                     <span className="font-medium">Line Adjustment:</span>
                     <p className="text-gray-600">
-                      Total distance the line has been moved left or right to
-                      minimize waste
+                      The cumulative distance the line has been moved left
+                      (blue) or right (purple) to optimize remainder
+                      distribution.
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-medium">
+                      Left (Blue) vs Right (Purple):
+                    </span>
+                    <p className="text-gray-600">
+                      Indicates which side of your reference point each
+                      measurement is located. The toggle button switches
+                      direction for individual measurements.
                     </p>
                   </div>
                 </AccordionContent>
               </AccordionItem>
-              <AccordionItem value="about">
-                <AccordionTrigger>About</AccordionTrigger>
-                <AccordionContent className="space-y-2 text-sm">
+              <AccordionItem value="automagic">
+                <AccordionTrigger>Automagic Adjustment</AccordionTrigger>
+                <AccordionContent className="space-y-3 text-sm">
                   <p>
-                    The Plank Incrementor helps contractors optimize cutting
-                    layouts by calculating remainders and tracking line
-                    adjustments to minimize material waste.
+                    The "Adjust Automagically" button uses an optimization
+                    algorithm to find the best line position for your
+                    measurements.
                   </p>
-                  <p>
-                    Your data is automatically saved locally, so your
-                    measurements persist between sessions.
+                  <div className="space-y-2">
+                    <p className="font-medium">How it works:</p>
+                    <ol className="list-decimal list-inside space-y-1 ml-2">
+                      <li>
+                        Tests every possible line adjustment from 0" to your
+                        material width in 0.01" increments (roughly 725
+                        adjustment points for 7.25" material)
+                      </li>
+                      <li>
+                        For each adjustment, calculates how many of your
+                        measurements would result in "good" remainders (≥
+                        threshold)
+                      </li>
+                      <li>
+                        Returns the adjustment that maximizes the number of good
+                        remainders
+                      </li>
+                      <li>Breaks ties by preferring the smallest adjustment</li>
+                    </ol>
+                  </div>
+                  <p className="text-gray-500 text-xs italic">
+                    Note: Results are estimates based on your current
+                    measurements. The algorithm assumes a repeating material
+                    pattern and may not account for all real-world constraints.
+                    Use as a starting point and verify manually.
                   </p>
                 </AccordionContent>
               </AccordionItem>
