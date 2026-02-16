@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 
+import PlankIncrementorVisualizer from 'src/components/Tools/PlankIncrementor/PlankIncrementorVisualizer'
 import {
   Accordion,
   AccordionContent,
@@ -808,7 +809,21 @@ const NewPlankIncrementor = () => {
             </div>
 
             {/* Information Accordion */}
-            <Accordion type="single" collapsible className="w-full">
+            <Accordion
+              type="single"
+              collapsible
+              className="w-full"
+              defaultValue="visualizer"
+            >
+              <AccordionItem value="visualizer">
+                <AccordionTrigger>Visualizer</AccordionTrigger>
+                <AccordionContent className="space-y-2 text-sm">
+                  <PlankIncrementorVisualizer
+                    measurements={measurements}
+                    materialWidth={plankWidth}
+                  />
+                </AccordionContent>
+              </AccordionItem>
               <AccordionItem value="glossary">
                 <AccordionTrigger>Glossary</AccordionTrigger>
                 <AccordionContent className="space-y-2 text-sm">
