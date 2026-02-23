@@ -10,6 +10,17 @@ const Routes = () => {
   return (
     <Router useAuth={useAuth}>
       <PrivateSet wrap={WrapperLayout} unauthenticated="login" roles={['guest', 'admin']}>
+        <Set wrap={AdminScaffoldLayout} title="Tags" titleTo="tags" buttonLabel="New Tag" buttonTo="newTag">
+          <Route path="/tags/new" page={TagNewTagPage} name="newTag" />
+          <Route path="/tags/{id:Int}/edit" page={TagEditTagPage} name="editTag" />
+          <Route path="/tags/{id:Int}" page={TagTagPage} name="tag" />
+        </Set>
+        <Set wrap={AdminScaffoldLayout} title="Tags" titleTo="tags" buttonLabel="New Tag" buttonTo="newTag" showSearch={true}>
+          <Route path="/tags" page={TagTagsPage} name="tags" />
+        </Set>
+      </PrivateSet>
+
+      <PrivateSet wrap={WrapperLayout} unauthenticated="login" roles={['guest', 'admin']}>
         <Set wrap={AdminScaffoldLayout} title="Invoices" titleTo="invoices" buttonLabel="New Invoice" buttonTo="newInvoice">
           <Route path="/invoices/new" page={InvoiceNewInvoicePage} name="newInvoice" />
           <Route path="/invoices/{uuid}/edit" page={InvoiceEditInvoicePage} name="editInvoice" />

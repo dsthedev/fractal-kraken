@@ -35,6 +35,7 @@ model User {
   entities         Entity[]       @relation("entityUsers")
   authoredEntities Entity[]       @relation("entityAuthor")
   invoices         Invoice[]
+  tags             Tag[]
 }
 
 model MeasurementUnit {
@@ -366,4 +367,20 @@ model Invoice {
 
   @@index([authorId])
   @@index([status])
+}
+
+model Tag {
+  id Int @id @default(autoincrement())
+
+  name        String
+  description String?
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([authorId, name])
+  @@index([authorId])
 }
