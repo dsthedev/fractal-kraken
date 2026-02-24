@@ -1,3 +1,4 @@
+import { Pencil, Trash2 } from 'lucide-react'
 import type {
   DeleteTagMutation,
   DeleteTagMutationVariables,
@@ -10,7 +11,7 @@ import type { TypedDocumentNode } from '@cedarjs/web'
 import { toast } from '@cedarjs/web/toast'
 
 import { QUERY } from 'src/components/Tag/TagsCell'
-import { timeTag, truncate } from 'src/lib/formatters.js'
+import { truncate } from 'src/lib/formatters.js'
 
 const DELETE_TAG_MUTATION: TypedDocumentNode<
   DeleteTagMutation,
@@ -23,19 +24,18 @@ const DELETE_TAG_MUTATION: TypedDocumentNode<
   }
 `
 
-const TagsList = ({ tags }: FindTags) => {
+const TagsList = ({
+  tags,
+  refetch,
+}: FindTags & { refetch?: () => Promise<any> }) => {
   const [deleteTag] = useMutation(DELETE_TAG_MUTATION, {
     onCompleted: () => {
       toast.success('Tag deleted')
+      refetch?.()
     },
     onError: (error) => {
       toast.error(error.message)
     },
-    // This refetches the query on the list page. Read more about other ways to
-    // update the cache over here:
-    // https://www.apollographql.com/docs/react/data/mutations/#making-all-other-cache-updates
-    refetchQueries: [{ query: QUERY }],
-    awaitRefetchQueries: true,
   })
 
   const onDeleteClick = (id: DeleteTagMutationVariables['id']) => {
@@ -49,39 +49,24 @@ const TagsList = ({ tags }: FindTags) => {
       <table className="rw-table">
         <thead>
           <tr>
-            <th>Id</th>
             <th>Name</th>
             <th>Description</th>
-            <th>Author id</th>
-            <th>Created at</th>
-            <th>Updated at</th>
             <th>&nbsp;</th>
           </tr>
         </thead>
         <tbody>
           {tags.map((tag) => (
             <tr key={tag.id}>
-              <td>{truncate(tag.id)}</td>
               <td>{truncate(tag.name)}</td>
               <td>{truncate(tag.description)}</td>
-              <td>{truncate(tag.authorId)}</td>
-              <td>{timeTag(tag.createdAt)}</td>
-              <td>{timeTag(tag.updatedAt)}</td>
               <td>
                 <nav className="rw-table-actions">
-                  <Link
-                    to={routes.tag({ id: tag.id })}
-                    title={'Show tag ' + tag.id + ' detail'}
-                    className="rw-button rw-button-small"
-                  >
-                    Show
-                  </Link>
                   <Link
                     to={routes.editTag({ id: tag.id })}
                     title={'Edit tag ' + tag.id}
                     className="rw-button rw-button-small rw-button-blue"
                   >
-                    Edit
+                    <Pencil />
                   </Link>
                   <button
                     type="button"
@@ -89,7 +74,7 @@ const TagsList = ({ tags }: FindTags) => {
                     className="rw-button rw-button-small rw-button-red"
                     onClick={() => onDeleteClick(tag.id)}
                   >
-                    Delete
+                    <Trash2 />
                   </button>
                 </nav>
               </td>

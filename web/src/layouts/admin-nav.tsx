@@ -20,16 +20,17 @@ const AdminNav = () => {
   const { isAuthenticated, currentUser } = useAuth()
 
   const adminMenuItems: AdminMenuItem[] = [
+    { label: 'Tags', route: routes.tags },
     { label: 'Carpet Calculator', route: routes.carpetCalculator },
     {
       label: 'Orphaned Billable Items Cleanup',
       route: routes.orphanedBillableItemsCleanup,
     },
-    { label: 'Invoices', route: routes.invoices },
-    { label: 'Estimates', route: routes.estimates },
-    { label: 'Billable Items', route: routes.billableItems },
-    { label: 'Rates', route: routes.rates },
-    { label: 'Entities', route: routes.entities },
+    // { label: 'Invoices', route: routes.invoices },
+    // { label: 'Estimates', route: routes.estimates },
+    // { label: 'Billable Items', route: routes.billableItems },
+    // { label: 'Rates', route: routes.rates },
+    // { label: 'Entities', route: routes.entities },
     // { label: 'Services', route: routes.services },
     { label: 'Materials', route: routes.materials },
     { label: 'Actions', route: routes.actions },
