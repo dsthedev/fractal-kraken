@@ -106,7 +106,6 @@ const InvoicesTable = ({
       <thead>
         <tr>
           <th className="table-cell text-left">Status</th>
-          <th className="text-left hidden md:table-cell">Pay Status</th>
           <th
             onClick={() => handleSort('invoiceNumber')}
             className="table-cell text-left cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -128,16 +127,16 @@ const InvoicesTable = ({
         {sortedInvoices.map((invoice) => (
           <tr key={invoice.uuid}>
             <td className="table-cell">
-              <Badge variant={getStatusBadgeVariant(invoice.status)}>
-                {formatEnum(invoice.status)}
-              </Badge>
-            </td>
-            <td className="hidden sm:table-cell">
-              {invoice.status !== 'DRAFT' && (
-                <Badge variant={getPayStatusBadgeVariant(invoice.payStatus)}>
-                  {formatEnum(invoice.payStatus)}
+              <div className="flex flex-col items-start gap-1">
+                <Badge variant={getStatusBadgeVariant(invoice.status)}>
+                  {formatEnum(invoice.status)}
                 </Badge>
-              )}
+                {invoice.status !== 'DRAFT' && (
+                  <Badge variant={getPayStatusBadgeVariant(invoice.payStatus)}>
+                    {formatEnum(invoice.payStatus)}
+                  </Badge>
+                )}
+              </div>
             </td>
             <td>
               <button
@@ -239,17 +238,21 @@ const InvoiceDrawerContent = ({
 }
 
 const InvoicesList = ({ invoices }: FindInvoices) => {
-  // Default: all statuses except ARCHIVED, all pay statuses
+  // Default: all statuses except ARCHIVED, and pay statuses except PAID
   const getDefaultStatuses = (): string[] => {
     return INVOICE_STATUSES.filter((status) => status !== 'ARCHIVED')
+  }
+
+  const getDefaultPayStatuses = (): string[] => {
+    return INVOICE_PAY_STATUSES.filter((payStatus) => payStatus !== 'PAID')
   }
 
   const [openDrawerUuid, setOpenDrawerUuid] = useState<string | null>(null)
   const [selectedStatuses, setSelectedStatuses] =
     useState<string[]>(getDefaultStatuses())
-  const [selectedPayStatuses, setSelectedPayStatuses] = useState<string[]>([
-    ...INVOICE_PAY_STATUSES,
-  ])
+  const [selectedPayStatuses, setSelectedPayStatuses] = useState<string[]>(
+    getDefaultPayStatuses()
+  )
   const [sortConfig, setSortConfig] = useState<{
     key: string
     direction: 'asc' | 'desc'
