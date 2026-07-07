@@ -89,7 +89,8 @@ export const createInvoiceFromEstimate: MutationResolvers['createInvoiceFromEsti
 
     const retailerName = retailer?.nickname || retailer?.name
     const clientName = client?.nickname || client?.name
-    const invoiceNumber = createRefNo(retailerName, clientName)
+    const base = createRefNo(retailerName, clientName)
+    const invoiceNumber = `${base}-${estimate.id}`
 
     const dueAt = new Date()
     dueAt.setDate(dueAt.getDate() + 30)
